@@ -12,7 +12,13 @@ import {
   ProofOfPasswordContract,
   ProofOfPasswordContractArtifact,
 } from "@aztec-kit/contracts-aztec/artifacts/ProofOfPassword";
-import { BatchCall, NO_WAIT, type DeployOptions, type WaitOpts } from "@aztec/aztec.js/contracts";
+import {
+  BatchCall,
+  NO_WAIT,
+  type DeployInstantiationOptions,
+  type DeployOptions,
+  type WaitOpts,
+} from "@aztec/aztec.js/contracts";
 import { waitForTx, type AztecNode } from "@aztec/aztec.js/node";
 
 import {
@@ -75,36 +81,44 @@ async function deployContracts(
   mintToAddresses: string[],
   paymentMethod?: PaymentMethod,
 ) {
-  const contractAddressSalt = getSalt();
+  const salt = getSalt();
 
   // ── Build every deployment method + derive its deterministic address ──
   //
   // The AMM depends on token addresses, so tokens must resolve first. PoP
   // depends on GoCoin. Everything uses the same salt so re-runs with the
   // same admin + SALT produce the same addresses and can be skipped.
-  const goCoinDeploy = TokenContract.deploy(wallet, deployer, "GoCoin", "GO", 18);
-  const goCoinPremiumDeploy = TokenContract.deploy(wallet, deployer, "GoCoinPremium", "GOP", 18);
-  const liquidityTokenDeploy = TokenContract.deploy(wallet, deployer, "GoLiquidity", "GOLP", 18);
+  const goCoinDeploy = TokenContract.deploy(wallet, deployer, "GoCoin", "GO", 18, {
+    deployer,
+    salt,
+  });
+  const goCoinPremiumDeploy = TokenContract.deploy(wallet, deployer, "GoCoinPremium", "GOP", 18, {
+    deployer,
+    salt,
+  });
+  const liquidityTokenDeploy = TokenContract.deploy(wallet, deployer, "GoLiquidity", "GOLP", 18, {
+    deployer,
+    salt,
+  });
 
-  // `deployer` has to be passed explicitly to getInstance — it defaults to
-  // AztecAddress.ZERO, which would produce an address different from the
-  // one the eventual .send({ from: deployer }) writes to chain. See
-  // DeployMethod.getInstance in aztec.js for the default.
-  const instanceOpts = { contractAddressSalt, deployer };
-  const goCoinInstance = await goCoinDeploy.getInstance(instanceOpts);
-  const goCoinPremiumInstance = await goCoinPremiumDeploy.getInstance(instanceOpts);
-  const liquidityTokenInstance = await liquidityTokenDeploy.getInstance(instanceOpts);
+  const goCoinInstance = await goCoinDeploy.getInstance();
+  const goCoinPremiumInstance = await goCoinPremiumDeploy.getInstance();
+  const liquidityTokenInstance = await liquidityTokenDeploy.getInstance();
 
   const ammDeploy = AMMContract.deploy(
     wallet,
     goCoinInstance.address,
     goCoinPremiumInstance.address,
     liquidityTokenInstance.address,
+    { deployer, salt },
   );
-  const ammInstance = await ammDeploy.getInstance(instanceOpts);
+  const ammInstance = await ammDeploy.getInstance();
 
-  const popDeploy = ProofOfPasswordContract.deploy(wallet, goCoinInstance.address, password);
-  const popInstance = await popDeploy.getInstance(instanceOpts);
+  const popDeploy = ProofOfPasswordContract.deploy(wallet, goCoinInstance.address, password, {
+    deployer,
+    salt,
+  });
+  const popInstance = await popDeploy.getInstance();
 
   await Promise.all([
     wallet.registerContract(goCoinInstance, TokenContractArtifact),
@@ -134,7 +148,6 @@ async function deployContracts(
   const baseOpts: DeployOptions<WaitOpts> = {
     from: deployer,
     fee: { paymentMethod, gasSettings: { maxFeesPerGas: currentMinFees.mul(10) } },
-    contractAddressSalt,
     wait: { timeout: 120, waitForStatus: TxStatus.PROPOSED },
   };
 
@@ -237,7 +250,7 @@ async function deployContracts(
     liquidityTokenAddress: liquidityToken.address.toString(),
     ammAddress: amm.address.toString(),
     popAddress: pop.address.toString(),
-    contractAddressSalt: contractAddressSalt.toString(),
+    salt: salt.toString(),
   };
 }
 
@@ -252,7 +265,7 @@ function writeNetworkConfig(
     ammAddress: string;
     liquidityTokenAddress: string;
     popAddress: string;
-    contractAddressSalt: string;
+    salt: string;
     deployerAddress: string;
   },
   sponsoredFPCAddress: string,
@@ -273,7 +286,7 @@ function writeNetworkConfig(
       liquidityToken: deploymentInfo.liquidityTokenAddress,
       pop: deploymentInfo.popAddress,
       sponsoredFPC: sponsoredFPCAddress,
-      salt: deploymentInfo.contractAddressSalt,
+      salt: deploymentInfo.salt,
     },
     deployer: {
       address: deploymentInfo.deployerAddress,
@@ -358,7 +371,7 @@ export async function runSwapDeploy(opts: SwapDeployOptions): Promise<SwapDeploy
       amm: deploymentInfo.ammAddress,
       pop: deploymentInfo.popAddress,
       sponsoredFPC: sponsoredFPC.address.toString(),
-      salt: deploymentInfo.contractAddressSalt,
+      salt: deploymentInfo.salt,
     },
     configPath,
   };

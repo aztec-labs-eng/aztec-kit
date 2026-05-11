@@ -4,43 +4,43 @@
   "chainId": "11155111",
   "rollupVersion": "4127419662",
   "contracts": {
-    "goCoin": "0x0e9da1893a7bd39ce485171f8025fc11381250f397b0a190d9b20745839b5626",
-    "goCoinPremium": "0x0bdb6ee4945c9b31e46101eba99837087996d275326e86e40de1e6637b4826fd",
-    "amm": "0x07d66f8ca420c521938fe11ab10ed9372c07345dd6b52b6d6e9587a598e41a01",
-    "liquidityToken": "0x279e80240b94120513376dbef213ede9afc0b2813e6a374b956f3384b88e8b3d",
-    "pop": "0x1ad7a07f5b11ad292950bb0375c03daf89dfef959e57afa770e9d4f8bb66f580",
-    "sponsoredFPC": "0x02a481c5711fce148a5fb401b4969abc589f20ecf0ad8d62231a0917c1916d8c",
-    "salt": "0x000000000000000000000000000000000000000000000000000000000012d4cb"
+    "goCoin": "0x067d2427736a4cf10536bfdd80eb87793acda3c84a1b3512c6216d5c953dbd95",
+    "goCoinPremium": "0x1698b577fbb435d765e6472474fa0fa102b86ae2b65770c799c49f58991ca068",
+    "amm": "0x2d42eba2c3b89853153a06de2ba4e0f0ffce996b52753645350a2973a9c31053",
+    "liquidityToken": "0x18cf013cb7c7b222c7b04393f72407e9871b6391461ca6954d1dd285c3aceecb",
+    "pop": "0x03912db8b8ff6d263426f8e894d233affc695a7ee289bcf190382fe7a2d990d1",
+    "sponsoredFPC": "0x28bc6d58ff81fd6a936e2ad47b7b473c526e3ef7257ba5ce5edfe62c2a95fb64",
+    "salt": "0x0000000000000000000000000000000000000000000000000000000000000000"
   },
   "deployer": {
-    "address": "0x27d1ed549a7217e720e31a3cc969aff4b086268cae58d0f492c22b4eee076688"
+    "address": "0x0b69232b002366f1145541bd24ef12c97e3b7f9c56dbb107849b7e4e7add3264"
   },
-  "deployedAt": "2026-05-05T11:58:41.433Z",
+  "deployedAt": "2026-05-11T10:14:23.426Z",
   "subscriptionFPC": {
-    "address": "0x287ea154626c821edb56c2c1161445144a87bd405bc1d4e853eb34d922ed25c2",
+    "address": "0x1c6f8d1d4fb1109299c40c1dea3d30ade7690eea2363e698ce578c6890d36fca",
     "secretKey": "0x000000000000000000000000000000000000000000000000000000000000002c",
     "functions": {
-      "0x1ad7a07f5b11ad292950bb0375c03daf89dfef959e57afa770e9d4f8bb66f580": {
+      "0x03912db8b8ff6d263426f8e894d233affc695a7ee289bcf190382fe7a2d990d1": {
         "0xa539bd29": {
           "configIndex": 0,
           "gasLimits": {
             "daGas": 992,
-            "l2Gas": 721298
+            "l2Gas": 721292
           },
           "hasPublicCall": true
         }
       },
-      "0x07d66f8ca420c521938fe11ab10ed9372c07345dd6b52b6d6e9587a598e41a01": {
+      "0x2d42eba2c3b89853153a06de2ba4e0f0ffce996b52753645350a2973a9c31053": {
         "0xfd228669": {
           "configIndex": 0,
           "gasLimits": {
             "daGas": 2464,
-            "l2Gas": 1032463
+            "l2Gas": 1032841
           },
           "hasPublicCall": true
         }
       },
-      "0x0e9da1893a7bd39ce485171f8025fc11381250f397b0a190d9b20745839b5626": {
+      "0x067d2427736a4cf10536bfdd80eb87793acda3c84a1b3512c6216d5c953dbd95": {
         "0x859e4f61": {
           "configIndex": 0,
           "gasLimits": {
@@ -50,7 +50,7 @@
           "hasPublicCall": false
         }
       },
-      "0x0bdb6ee4945c9b31e46101eba99837087996d275326e86e40de1e6637b4826fd": {
+      "0x1698b577fbb435d765e6472474fa0fa102b86ae2b65770c799c49f58991ca068": {
         "0x859e4f61": {
           "configIndex": 0,
           "gasLimits": {

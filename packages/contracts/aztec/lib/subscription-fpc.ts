@@ -31,6 +31,7 @@ import {
   FPC_TEARDOWN_DA_GAS,
   FPC_TEARDOWN_L2_GAS,
 } from "./fpc-gas-constants.js";
+import type { DeployInstantiationOptions } from "@aztec/aztec.js/contracts";
 
 /**
  * Overhead the FPC adds on top of the sponsored function's gas.
@@ -360,26 +361,12 @@ export class SubscriptionFPC {
     return new SubscriptionFPC(SubscriptionFPCContract.at(address, wallet));
   }
 
-  static deploy(wallet: Wallet, admin: AztecAddressLike) {
-    return SubscriptionFPCContract.deploy(wallet, admin);
-  }
-
-  /**
-   * Deploys the FPC with public keys so it can own private notes (slot notes).
-   * Returns the deployment handle and the secret key needed to register the contract.
-   *
-   * Pass `secretKey` to make the FPC address deterministic (e.g. so tests can
-   * include it in a pre-funded genesis set). Otherwise a random key is used.
-   */
-  static async deployWithKeys(
+  static deploy(
     wallet: Wallet,
     admin: AztecAddressLike,
-    opts: { secretKey?: Fr } = {},
+    instantiation?: DeployInstantiationOptions,
   ) {
-    const secretKey = opts.secretKey ?? Fr.random();
-    const { publicKeys } = await deriveKeys(secretKey);
-    const deployment = SubscriptionFPCContract.deployWithPublicKeys(publicKeys, wallet, admin);
-    return { deployment, secretKey };
+    return SubscriptionFPCContract.deploy(wallet, admin, instantiation);
   }
 
   static get artifact(): ContractArtifact {
