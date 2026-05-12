@@ -134,10 +134,7 @@ export async function ensurePlaintextMigrationDone(rollupAddress: string): Promi
     if (flag === true) return;
 
     const root = await navigator.storage.getDirectory();
-    for (const dirName of [
-      `.aztec-kv-pxe-${rollupAddress}`,
-      `.aztec-kv-wallet-${rollupAddress}`,
-    ]) {
+    for (const dirName of [`.aztec-kv-pxe-${rollupAddress}`, `.aztec-kv-wallet-${rollupAddress}`]) {
       await root.removeEntry(dirName, { recursive: true }).catch((err: unknown) => {
         // NotFoundError = dir wasn't there; happy path on a fresh install.
         if (err instanceof DOMException && err.name === "NotFoundError") return;
@@ -164,10 +161,7 @@ export async function ensurePlaintextMigrationDone(rollupAddress: string): Promi
  */
 export async function resetWalletKeyAndStorage(rollupAddress: string): Promise<void> {
   const root = await navigator.storage.getDirectory();
-  for (const dirName of [
-    `.aztec-kv-pxe-${rollupAddress}`,
-    `.aztec-kv-wallet-${rollupAddress}`,
-  ]) {
+  for (const dirName of [`.aztec-kv-pxe-${rollupAddress}`, `.aztec-kv-wallet-${rollupAddress}`]) {
     await root.removeEntry(dirName, { recursive: true }).catch(() => {
       // Best-effort — if the dir is already gone or unremovable, we
       // still want to nuke the IDB key. Worst case the user reloads

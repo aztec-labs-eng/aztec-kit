@@ -40,10 +40,7 @@ import {
   serializeSigningKey,
 } from "./initializerless-account";
 import { registerSqliteInspectors } from "./sqlite-inspector";
-import {
-  EncryptionKeyMismatchError,
-  type StoreName,
-} from "./encryption-key-mismatch-error";
+import { EncryptionKeyMismatchError, type StoreName } from "./encryption-key-mismatch-error";
 import { GasSettings } from "@aztec/stdlib/gas";
 import type { AztecAddress } from "@aztec/stdlib/aztec-address";
 

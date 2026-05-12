@@ -79,9 +79,9 @@ describe("EmbeddedWallet.create — getEncryptionKey", () => {
 
     const getEncryptionKey = vi.fn(async () => key1);
 
-    await expect(
-      EmbeddedWallet.create(fakeNode(), { getEncryptionKey }),
-    ).rejects.toThrow("__test_short_circuit__");
+    await expect(EmbeddedWallet.create(fakeNode(), { getEncryptionKey })).rejects.toThrow(
+      "__test_short_circuit__",
+    );
 
     expect(getEncryptionKey).toHaveBeenCalledTimes(1);
     const firstCall = vi.mocked(AztecSQLiteOPFSStore.open).mock.calls[0];
@@ -116,9 +116,7 @@ describe("EmbeddedWallet.create — getEncryptionKey", () => {
   });
 
   it("wraps the 'file is not a database' decrypt error as EncryptionKeyMismatchError on pxe", async () => {
-    vi.mocked(AztecSQLiteOPFSStore.open).mockRejectedValueOnce(
-      new Error("file is not a database"),
-    );
+    vi.mocked(AztecSQLiteOPFSStore.open).mockRejectedValueOnce(new Error("file is not a database"));
 
     await expect(
       EmbeddedWallet.create(fakeNode(), {

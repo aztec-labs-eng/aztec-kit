@@ -14,16 +14,6 @@ import type { Page } from "@playwright/test";
  *   (c) Reloading the tab restores the wallet (same address) without
  *       re-onboarding, which proves the key round-trips through IndexedDB
  *       correctly.
- *
- * Does not depend on the 01-05 dependency chain — only needs local Aztec
- * network up (from globalSetup) and the swap dev server.
- *
- * NOTE: we use `data-address` (set as soon as the embedded wallet finishes
- * createInitializerlessAccount) as the readiness signal — NOT
- * `data-connected="true"`, which only flips after the full drip flow that
- * requires the FPC contract chain from specs 01-04. Encryption is set up
- * at wallet-creation time, so by the time `data-address` is populated
- * the OPFS bytes are already encrypted.
  */
 
 const SQLITE_MAGIC = [
@@ -111,10 +101,9 @@ test.describe.serial("wallet encryption at rest", () => {
       const bytes = await stores.wallet.exportDb();
       return Array.from(bytes.slice(0, 16));
     });
-    expect(
-      firstBytes,
-      "wallet OPFS file header should NOT be plaintext SQLite magic",
-    ).not.toEqual(SQLITE_MAGIC);
+    expect(firstBytes, "wallet OPFS file header should NOT be plaintext SQLite magic").not.toEqual(
+      SQLITE_MAGIC,
+    );
     expect(firstBytes.length, "exportDb returned fewer than 16 bytes — store is empty?").toBe(16);
 
     // (c) Capture the current wallet address, reload, verify same address.
