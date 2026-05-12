@@ -89,7 +89,14 @@ runs:
     - name: Update PATH
       shell: bash
       run: |
+        # `bin/` holds user-facing aztec-* symlinks; `node_modules/.bin/` holds
+        # JS CLIs. Native tools (nargo, forge, cast, anvil, chisel, noir-profiler)
+        # live in `internal-bin/` since v4.3.0-nightly.20260512-1 — the upstream
+        # installer no longer puts them on PATH (the shell-wrapper `aztec`
+        # prepends internal-bin to its child env, but the npm-shipped
+        # `node_modules/.bin/aztec` doesn't, so we add it ourselves).
         echo "$HOME/.aztec/versions/${{ steps.aztec-version.outputs.version }}/bin" >> $GITHUB_PATH
+        echo "$HOME/.aztec/versions/${{ steps.aztec-version.outputs.version }}/internal-bin" >> $GITHUB_PATH
         echo "$HOME/.aztec/versions/${{ steps.aztec-version.outputs.version }}/node_modules/.bin" >> $GITHUB_PATH
         echo "$HOME/.foundry/bin" >> $GITHUB_PATH
 

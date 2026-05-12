@@ -31,3 +31,46 @@ yarn workspace @aztec-kit/embedded-wallet test
 ```
 
 Uses the in-process `setupLocalNetwork` fixture from `@aztec-kit/common/testing` — no external `aztec start --local-network` needed.
+
+## At-rest encryption
+
+`EmbeddedWalletExtraOptions.getEncryptionKey` enables sqlite3mc page-level
+encryption (ChaCha20) on both the PXE store and the walletDB store.
+
+```ts
+const wallet = await EmbeddedWallet.create(node, {
+  getEncryptionKey: async () => new Uint8Array(32), // your 32-byte key
+});
+```
+
+Rules:
+
+- The callback is invoked **once per store** (twice total per `create()`).
+- It must return a **fresh 32-byte `Uint8Array` each call** — the upstream
+  `AztecSQLiteOPFSStore.open()` transfers the buffer to its worker, detaching
+  the caller's view. Sharing a buffer between calls produces an empty key on
+  the second call.
+- Not compatible with `ephemeral: true` (sqlite3mc cannot encrypt `:memory:`
+  databases). Combining the two throws synchronously.
+- If the on-disk data was encrypted with a different key (or wasn't
+  encrypted at all), `create()` throws `EncryptionKeyMismatchError`. Catch it
+  to surface a "wipe and re-onboard" recovery path.
+
+```ts
+import { EncryptionKeyMismatchError } from "@aztec-kit/embedded-wallet";
+
+try {
+  wallet = await EmbeddedWallet.create(node, { getEncryptionKey });
+} catch (err) {
+  if (err instanceof EncryptionKeyMismatchError) {
+    // err.storeName is "pxe" or "wallet"
+    // Wipe the relevant OPFS dir + your stored key, prompt the user to reload.
+  } else {
+    throw err;
+  }
+}
+```
+
+See `apps/swap/src/services/keyService.ts` for a reference implementation
+that generates a random AES-256 `CryptoKey`, stores it in IndexedDB, and
+handles wipe-and-restart on key mismatch.
