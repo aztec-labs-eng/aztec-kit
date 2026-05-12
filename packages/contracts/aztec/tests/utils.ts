@@ -48,12 +48,16 @@ async function deriveAdminAddress(): Promise<AztecAddress> {
 
 async function computeFpcAddress(admin: AztecAddress, salt: Fr): Promise<AztecAddress> {
   const { publicKeys } = await deriveKeys(FPC_SECRET_KEY);
+  // `deployer` must match what the real deploy below passes — the contract
+  // address derivation hashes it, so omitting it here pre-funds a different
+  // address than the FPC that actually gets deployed.
   const instance = await getContractInstanceFromInstantiationParams(
     SubscriptionFPCContractArtifact,
     {
       constructorArgs: [admin],
       salt,
       publicKeys,
+      deployer: admin,
     },
   );
   return instance.address;

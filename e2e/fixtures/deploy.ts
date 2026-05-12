@@ -1,4 +1,4 @@
-import type { LocalNetwork } from "./local-network.ts";
+import type { LocalNetworkCli } from "@aztec-kit/common/testing";
 
 /**
  * Deploys the contracts each app needs against a running local-network and
@@ -19,6 +19,6 @@ export interface DeployedNetwork {
   bridge?: string;
 }
 
-export async function deployAll(_network: LocalNetwork): Promise<DeployedNetwork> {
+export async function deployAll(_network: LocalNetworkCli): Promise<DeployedNetwork> {
   throw new Error("deployAll: not implemented — fill in when tests are added");
 }

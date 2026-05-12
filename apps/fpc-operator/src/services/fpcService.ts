@@ -145,14 +145,12 @@ export async function prepareFPC(
     const meta = await wallet.getContractMetadata(fpcAddress);
     if (!meta.instance) {
       const { publicKeys } = await deriveKeys(secretKey);
-      const deployment = SubscriptionFPCContract.deployWithPublicKeys(
+      const deployment = SubscriptionFPCContract.deploy(wallet, adminAddress, {
+        salt,
         publicKeys,
-        wallet,
-        adminAddress,
-      );
-      const instance = await deployment.getInstance({
-        contractAddressSalt: salt,
+        deployer: adminAddress,
       });
+      const instance = await deployment.getInstance();
       await wallet.registerContract(instance, SubscriptionFPCContractArtifact, secretKey);
     }
     return { fpcAddress, secretKey };
@@ -162,8 +160,12 @@ export async function prepareFPC(
   const salt = Fr.random();
   const { publicKeys } = await deriveKeys(secretKey);
 
-  const deployment = SubscriptionFPCContract.deployWithPublicKeys(publicKeys, wallet, adminAddress);
-  const instance = await deployment.getInstance({ contractAddressSalt: salt });
+  const deployment = SubscriptionFPCContract.deploy(wallet, adminAddress, {
+    salt,
+    publicKeys,
+    deployer: adminAddress,
+  });
+  const instance = await deployment.getInstance();
 
   await wallet.registerContract(instance, SubscriptionFPCContractArtifact, secretKey);
 
@@ -187,11 +189,15 @@ export async function deployFPC(
   const salt = Fr.fromString(stored.salt);
   const { publicKeys } = await deriveKeys(secretKey);
 
-  const deployment = SubscriptionFPCContract.deployWithPublicKeys(publicKeys, wallet, adminAddress);
+  const deployment = SubscriptionFPCContract.deploy(wallet, adminAddress, {
+    salt,
+    publicKeys,
+    deployer: adminAddress,
+  });
   // getInstance caches, so passing the salt here ensures the same address
-  await deployment.getInstance({ contractAddressSalt: salt });
+  await deployment.getInstance();
 
-  await deployment.send({ from: adminAddress, contractAddressSalt: salt });
+  await deployment.send({ from: adminAddress });
   markFPCDeployed();
 
   return { fpcAddress: AztecAddress.fromString(stored.address) };
