@@ -176,7 +176,12 @@ function installAztecCLI(version) {
     exec(
       `curl -fsSL "https://install.aztec.network/${version}/install" | VERSION="${version}" bash`,
     );
+    // `internal-bin` holds nargo + foundry binaries since
+    // v4.3.0-nightly.20260512-1 — the installer's shell-wrapper `aztec`
+    // prepends it for subprocesses, but the npm-shipped CLI (which our
+    // contracts build uses) doesn't, so we add it explicitly.
     process.env.PATH = `${process.env.HOME}/.aztec/versions/${version}/bin:${process.env.PATH}`;
+    process.env.PATH = `${process.env.HOME}/.aztec/versions/${version}/internal-bin:${process.env.PATH}`;
     process.env.PATH = `${process.env.HOME}/.aztec/versions/${version}/node_modules/.bin:${process.env.PATH}`;
     log(COLORS.green, "✓ Aztec CLI installed (CI mode)\n");
     return;
