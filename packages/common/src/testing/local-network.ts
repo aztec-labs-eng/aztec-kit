@@ -51,12 +51,7 @@ import { join } from "node:path";
 import { type Hex } from "viem";
 import { mnemonicToAccount, privateKeyToAddress } from "viem/accounts";
 import { foundry } from "viem/chains";
-import {
-  ensureAztecBinsInPath,
-  killTracked,
-  resolveAnvilBinary,
-  spawnTracked,
-} from "./spawn.ts";
+import { ensureAztecBinsInPath, killTracked, resolveAnvilBinary, spawnTracked } from "./spawn.ts";
 
 const DEFAULT_MNEMONIC = "test test test test test test test test test test test junk";
 
