@@ -17,8 +17,6 @@ import { computeVarArgsHash, computeCalldataHash } from "@aztec/stdlib/hash";
 import { computeInnerAuthWitHash } from "@aztec/stdlib/auth-witness";
 import { HashedValues } from "@aztec/stdlib/tx";
 import { NO_FROM } from "@aztec/aztec.js/account";
-import { Fr } from "@aztec/aztec.js/fields";
-import { deriveKeys } from "@aztec/aztec.js/keys";
 import {
   FPC_SPONSOR_OVERHEAD_DA_GAS_PRIVATE,
   FPC_SPONSOR_OVERHEAD_DA_GAS_PUBLIC,

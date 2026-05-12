@@ -12,13 +12,7 @@ import {
   ProofOfPasswordContract,
   ProofOfPasswordContractArtifact,
 } from "@aztec-kit/contracts-aztec/artifacts/ProofOfPassword";
-import {
-  BatchCall,
-  NO_WAIT,
-  type DeployInstantiationOptions,
-  type DeployOptions,
-  type WaitOpts,
-} from "@aztec/aztec.js/contracts";
+import { BatchCall, NO_WAIT, type DeployOptions, type WaitOpts } from "@aztec/aztec.js/contracts";
 import { waitForTx, type AztecNode } from "@aztec/aztec.js/node";
 
 import {

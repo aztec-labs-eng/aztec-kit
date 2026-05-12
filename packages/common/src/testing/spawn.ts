@@ -176,17 +176,15 @@ export function killTracked(child: ChildProcess): Promise<void> {
       return;
     }
 
-    let killTimer: NodeJS.Timeout | undefined;
-    const onClose = () => {
-      if (killTimer !== undefined) clearTimeout(killTimer);
+    killGroupSync(child, "SIGTERM");
+    const killTimer = setTimeout(() => killGroupSync(child, "SIGKILL"), 5000);
+    killTimer.unref();
+
+    child.once("close", () => {
+      clearTimeout(killTimer);
       child.stdout?.destroy();
       child.stderr?.destroy();
       resolve();
-    };
-    child.once("close", onClose);
-
-    killGroupSync(child, "SIGTERM");
-    killTimer = setTimeout(() => killGroupSync(child, "SIGKILL"), 5000);
-    killTimer.unref();
+    });
   });
 }
