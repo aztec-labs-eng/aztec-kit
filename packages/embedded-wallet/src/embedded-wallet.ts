@@ -30,8 +30,11 @@ import {
   EmbeddedWallet as EmbeddedWalletBase,
   type EmbeddedWalletOptions,
   type AccountType,
-  openEncryptedEmbeddedStores,
 } from "@aztec/wallets/embedded";
+// Encryption-at-rest helpers live on a separate sub-path so consumers of
+// `@aztec/wallets/embedded` who don't use encryption don't transitively
+// bundle `@aztec/kv-store/sqlite-opfs` (and its Web Worker chain).
+import { openEncryptedEmbeddedStores } from "@aztec/wallets/embedded/store-encryption";
 import { AztecSQLiteOPFSStore } from "@aztec/kv-store/sqlite-opfs";
 import { createLogger } from "@aztec/foundation/log";
 import { Fr } from "@aztec/foundation/curves/bn254";
