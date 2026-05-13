@@ -24,7 +24,7 @@
   "scripts": {
     "clean": "rm -rf ./dist ./noir/artifacts ./noir/target",
     "compile": "cd noir && aztec compile",
-    "codegen": "cd noir && bash aztec codegen ./target -o artifacts",
+    "codegen": "cd noir && aztec codegen ./target -o artifacts",
     "build": "yarn compile && yarn codegen && tsc -p tsconfig.build.json && mkdir -p dist/noir/target && cp noir/target/*.json dist/noir/target/",
     "build:codegen": "yarn codegen",
     "build:ts": "tsc -p tsconfig.build.json",
