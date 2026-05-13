@@ -48,12 +48,16 @@ async function deriveAdminAddress(): Promise<AztecAddress> {
 
 async function computeFpcAddress(admin: AztecAddress, salt: Fr): Promise<AztecAddress> {
   const { publicKeys } = await deriveKeys(FPC_SECRET_KEY);
+  // `deployer` must match what the real deploy below passes — the contract
+  // address derivation hashes it, so omitting it here pre-funds a different
+  // address than the FPC that actually gets deployed.
   const instance = await getContractInstanceFromInstantiationParams(
     SubscriptionFPCContractArtifact,
     {
       constructorArgs: [admin],
       salt,
       publicKeys,
+      deployer: admin,
     },
   );
   return instance.address;
@@ -116,17 +120,19 @@ export async function setupTestContext(): Promise<FPCTestContext> {
   const feeJuice = FeeJuiceContract.at(wallet);
 
   // Deploy with the same (secret, salt) the genesis pre-fund used.
-  const { deployment, secretKey } = await SubscriptionFPC.deployWithKeys(wallet, admin, {
-    secretKey: FPC_SECRET_KEY,
+  const { publicKeys } = await deriveKeys(FPC_SECRET_KEY);
+  const deployMethod = await SubscriptionFPC.deploy(wallet, admin, {
+    publicKeys,
+    deployer: admin,
+    salt: fpcSalt,
   });
-  const instance = await deployment.getInstance({ contractAddressSalt: fpcSalt });
-  await wallet.registerContract(instance, SubscriptionFPC.artifact, secretKey);
+  const instance = await deployMethod.getInstance();
+  await wallet.registerContract(instance, SubscriptionFPC.artifact, FPC_SECRET_KEY);
 
   const {
     receipt: { contract: rawFpc },
-  } = await deployment.send({
+  } = await deployMethod.send({
     from: admin,
-    contractAddressSalt: fpcSalt,
     wait: { returnReceipt: true },
   });
   const fpc = new SubscriptionFPC(rawFpc);
@@ -138,7 +144,7 @@ export async function setupTestContext(): Promise<FPCTestContext> {
     feeJuice,
     fpc,
     fpcInstance: instance,
-    fpcSecretKey: secretKey,
+    fpcSecretKey: FPC_SECRET_KEY,
     stop: network.stop,
   };
 }

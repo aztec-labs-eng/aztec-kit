@@ -35,6 +35,7 @@ import {
   writeFpcAdminBackup,
   resolveFpcAdminBackupPath,
 } from "@aztec-kit/common/testing";
+import { deriveKeys } from "@aztec/stdlib/keys";
 
 const FUND_AMOUNT: bigint = BigInt("1000000000000000000000"); // 1000 FJ
 
@@ -63,25 +64,27 @@ async function main() {
 
   // Compute the FPC's deterministic address up front so we can detect the
   // already-deployed case and skip re-deploying.
-  const { deployment, secretKey } = await SubscriptionFPC.deployWithKeys(wallet, admin, {
-    secretKey: fpcSecret.secretKey,
+  const { publicKeys } = await deriveKeys(fpcSecret.secretKey);
+  const deployMethod = await SubscriptionFPC.deploy(wallet, admin, {
+    salt: fpcSalt,
+    deployer: admin,
+    publicKeys,
   });
-  const instance = await deployment.getInstance({ contractAddressSalt: fpcSalt });
+  const instance = await deployMethod.getInstance();
   const fpcAddress: AztecAddress = instance.address;
 
   const existing = await node.getContract(fpcAddress);
   if (existing) {
     // Already on-chain — just register it in the PXE so downstream steps can
     // interact. Skip both the deploy tx and the L1 bridge + claim.
-    await wallet.registerContract(instance, SubscriptionFPCContractArtifact, secretKey);
+    await wallet.registerContract(instance, SubscriptionFPCContractArtifact, fpcSecret.secretKey);
     console.error(`FPC already deployed at ${fpcAddress.toString()} — reusing.`);
   } else {
     console.error("Deploying SubscriptionFPC...");
-    await wallet.registerContract(instance, SubscriptionFPCContractArtifact, secretKey);
-    await deployment.send({
+    await wallet.registerContract(instance, SubscriptionFPCContractArtifact, fpcSecret.secretKey);
+    await deployMethod.send({
       from: admin,
       fee: { paymentMethod },
-      contractAddressSalt: fpcSalt,
       wait: { timeout: 120 },
     });
     console.error(`FPC deployed at ${fpcAddress.toString()}`);

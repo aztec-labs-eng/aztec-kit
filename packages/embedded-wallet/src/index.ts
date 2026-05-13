@@ -17,3 +17,5 @@ export {
   computeImmutablesAddress,
   IMMUTABLES_SLOT,
 } from "./immutables";
+export { EncryptionKeyMismatchError } from "./encryption-key-mismatch-error";
+export type { StoreName } from "./encryption-key-mismatch-error";

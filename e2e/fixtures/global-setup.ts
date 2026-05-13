@@ -2,7 +2,7 @@ import { spawnSync } from "node:child_process";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import type { FullConfig } from "@playwright/test";
-import { startLocalNetwork, type LocalNetwork } from "./local-network.ts";
+import { setupLocalNetworkCli, type LocalNetworkCli } from "@aztec-kit/common/testing";
 import { deployL1Bridge } from "@aztec-kit/contracts-ethereum";
 import { deriveSwapAdmin } from "./derive-swap-admin.ts";
 import {
@@ -57,8 +57,10 @@ export default async function globalSetup(_config: FullConfig): Promise<void> {
   if (process.env.E2E_SKIP_NETWORK === "1") {
     console.log("[e2e] E2E_SKIP_NETWORK=1 — skipping local-network startup");
   } else {
-    const network = await startLocalNetwork();
-    (globalThis as unknown as { __gjNetwork: LocalNetwork }).__gjNetwork = network;
+    const network = await setupLocalNetworkCli({
+      logDir: resolve(HERE, "..", "playwright-report"),
+    });
+    (globalThis as unknown as { __gjNetwork: LocalNetworkCli }).__gjNetwork = network;
     console.log(`[e2e] local-network ready (node=${network.nodeUrl} l1=${network.l1RpcUrl})`);
   }
 

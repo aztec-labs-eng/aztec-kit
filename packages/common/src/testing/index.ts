@@ -38,7 +38,22 @@ export {
   type DeployAdminParams,
 } from "./admin.ts";
 
-export { setupLocalNetwork, type LocalNetwork, type LocalNetworkOptions } from "./local-network.ts";
+export {
+  setupLocalNetwork,
+  setupLocalNetworkCli,
+  type LocalNetwork,
+  type LocalNetworkOptions,
+  type LocalNetworkCli,
+  type LocalNetworkCliOptions,
+} from "./local-network.ts";
+
+export {
+  ensureAztecBinsInPath,
+  resolveAnvilBinary,
+  spawnTracked,
+  killTracked,
+  type SpawnTrackedOptions,
+} from "./spawn.ts";
 
 export {
   BACKUP_VERSION,

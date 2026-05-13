@@ -88,7 +88,7 @@ export function aztecVitePlugin(options: AztecVitePluginOptions = {}): Plugin[] 
               "@aztec/noir-acvm_js",
               "@aztec/noir-noirc_abi",
               "@aztec/bb.js",
-              "@sqlite.org/sqlite-wasm",
+              "@aztec/sqlite3mc-wasm",
               "@aztec/kv-store/sqlite-opfs",
             ],
             include: [

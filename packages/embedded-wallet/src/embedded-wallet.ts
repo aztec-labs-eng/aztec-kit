@@ -40,8 +40,47 @@ import {
   serializeSigningKey,
 } from "./initializerless-account";
 import { registerSqliteInspectors } from "./sqlite-inspector";
+import { EncryptionKeyMismatchError, type StoreName } from "./encryption-key-mismatch-error";
 import { GasSettings } from "@aztec/stdlib/gas";
 import type { AztecAddress } from "@aztec/stdlib/aztec-address";
+
+/**
+ * Sqlite3mc raises one of these messages when the supplied key fails to
+ * decrypt page 1 of an existing database. The strings are pinned by tests in
+ * encrypted-store.test.ts — if a future nightly changes them, those tests
+ * fail loudly rather than letting `EncryptionKeyMismatchError` silently
+ * regress to a generic `Error` (which would defeat its purpose for callers).
+ */
+const SQLITE3MC_DECRYPT_ERROR_PATTERNS = [
+  /file is not a database/i,
+  /file is encrypted or is not a database/i,
+];
+
+function isDecryptError(err: unknown): boolean {
+  if (!(err instanceof Error)) return false;
+  return SQLITE3MC_DECRYPT_ERROR_PATTERNS.some((p) => p.test(err.message));
+}
+
+async function openEncryptedOrPlain(
+  storeName: StoreName,
+  log: ReturnType<typeof createLogger>,
+  dbName: string,
+  poolDirectory: string,
+  getEncryptionKey: (() => Promise<Uint8Array>) | undefined,
+): Promise<AztecSQLiteOPFSStore> {
+  // Re-derive a FRESH 32-byte key per open(). Upstream open() transfers the
+  // buffer, detaching the caller's view — we can't reuse one buffer for two
+  // opens.
+  const key = getEncryptionKey ? await getEncryptionKey() : undefined;
+  try {
+    return await AztecSQLiteOPFSStore.open(log, dbName, false, poolDirectory, key);
+  } catch (err) {
+    if (key && isDecryptError(err)) {
+      throw new EncryptionKeyMismatchError({ storeName, cause: err });
+    }
+    throw err;
+  }
+}
 
 /** The initializerless type string — cast to AccountType for WalletDB storage. */
 export const INITIALIZERLESS_TYPE = "schnorr-initializerless" as AccountType;
@@ -56,6 +95,23 @@ export type EmbeddedWalletExtraOptions = {
    * Not compatible with `ephemeral: true` — no sqlite-opfs store exists to inspect.
    */
   inspect?: boolean;
+
+  /**
+   * If provided, both the PXE store and the walletDB store are opened with
+   * sqlite3mc page-level encryption (ChaCha20). The callback is invoked once
+   * per store (twice total per create()) and must return a fresh 32-byte
+   * Uint8Array each call — the upstream open() *transfers* the buffer to its
+   * worker, so a shared buffer would detach between the two open() calls.
+   *
+   * Not compatible with `ephemeral: true` (sqlite3mc doesn't encrypt :memory:
+   * databases) — passing both throws synchronously.
+   *
+   * If the on-disk data was encrypted with a different key (or wasn't
+   * encrypted at all), open() throws — wrapped here as
+   * `EncryptionKeyMismatchError`. Consumers typically respond by wiping the
+   * affected OPFS dir and re-onboarding.
+   */
+  getEncryptionKey?: () => Promise<Uint8Array>;
 };
 
 export class EmbeddedWallet extends EmbeddedWalletBase {
@@ -79,11 +135,17 @@ export class EmbeddedWallet extends EmbeddedWalletBase {
     nodeOrUrl: string | AztecNode,
     options: EmbeddedWalletOptions & EmbeddedWalletExtraOptions = {},
   ): Promise<T> {
-    const { inspect, ...rest } = options;
+    const { inspect, getEncryptionKey, ...rest } = options;
 
     if (inspect && rest.ephemeral) {
       throw new Error(
         "`inspect: true` is incompatible with `ephemeral: true` (no persistent store to inspect)",
+      );
+    }
+
+    if (getEncryptionKey && rest.ephemeral) {
+      throw new Error(
+        "`getEncryptionKey` is incompatible with `ephemeral: true` (sqlite3mc does not encrypt :memory: databases)",
       );
     }
 
@@ -106,22 +168,38 @@ export class EmbeddedWallet extends EmbeddedWalletBase {
       const rollup = rollupAddress.toString();
 
       // Only open defaults the caller didn't already fill in.
+      const pxeStoreOverride = pxeOptions.store as AztecSQLiteOPFSStore | undefined;
       pxeStore =
-        (pxeOptions.store as AztecSQLiteOPFSStore | undefined) ??
-        (await AztecSQLiteOPFSStore.open(
+        pxeStoreOverride ??
+        (await openEncryptedOrPlain(
+          "pxe",
           rootLogger.createChild("pxe:data:sqlite-opfs"),
           `pxe_data_${rollup}`,
-          false,
           `.aztec-kv-pxe-${rollup}`,
+          getEncryptionKey,
         ));
-      walletStore =
-        (rest.walletDb?.store as AztecSQLiteOPFSStore | undefined) ??
-        (await AztecSQLiteOPFSStore.open(
-          rootLogger.createChild("wallet:data:sqlite-opfs"),
-          `wallet_data_${rollup}`,
-          false,
-          `.aztec-kv-wallet-${rollup}`,
-        ));
+      try {
+        walletStore =
+          (rest.walletDb?.store as AztecSQLiteOPFSStore | undefined) ??
+          (await openEncryptedOrPlain(
+            "wallet",
+            rootLogger.createChild("wallet:data:sqlite-opfs"),
+            `wallet_data_${rollup}`,
+            `.aztec-kv-wallet-${rollup}`,
+            getEncryptionKey,
+          ));
+      } catch (err) {
+        // Don't leak the pxe store's SAH Pool lock if the wallet store
+        // fails to open. Only close stores we opened ourselves — leave
+        // caller-provided stores alone.
+        if (pxeStore && !pxeStoreOverride) {
+          await pxeStore.close().catch(() => {
+            // Best-effort; let the original (more informative) error
+            // propagate rather than masking it with a cleanup failure.
+          });
+        }
+        throw err;
+      }
 
       finalOptions = {
         ...rest,

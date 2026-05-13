@@ -105,6 +105,14 @@ export default defineConfig({
       dependencies: ["fpc-signup"],
       use: { ...desktopChrome, baseURL: "http://localhost:5175" },
     },
+    {
+      name: "wallet-encryption",
+      testMatch: /06-wallet-encryption\.spec\.ts$/,
+      // No dependencies: this test only needs the local Aztec network
+      // (spawned by globalSetup) and the swap dev server. It doesn't
+      // exercise any contract flows so the 01-05 setup chain is unnecessary.
+      use: { ...desktopChrome, baseURL: "http://localhost:5175" },
+    },
   ],
   webServer: [
     appServer("@aztec-kit/swap", 5175),

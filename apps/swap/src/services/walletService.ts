@@ -14,8 +14,14 @@ import {
   type DiscoverySession,
 } from "@aztec/wallet-sdk/manager";
 import type { AztecAddress } from "@aztec/aztec.js/addresses";
-import { EmbeddedWallet } from "@aztec-kit/embedded-wallet";
+import { EmbeddedWallet, EncryptionKeyMismatchError } from "@aztec-kit/embedded-wallet";
 import type { NetworkConfig } from "../config/networks";
+import {
+  ensurePlaintextMigrationDone,
+  getOrCreateWalletEncryptionKey,
+  exportRawKey,
+  resetWalletKeyAndStorage,
+} from "./keyService";
 
 /**
  * Web wallet URLs to probe during discovery.
@@ -36,17 +42,45 @@ export function createNodeClient(nodeUrl: string): AztecNode {
  * Creates an embedded wallet and ensures it has an account.
  * Uses initializerless Schnorr accounts — no on-chain deployment needed.
  * The wallet's internal DB persists the account, so the same address is restored on reload.
+ *
+ * The wallet's OPFS-backed PXE + walletDB stores are encrypted at rest with
+ * a random AES-256 key stored in IndexedDB (see keyService). On rollout day
+ * any pre-existing plaintext OPFS dirs are wiped so the user is force-re-onboarded
+ * with encrypted storage.
  */
 export async function createEmbeddedWallet(
   node: AztecNode,
 ): Promise<{ wallet: EmbeddedWallet; address: AztecAddress }> {
+  const { rollupAddress } = await node.getL1ContractAddresses();
+  const rollupHex = rollupAddress.toString();
+  await ensurePlaintextMigrationDone(rollupHex);
+
+  const cryptoKey = await getOrCreateWalletEncryptionKey();
+
   // `VITE_DISABLE_PROVER=1` turns off bb.js proving — only used in CI e2e
   // where proving starves the Aztec node's event loop on the 4 vCPU runner.
   const proverEnabled = import.meta.env.VITE_DISABLE_PROVER !== "1";
-  const wallet = await EmbeddedWallet.create(node, {
-    inspect: import.meta.env.DEV,
-    pxe: { proverEnabled },
-  });
+
+  let wallet: EmbeddedWallet;
+  try {
+    wallet = await EmbeddedWallet.create(node, {
+      inspect: import.meta.env.DEV,
+      pxe: { proverEnabled },
+      getEncryptionKey: () => exportRawKey(cryptoKey),
+    });
+  } catch (err) {
+    if (err instanceof EncryptionKeyMismatchError) {
+      // On-disk data is encrypted with a key we no longer have (user
+      // cleared IndexedDB but not OPFS, or some other key/data drift).
+      // Wipe both sides and force a re-onboard via reload.
+      await resetWalletKeyAndStorage(rollupHex);
+      throw new Error(
+        "Wallet storage was reset due to an encryption key mismatch. Please reload the page.",
+      );
+    }
+    throw err;
+  }
+
   let accountManager = await wallet.loadStoredAccount();
   if (!accountManager) {
     accountManager = await wallet.createInitializerlessAccount();
