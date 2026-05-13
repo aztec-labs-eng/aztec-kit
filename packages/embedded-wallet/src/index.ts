@@ -17,5 +17,8 @@ export {
   computeImmutablesAddress,
   IMMUTABLES_SLOT,
 } from "./immutables";
-export { EncryptionKeyMismatchError } from "./encryption-key-mismatch-error";
-export type { StoreName } from "./encryption-key-mismatch-error";
+// Encryption-failure surface now ships upstream — re-export
+// `EmbeddedWalletEncryptionError` and its `storeName` discriminant so apps
+// continue to import their error class from this package.
+export { EmbeddedWalletEncryptionError } from "@aztec/wallets/embedded";
+export type { EmbeddedStoreName } from "@aztec/wallets/embedded";

@@ -53,17 +53,19 @@ Rules:
 - Not compatible with `ephemeral: true` (sqlite3mc cannot encrypt `:memory:`
   databases). Combining the two throws synchronously.
 - If the on-disk data was encrypted with a different key (or wasn't
-  encrypted at all), `create()` throws `EncryptionKeyMismatchError`. Catch it
-  to surface a "wipe and re-onboard" recovery path.
+  encrypted at all), `create()` throws `EmbeddedWalletEncryptionError`
+  (re-exported from `@aztec/wallets/embedded`). Catch it to surface a "wipe
+  and re-onboard" recovery path.
 
 ```ts
-import { EncryptionKeyMismatchError } from "@aztec-kit/embedded-wallet";
+import { EmbeddedWalletEncryptionError } from "@aztec-kit/embedded-wallet";
 
 try {
   wallet = await EmbeddedWallet.create(node, { getEncryptionKey });
 } catch (err) {
-  if (err instanceof EncryptionKeyMismatchError) {
-    // err.storeName is "pxe" or "wallet"
+  if (err instanceof EmbeddedWalletEncryptionError) {
+    // err.storeName is "pxe" or "wallet" — tells you which store failed.
+    // err.cause is the underlying SqliteEncryptionError from kv-store.
     // Wipe the relevant OPFS dir + your stored key, prompt the user to reload.
   } else {
     throw err;
