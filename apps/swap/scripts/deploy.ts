@@ -12,7 +12,13 @@ import {
   ProofOfPasswordContract,
   ProofOfPasswordContractArtifact,
 } from "@aztec-kit/contracts-aztec/artifacts/ProofOfPassword";
-import { BatchCall, NO_WAIT, type DeployOptions, type WaitOpts } from "@aztec/aztec.js/contracts";
+import {
+  BatchCall,
+  NO_WAIT,
+  type ContractFunctionInteraction,
+  type DeployOptions,
+  type WaitOpts,
+} from "@aztec/aztec.js/contracts";
 import { waitForTx, type AztecNode } from "@aztec/aztec.js/node";
 
 import {
@@ -125,7 +131,11 @@ async function deployContracts(
   // ── Gate deploys on what's already on-chain ─────────────────────────
   //
   // registerContract is idempotent + fast, so we always register. Deploy is
-  // only sent when node.getContract returns null for that address.
+  // only sent when node.getContract returns null for that address. Each
+  // contract is independent here; addresses are deterministic functions of
+  // (salt, deployer, class id, ctor args), so a class change on any leaf
+  // (e.g. Token's noir source) automatically cascades — every dependent
+  // contract's address shifts too and gets redeployed by this same gate.
   const [goCoinExists, goCoinPremiumExists, liquidityTokenExists, ammExists, popExists] =
     await Promise.all([
       node.getContract(goCoinInstance.address),
@@ -134,6 +144,19 @@ async function deployContracts(
       node.getContract(ammInstance.address),
       node.getContract(popInstance.address),
     ]);
+
+  const tokens = [
+    { label: "GoCoin", contract: goCoinInstance, exists: !!goCoinExists },
+    { label: "GoCoinPremium", contract: goCoinPremiumInstance, exists: !!goCoinPremiumExists },
+    { label: "LiquidityToken", contract: liquidityTokenInstance, exists: !!liquidityTokenExists },
+  ];
+
+  console.log("Deploy plan:");
+  for (const t of tokens) {
+    console.log(`  ${t.label}: ${t.exists ? "reuse" : "deploy"} (${t.contract.address})`);
+  }
+  console.log(`  AMM:           ${ammExists ? "reuse" : "deploy"} (${ammInstance.address})`);
+  console.log(`  PoP:           ${popExists ? "reuse" : "deploy"} (${popInstance.address})`);
 
   const { isContractClassPubliclyRegistered: isTokenPubliclyRegistered } =
     await wallet.getContractClassMetadata(goCoinInstance.currentContractClassId);
@@ -180,29 +203,57 @@ async function deployContracts(
   const amm = AMMContract.at(ammInstance.address, wallet);
   const pop = ProofOfPasswordContract.at(popInstance.address, wallet);
 
-  // ── Post-deploy seeding ─────────────────────────────────────────────
+  // ── Post-deploy bootstrapping ───────────────────────────────────────
   //
-  // Anything that mutates state — minting, authwits, liquidity seed, PoP
-  // minter binding — must only run on a fresh deploy. Re-running an authwit
-  // would re-emit the same nullifier; re-seeding the AMM would double its
-  // pool.
+  // Each post-deploy action is gated on the precise on-chain state it sets,
+  // not on "did the AMM redeploy". This matters because partial redeploys
+  // are common: change AMM's noir source and the tokens still exist with
+  // their state (balances, minter maps) intact. Re-running the old monolithic
+  // `if (!ammExists)` block would have:
+  //   - re-minted INITIAL_TOKEN_BALANCE on top of the existing deployer
+  //     balance (token state survives the AMM redeploy);
+  //   - re-set the liquidity-token minter twice (the original ran the same
+  //     call in two batches).
+  //
+  // The per-action gates below send only the writes that are actually needed.
+
+  // 1. Initial token mints. Per-token gate: if a token is fresh, the deployer
+  //    + every `--mint-to` recipient gets its starting balance on THAT token.
+  //    A reused token already carries those balances forward.
+  const seedMints: ContractFunctionInteraction[] = [];
+  const tokensToSeed: Array<{ label: string; contract: TokenContract; exists: boolean }> = [
+    { label: "GoCoin", contract: goCoin, exists: !!goCoinExists },
+    { label: "GoCoinPremium", contract: goCoinPremium, exists: !!goCoinPremiumExists },
+  ];
+  for (const { label, contract, exists } of tokensToSeed) {
+    if (exists) continue;
+    seedMints.push(contract.methods.mint_to_private(deployer, INITIAL_TOKEN_BALANCE));
+    for (const addr of mintToAddresses) {
+      console.log(`Will mint ${INITIAL_TOKEN_BALANCE} ${label} to ${addr}`);
+      seedMints.push(
+        contract.methods.mint_to_private(AztecAddress.fromString(addr), INITIAL_TOKEN_BALANCE),
+      );
+    }
+  }
+
+  // 2. LiquidityToken needs the AMM as a public minter. The minter map is
+  //    keyed on AMM address, so a new AMM needs a new entry even when the
+  //    LiquidityToken is reused. (And if LiquidityToken is fresh, its map
+  //    starts empty regardless of AMM.) The original code ran this twice;
+  //    here it runs at most once, in the same batch as the seed mints.
+  const liquidityMinterCalls: ContractFunctionInteraction[] = [];
+  if (!liquidityTokenExists || !ammExists) {
+    liquidityMinterCalls.push(liquidityToken.methods.set_minter(amm.address, true));
+  }
+
+  if (seedMints.length > 0 || liquidityMinterCalls.length > 0) {
+    await new BatchCall(wallet, [...liquidityMinterCalls, ...seedMints]).send(baseOpts);
+  }
+
+  // 3. Seed the AMM pool. Pool state lives in AMM storage, so an AMM
+  //    redeploy starts empty; a reused AMM already has the liquidity.
+  //    Re-running this would double the pool's reserves
   if (!ammExists) {
-    const extraMints = mintToAddresses.flatMap((addr) => {
-      const recipient = AztecAddress.fromString(addr);
-      console.log(`Will mint ${INITIAL_TOKEN_BALANCE} GoCoin + GoCoinPremium to ${addr}`);
-      return [
-        goCoin.methods.mint_to_private(recipient, INITIAL_TOKEN_BALANCE),
-        goCoinPremium.methods.mint_to_private(recipient, INITIAL_TOKEN_BALANCE),
-      ];
-    });
-
-    await new BatchCall(wallet, [
-      liquidityToken.methods.set_minter(amm.address, true),
-      goCoin.methods.mint_to_private(deployer, INITIAL_TOKEN_BALANCE),
-      goCoinPremium.methods.mint_to_private(deployer, INITIAL_TOKEN_BALANCE),
-      ...extraMints,
-    ]).send(baseOpts);
-
     const nonceForAuthwits = Fr.random();
     const [token0Authwit, token1Authwit] = await Promise.all(
       [goCoin, goCoinPremium].map(async (token) =>
@@ -221,7 +272,6 @@ async function deployContracts(
     );
 
     await new BatchCall(wallet, [
-      liquidityToken.methods.set_minter(amm.address, true),
       amm.methods
         .add_liquidity(
           INITIAL_TOKEN_BALANCE,
@@ -234,6 +284,9 @@ async function deployContracts(
     ]).send(baseOpts);
   }
 
+  // 4. PoP needs minter rights on GoCoin so it can mint to the password-revealer.
+  //    Gate on PoP being fresh: a redeploy of just PoP (GoCoin unchanged) still
+  //    needs this because the new PoP address isn't in GoCoin's minter map.
   if (!popExists) {
     await goCoin.methods.set_minter(pop.address, true).send(baseOpts);
   }

@@ -3,7 +3,7 @@
  * Pure functions for wallet-related operations
  */
 
-import { createAztecNodeClient, type AztecNode } from "@aztec/aztec.js/node";
+import type { AztecNode } from "@aztec/aztec.js/node";
 import type { Wallet } from "@aztec/aztec.js/wallet";
 import type { ChainInfo } from "@aztec/aztec.js/account";
 import { Fr } from "@aztec/aztec.js/fields";
@@ -30,13 +30,6 @@ import {
 const WEB_WALLET_URLS: string[] = [import.meta.env.VITE_WEB_WALLET_URL ?? "http://localhost:3001"];
 
 const APP_ID = "goswap";
-
-/**
- * Creates an Aztec node client for the given node URL
- */
-export function createNodeClient(nodeUrl: string): AztecNode {
-  return createAztecNodeClient(nodeUrl);
-}
 
 /**
  * Creates an embedded wallet and ensures it has an account.
