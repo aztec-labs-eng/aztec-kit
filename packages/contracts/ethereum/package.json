@@ -15,10 +15,9 @@
   ],
   "scripts": {
     "clean": "rm -rf ./dist ./generated ./solidity/out ./solidity/cache ./solidity/broadcast",
-    "build:forge": "cd solidity && forge build",
     "build:codegen": "cd solidity && ./generate-artifacts.sh",
     "build:ts": "tsc -p tsconfig.build.json",
-    "build": "yarn build:forge && yarn build:codegen && yarn build:ts",
+    "build": "yarn build:codegen && yarn build:ts",
     "lint": "eslint .",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "prepublishOnly": "yarn build"

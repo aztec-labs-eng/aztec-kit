@@ -7,8 +7,22 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR"
 
-echo "Compiling with forge..."
-forge build
+# Resolve `forge`. aztec-up installs it at ~/.aztec/current/internal-bin/ but no
+# longer puts that directory on PATH, so the bare `forge` lookup fails for users
+# who don't also have foundryup. Order: $FORGE override → aztec-up → PATH.
+FORGE="${FORGE:-$HOME/.aztec/current/internal-bin/forge}"
+if [ ! -x "$FORGE" ]; then
+  if command -v forge >/dev/null 2>&1; then
+    FORGE=forge
+  else
+    echo "error: forge not found at $HOME/.aztec/current/internal-bin/forge or on PATH" >&2
+    echo "install aztec-up or foundryup, or set FORGE=/path/to/forge" >&2
+    exit 1
+  fi
+fi
+
+echo "Compiling with $FORGE..."
+"$FORGE" build
 
 ARTIFACT="out/GoBridge.sol/GoBridge.json"
 OUTPUT_DIR="../generated"
