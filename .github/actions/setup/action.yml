@@ -100,26 +100,26 @@ runs:
         echo "$HOME/.aztec/versions/${{ steps.aztec-version.outputs.version }}/node_modules/.bin" >> $GITHUB_PATH
         echo "$HOME/.foundry/bin" >> $GITHUB_PATH
 
-    # Cache compiled contract artifacts. Keyed on the noir source + Nargo.toml
-    # so any contract change busts the cache cleanly.
-    - name: Cache contract artifacts
-      id: contracts-cache
-      uses: actions/cache@v4
-      with:
-        path: |
-          packages/contracts/aztec/noir/target
-          packages/contracts/aztec/noir/artifacts
-        key: contracts-${{ runner.os }}-${{ steps.aztec-version.outputs.version }}-${{ hashFiles('packages/contracts/aztec/noir/**/*.nr', 'packages/contracts/aztec/noir/**/Nargo.toml') }}
-
-    - name: Compile contracts
-      if: steps.contracts-cache.outputs.cache-hit != 'true'
-      shell: bash
-      run: yarn workspace @aztec-kit/contracts-aztec build
-
-    # Turbo's local cache + build outputs. Not suffixed with `cache-suffix`:
-    # emitted artifacts are platform-independent, so any job can read what
-    # another wrote under the same SHA. `restore-keys` fallback lets a first
-    # run on a new branch pick up the most recent main-branch cache.
+    # Turbo's local cache + build outputs. Single source of truth for ALL
+    # compiled artifacts in any given run: `dist/`, `noir/target/`,
+    # `noir/artifacts/`, the ethereum codegen, etc. — every output `turbo.json`
+    # lists for the `build` task lives here.
+    #
+    # An earlier version had a second cache that stored just `noir/target` +
+    # `noir/artifacts` keyed on the noir-source hash, and a conditional
+    # pre-build compile step that primed it. That created two independent
+    # writers for the same files: when the contracts cache hit but the turbo
+    # cache fell back to a different (older) `restore-keys` prefix entry,
+    # the e2e job ended up with `noir/target/*.json` from one compile and
+    # `dist/noir/target/*.json` from a different compile. Class-id mismatch
+    # at signup time (PXE rejects the artifact). Folding everything into
+    # turbo's per-SHA cache keeps the two paths in lockstep.
+    #
+    # Not suffixed with `cache-suffix`: emitted artifacts are platform-
+    # independent, so any job can read what another wrote under the same SHA.
+    # The aztec-version is part of the key prefix so that on a version bump
+    # the `restore-keys` fallback doesn't drag in the previous version's
+    # `dist/` while `noir/target/` recompiles to the new version's output.
     - name: Cache turbo outputs
       uses: actions/cache@v4
       with:
@@ -132,8 +132,10 @@ runs:
           apps/*/dist
           packages/*/dist
           packages/contracts/*/dist
+          packages/contracts/aztec/noir/target
+          packages/contracts/aztec/noir/artifacts
           packages/contracts/ethereum/generated
           packages/contracts/ethereum/solidity/out
-        key: turbo-${{ runner.os }}-${{ github.sha }}
+        key: turbo-${{ runner.os }}-${{ steps.aztec-version.outputs.version }}-${{ github.sha }}
         restore-keys: |
-          turbo-${{ runner.os }}-
+          turbo-${{ runner.os }}-${{ steps.aztec-version.outputs.version }}-
