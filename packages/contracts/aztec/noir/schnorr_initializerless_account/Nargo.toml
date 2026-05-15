@@ -5,6 +5,6 @@ compiler_version = ">=1.0.0"
 authors = [""]
 
 [dependencies]
-aztec = { git="https://github.com/AztecProtocol/aztec-nr", tag="v4.3.0-nightly.20260514", directory="aztec" }
+aztec = { git="https://github.com/AztecProtocol/aztec-nr", tag="v4.3.0-rc.1", directory="aztec" }
 schnorr = { git = "https://github.com/noir-lang/schnorr", tag = "v0.2.0" }
 immutables = { path = "../immutables" }

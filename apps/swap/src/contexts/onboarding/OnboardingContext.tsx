@@ -114,8 +114,7 @@ export function OnboardingProvider({ children }: OnboardingProviderProps) {
 
   // Refs to prevent duplicate execution under React StrictMode (which double-invokes
   // effects in dev) and from stale-closure re-runs after state updates trigger renders
-  // mid-await. Without these, two parallel calls of registerBaseContracts both pass
-  // the metadata check and both attempt registerContract → SQLite UNIQUE violation.
+  // mid-await.
   const registerBaseTriggeredRef = useRef(false);
   const simulateTriggeredRef = useRef(false);
   const registerDripTriggeredRef = useRef(false);
@@ -138,7 +137,13 @@ export function OnboardingProvider({ children }: OnboardingProviderProps) {
         return;
 
       try {
-        // Step 1a: After external wallet connection, go straight to registering
+        // Step 1: After external wallet connection, go straight to registering.
+        // The embedded-wallet path does NOT register here: ContractsProvider's
+        // own mount effect drives registration the moment the wallet is ready
+        // (and is the sole driver on reload-after-onboarded, where this effect
+        // stays in 'idle'). Duplicating the call here races that effect — both
+        // pass the existence check and both invoke wallet.registerContract,
+        // tripping a SQLite UNIQUE on the second insert.
         if (
           state.status === "connecting" &&
           currentAddress &&
@@ -149,19 +154,6 @@ export function OnboardingProvider({ children }: OnboardingProviderProps) {
           registerBaseTriggeredRef.current = true;
           actions.markRegistered();
           actions.advanceStatus("registering");
-          await registerBaseContracts();
-        }
-
-        // Step 1b: For embedded wallet, register contracts when entering 'registering' status
-        if (
-          state.status === "registering" &&
-          currentAddress &&
-          isUsingEmbeddedWallet &&
-          !state.hasRegisteredBase &&
-          !registerBaseTriggeredRef.current
-        ) {
-          registerBaseTriggeredRef.current = true;
-          actions.markRegistered();
           await registerBaseContracts();
         }
 
