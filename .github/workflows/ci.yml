@@ -68,6 +68,13 @@ jobs:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/setup
 
+      # Hard guarantee that no test-state checkpoints leak in from any cache
+      # path widening. `e2e/.state/` is per-run scratch: contract addresses
+      # for the current local-network spawn, derived swap-admin keys, etc.
+      # Nothing in CI should ever resume from a prior run's `.state/`.
+      - name: Ensure e2e/.state is clean
+        run: rm -rf e2e/.state
+
       # Full playwright dep set (chromium + firefox + webkit + tools) so
       # adding a browser later is a one-line change in the test config —
       # no need to revisit this list. Pulled from playwright-core's
