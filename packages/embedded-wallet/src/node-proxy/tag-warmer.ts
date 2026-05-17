@@ -342,12 +342,6 @@ async function scanTriple(
 
     let logsByTag: unknown[][];
     try {
-      // Mark the next call as warm-originated so the proxy's stats can
-      // distinguish "warm populating" from "PXE asking". The flag is
-      // consumed synchronously by the handler before any await — even
-      // under Promise.all this remains race-free because each .map
-      // callback runs sync to the handler's first await.
-      (proxy as unknown as { __markNextAsWarm?: () => void }).__markNextAsWarm?.();
       logsByTag = (await (proxy as unknown as {
         getPrivateLogsByTags: (
           tags: SiloedTag[],

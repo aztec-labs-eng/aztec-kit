@@ -2,7 +2,6 @@ import type { AztecNode } from "@aztec/aztec.js/node";
 
 import { BlockBoundedCache } from "./block-bounded-cache";
 import { TwoTierCache } from "./cache";
-import { InflightDedup } from "./inflight";
 import { k, str } from "./keys";
 import { ReorgSniffer, type TipObservation } from "./reorg-sniffer";
 
@@ -80,26 +79,19 @@ export interface CacheStats {
 export interface MethodCounters {
   /** Total times this method was called through the proxy. */
   calls: number;
-  /** Cache hits — served from permanent or speculative without upstream. */
+  /** Cache hits — served from cache without upstream. */
   hits: number;
   /** Cache misses — fell through to upstream. */
   misses: number;
   /** Upstream calls actually made (may be fewer than misses if dedup'd). */
   upstream: number;
-  /** For decomposed methods: per-element seen / hit counts. */
-  elements?: { seen: number; hits: number };
   /**
-   * Calls originated by the wallet's tag warm-up rather than PXE. Warm
-   * calls necessarily start as misses (they're populating the cache),
-   * so they drag down the overall hit-rate metric. Subtracting them
-   * gives a true PXE-side hit rate — the one that determines sim
-   * latency.
+   * For decomposed methods (getPrivateLogsByTags, findLeavesIndexes):
+   * per-element seen/hit counts. A batch with 100 tags counts as one
+   * `calls` increment but up to 100 `elements.seen` increments. The
+   * element-level hit rate is the more meaningful cache metric.
    */
-  warmCalls?: number;
-  /** Hits attributable to warm-originated calls (a re-fetch of an already-cached tag). */
-  warmHits?: number;
-  /** Misses attributable to warm-originated calls. */
-  warmMisses?: number;
+  elements?: { seen: number; hits: number };
 }
 
 /**
@@ -115,7 +107,11 @@ export function createCachingNodeProxy(
   const cache = new TwoTierCache<unknown>();
   const tagLogCache = new BlockBoundedCache<unknown[]>();
   const leafIndexCache = new BlockBoundedCache<unknown>();
-  const inflight = new InflightDedup<string, unknown>();
+  // In-flight dedup: collapse concurrent identical RPCs (e.g. two
+  // overlapping `getPrivateLogsByTags` batches sharing the same tag
+  // set) onto a single upstream promise. The slot releases on
+  // settlement so a failed call doesn't poison future retries.
+  const inflight = new Map<string, Promise<unknown>>();
 
   const sniffer = new ReorgSniffer(
     {
@@ -203,28 +199,6 @@ export function createCachingNodeProxy(
     return c;
   }
 
-  /**
-   * Flag set by the warm-up immediately before each `getPrivateLogsByTags`
-   * call and consumed synchronously by the handler. Lets us attribute
-   * calls to "warm vs PXE" so the hit-rate metric isn't polluted by the
-   * warm's necessary populate-misses. JS event-loop guarantees: the
-   * warmer calls `__markNextAsWarm()` then immediately `proxy.getX()`,
-   * the handler reads the flag in its synchronous prelude before any
-   * await — no race even under Promise.all fanout because each .map
-   * callback runs sync up to the handler's first await.
-   */
-  let nextCallIsWarm = false;
-  function consumeWarmFlag(): boolean {
-    const v = nextCallIsWarm;
-    nextCallIsWarm = false;
-    return v;
-  }
-  function bumpWarmStats(c: MethodCounters, isWarm: boolean, kind: "hit" | "miss"): void {
-    if (!isWarm) return;
-    c.warmCalls = (c.warmCalls ?? 0) + 1;
-    if (kind === "hit") c.warmHits = (c.warmHits ?? 0) + 1;
-    else c.warmMisses = (c.warmMisses ?? 0) + 1;
-  }
   function elementCounter(name: string): { seen: number; hits: number } {
     const c = counter(name);
     if (!c.elements) c.elements = { seen: 0, hits: 0 };
@@ -329,7 +303,17 @@ export function createCachingNodeProxy(
   }
 
   async function dedup<T>(key: string, fn: () => Promise<T>): Promise<T> {
-    return (await inflight.run(key, fn as () => Promise<unknown>)) as T;
+    const existing = inflight.get(key);
+    if (existing) return (await existing) as T;
+    const p = (async () => {
+      try {
+        return await fn();
+      } finally {
+        inflight.delete(key);
+      }
+    })();
+    inflight.set(key, p as Promise<unknown>);
+    return (await p) as T;
   }
 
   /**
@@ -465,21 +449,7 @@ export function createCachingNodeProxy(
 
       const c = counter("getPrivateLogsByTags");
       c.calls++;
-      // Read-and-clear the warm flag SYNCHRONOUSLY before any await so
-      // back-to-back warm calls (Promise.all fanout) are attributed
-      // correctly. PXE never sets this flag.
-      const isWarm = consumeWarmFlag();
       const elem = elementCounter("getPrivateLogsByTags");
-
-      // Diagnostic: when every tag in a batch misses (full-miss), emit a
-      // one-line console.info with the first tag value, the page number,
-      // and the batch size. Captured by the testnet e2e to surface
-      // *which* tag value PXE asked for that the warmer didn't cover —
-      // the key signal for "warm enumeration ≠ PXE enumeration".
-      // Gated on a global flag set by registerNodeProxyInspector; in
-      // production with no inspector this is a no-op fast-path.
-      const diagMissLogger = (globalThis as { __nodeProxyDiagMiss?: (line: string) => void })
-        .__nodeProxyDiagMiss;
 
       // Page > 0 or unknown anchor height — fall back to the anchor-keyed
       // cache. Block-bounded only works when we know the anchor's height
@@ -525,28 +495,10 @@ export function createCachingNodeProxy(
       }
       if (missingTags.length === 0) {
         c.hits++;
-        bumpWarmStats(c, isWarm, "hit");
         return out as unknown[];
       }
-      if (missingTags.length === tags.length) {
-        c.misses++;
-        bumpWarmStats(c, isWarm, "miss");
-        // Diagnostic: every tag in this batch was uncached. Surface a
-        // sample of the missed tag values so the test (or a developer
-        // with the inspector running) can correlate them against what
-        // the warmer derived — answers "why is hit rate not 100%".
-        // Only log PXE-originated full-misses; warm misses are
-        // expected (they're populating).
-        if (diagMissLogger && !isWarm) {
-          const sample = missingTags.slice(0, 3).map((t) => str(t));
-          diagMissLogger(
-            `full-miss page=${p} anchor=${anchor.number} size=${tags.length} sample=[${sample.join(",")}${tags.length > 3 ? ",…" : ""}]`,
-          );
-        }
-      } else {
-        c.hits++;
-        bumpWarmStats(c, isWarm, "hit");
-      }
+      if (missingTags.length === tags.length) c.misses++;
+      else c.hits++;
       c.upstream++;
 
       // Fetch at the LATEST sniffed tip when we know one — extends the
@@ -924,9 +876,6 @@ export function createCachingNodeProxy(
      * Safe under Promise.all fanout because each .map callback runs
      * synchronously up to the handler's first await (mark+call pair).
      */
-    __markNextAsWarm(): void {
-      nextCallIsWarm = true;
-    },
     stats(): CacheStats {
       const s = cache.sizes();
       const methods: Record<string, MethodCounters> = {};
@@ -937,9 +886,6 @@ export function createCachingNodeProxy(
           misses: c.misses,
           upstream: c.upstream,
           elements: c.elements ? { ...c.elements } : undefined,
-          warmCalls: c.warmCalls,
-          warmHits: c.warmHits,
-          warmMisses: c.warmMisses,
         };
       }
       return {
