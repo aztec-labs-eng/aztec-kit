@@ -113,6 +113,24 @@ export default defineConfig({
       // exercise any contract flows so the 01-05 setup chain is unnecessary.
       use: { ...desktopChrome, baseURL: "http://localhost:5175" },
     },
+    {
+      // Testnet iteration: runs the swap flow against the public Aztec
+      // testnet (no local-network, no setup chain). Lets us profile the
+      // caching-node-proxy against realistic network latency + an actively-
+      // advancing chain. Requires the user to provide the testnet PoP
+      // password via TESTNET_POP_PASSWORD (drip would otherwise fail) — the
+      // test skip()s itself when the var is absent.
+      //
+      // Usage:
+      //   TESTNET_POP_PASSWORD=… E2E_SKIP_NETWORK=1 yarn test --project=testnet-iter
+      //
+      // No `dependencies` and no global-setup-driven node spawn (the spec
+      // sets E2E_SKIP_NETWORK internally if not set, and reads testnet
+      // config from the swap app's bundled config).
+      name: "testnet-iter",
+      testMatch: /07-testnet-iteration\.spec\.ts$/,
+      use: { ...desktopChrome, baseURL: "http://localhost:5175" },
+    },
   ],
   webServer: [
     appServer("@aztec-kit/swap", 5175),
