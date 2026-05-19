@@ -2,7 +2,7 @@
 # Orchestrates a full swap-app deploy on the target network:
 #
 #   1. Deploy the swap admin (generates SWAP_ADMIN_SECRET if not set).
-#      On local: via SponsoredFPC. On testnet: bridge + claim + deploy.
+#      On local: via SponsoredFPC. On testnet/nextnet: bridge + claim + deploy.
 #   2. Deploy swap contracts with that admin.
 #   3. Deploy the FPC admin (generates FPC_ADMIN_SECRET if not set). Same
 #      sponsoredfpc-vs-bridge split as step 1.
@@ -19,7 +19,7 @@ set -euo pipefail
 
 NETWORK="${1:-}"
 if [ -z "${NETWORK}" ]; then
-  echo "usage: $0 <local|testnet>" >&2
+  echo "usage: $0 <local|testnet|nextnet>" >&2
   exit 1
 fi
 

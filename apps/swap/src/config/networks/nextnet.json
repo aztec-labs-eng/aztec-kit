@@ -1,0 +1,65 @@
+{
+  "id": "nextnet",
+  "nodeUrl": "https://aztec-nextnet.alexghr.me",
+  "chainId": "11155111",
+  "rollupVersion": "960120478",
+  "contracts": {
+    "goCoin": "0x14845fb4ebed07e994f2e245ed945dcdf72dd1cf29188f047b1d65dbb02ac5c5",
+    "goCoinPremium": "0x24f7125f34ea6ec014a87ccdf40317fe0df0983d7499f91a024f6f655b232cce",
+    "amm": "0x018d8e0f8ff1e173b754a4e987b5ba31f99302157197fb196110f032ae20189a",
+    "liquidityToken": "0x2c0f747dca1b89aaa37ac38ff506f8f56832f405cce941372d639a7f569bd3e5",
+    "pop": "0x09c264ef8a38484646049258f1010ef25cc00856d347d08445432600ffc15cd0",
+    "sponsoredFPC": "0x1114a201e7b0680b2b75bc47be3abebbc54caf83f471e12b66c8a1abfa4478dd",
+    "salt": "0x0000000000000000000000000000000000000000000000000000000000000000"
+  },
+  "deployer": {
+    "address": "0x092c879b37132316e01570ee32911e17c543d48c2e3d9eca5e7a1fea4846a7da"
+  },
+  "deployedAt": "2026-05-19T09:06:49.754Z",
+  "subscriptionFPC": {
+    "address": "0x0b70cef299b052b950147adeafbabd3d9e30835bdec28428812eed6f3cc2aa25",
+    "secretKey": "0x000000000000000000000000000000000000000000000000000000000000002c",
+    "functions": {
+      "0x09c264ef8a38484646049258f1010ef25cc00856d347d08445432600ffc15cd0": {
+        "0xa539bd29": {
+          "configIndex": 0,
+          "gasLimits": {
+            "daGas": 992,
+            "l2Gas": 721292
+          },
+          "hasPublicCall": true
+        }
+      },
+      "0x018d8e0f8ff1e173b754a4e987b5ba31f99302157197fb196110f032ae20189a": {
+        "0xfd228669": {
+          "configIndex": 0,
+          "gasLimits": {
+            "daGas": 2464,
+            "l2Gas": 1032841
+          },
+          "hasPublicCall": true
+        }
+      },
+      "0x14845fb4ebed07e994f2e245ed945dcdf72dd1cf29188f047b1d65dbb02ac5c5": {
+        "0x859e4f61": {
+          "configIndex": 0,
+          "gasLimits": {
+            "daGas": 288,
+            "l2Gas": 522400
+          },
+          "hasPublicCall": false
+        }
+      },
+      "0x24f7125f34ea6ec014a87ccdf40317fe0df0983d7499f91a024f6f655b232cce": {
+        "0x859e4f61": {
+          "configIndex": 0,
+          "gasLimits": {
+            "daGas": 288,
+            "l2Gas": 522400
+          },
+          "hasPublicCall": false
+        }
+      }
+    }
+  }
+}

@@ -29,11 +29,14 @@ describe("Failure cases", () => {
   let hasPublicCall: boolean;
 
   beforeAll(async () => {
-    const {
-      receipt: { contract: rawToken, instance: tokenInstance },
-    } = await TokenContract.deploy(ctx.wallet, ctx.admin, "FailToken", "FT", 18).send({
+    const { contract: rawToken, instance: tokenInstance } = await TokenContract.deploy(
+      ctx.wallet,
+      ctx.admin,
+      "FailToken",
+      "FT",
+      18,
+    ).send({
       from: ctx.admin,
-      wait: { returnReceipt: true },
     });
     token = rawToken;
 
@@ -150,7 +153,7 @@ describe("Failure cases", () => {
       ctx.fpcSecretKey,
     );
     await grieferWallet.registerContract(
-      await ctx.node.getContract(token.address),
+      (await ctx.node.getContract(token.address))!,
       TokenContractArtifact,
     );
 
@@ -201,7 +204,7 @@ describe("Failure cases", () => {
       ctx.fpcSecretKey,
     );
     await tightUserWallet.registerContract(
-      await ctx.node.getContract(token.address),
+      (await ctx.node.getContract(token.address))!,
       TokenContractArtifact,
     );
 

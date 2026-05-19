@@ -2,9 +2,12 @@ name: Deploy to Vercel
 
 on:
   # On push to main, deploy to production unconditionally.
+  # On push to next, deploy a non-prod build aliased to `next.<app>.aztec-labs.com`
+  # so the v5 cycle has stable URLs alongside production.
   push:
     branches:
       - main
+      - next
   # On PRs, deploy preview after CI passes. pull_request_target runs in the
   # context of the base repo so it has access to secrets (needed for Vercel
   # deploys + PR comments) — we wait for the CI workflow on the PR head to
@@ -150,11 +153,32 @@ jobs:
       - name: Install Vercel CLI
         run: npm install --global vercel@latest
 
+      # Map the GitHub event → Vercel env slot. Hobby tier only ships three
+      # slots, so we reuse them: main → production, next → preview,
+      # PRs → development. `vercel build` has no "development" target, so for
+      # PR pulls we rename the dropped .env.development.local to .env.preview.local
+      # so the subsequent preview build picks it up.
+      - name: Resolve Vercel environment slot
+        run: |
+          if [ "${{ github.event_name }}" == "push" ] && [ "${{ github.ref }}" == "refs/heads/main" ]; then
+            echo "VERCEL_ENV_SLOT=production" >> "$GITHUB_ENV"
+          elif [ "${{ github.event_name }}" == "workflow_dispatch" ] && [ "${{ inputs.production }}" == "true" ]; then
+            echo "VERCEL_ENV_SLOT=production" >> "$GITHUB_ENV"
+          elif [ "${{ github.event_name }}" == "push" ] && [ "${{ github.ref }}" == "refs/heads/next" ]; then
+            echo "VERCEL_ENV_SLOT=preview" >> "$GITHUB_ENV"
+          else
+            echo "VERCEL_ENV_SLOT=development" >> "$GITHUB_ENV"
+          fi
+
       # ── Bridge deployment ──────────────────────────────────────────────
       - name: Pull Vercel Environment (Bridge)
         env:
           VERCEL_PROJECT_ID: ${{ secrets.BRIDGE_PROJECT_ID }}
-        run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }} --cwd apps/bridge
+        run: |
+          vercel pull --yes --environment=$VERCEL_ENV_SLOT --token=${{ secrets.VERCEL_TOKEN }} --cwd apps/bridge
+          if [ "$VERCEL_ENV_SLOT" = "development" ] && [ -f apps/bridge/.vercel/.env.development.local ]; then
+            mv apps/bridge/.vercel/.env.development.local apps/bridge/.vercel/.env.preview.local
+          fi
 
       - name: Build and deploy Bridge
         id: deploy-bridge
@@ -170,11 +194,23 @@ jobs:
           fi
           echo "url=$DEPLOY_URL" >> $GITHUB_OUTPUT
 
+      # On push to `next`, point next.bridge.aztec-labs.com at the just-built
+      # preview deployment. Main's production aliases are untouched.
+      - name: Alias Bridge to next subdomain
+        if: github.event_name == 'push' && github.ref == 'refs/heads/next'
+        env:
+          VERCEL_PROJECT_ID: ${{ secrets.BRIDGE_PROJECT_ID }}
+        run: vercel alias set ${{ steps.deploy-bridge.outputs.url }} next.bridge.aztec-labs.com --token=${{ secrets.VERCEL_TOKEN }} --scope=${{ secrets.VERCEL_ORG_ID }}
+
       # ── FPC Operator deployment ────────────────────────────────────────
       - name: Pull Vercel Environment (FPC Operator)
         env:
           VERCEL_PROJECT_ID: ${{ secrets.FPC_PROJECT_ID }}
-        run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }} --cwd apps/fpc-operator
+        run: |
+          vercel pull --yes --environment=$VERCEL_ENV_SLOT --token=${{ secrets.VERCEL_TOKEN }} --cwd apps/fpc-operator
+          if [ "$VERCEL_ENV_SLOT" = "development" ] && [ -f apps/fpc-operator/.vercel/.env.development.local ]; then
+            mv apps/fpc-operator/.vercel/.env.development.local apps/fpc-operator/.vercel/.env.preview.local
+          fi
 
       - name: Build and deploy FPC Operator
         id: deploy-fpc
@@ -191,11 +227,21 @@ jobs:
           fi
           echo "url=$DEPLOY_URL" >> $GITHUB_OUTPUT
 
+      - name: Alias FPC Operator to next subdomain
+        if: github.event_name == 'push' && github.ref == 'refs/heads/next'
+        env:
+          VERCEL_PROJECT_ID: ${{ secrets.FPC_PROJECT_ID }}
+        run: vercel alias set ${{ steps.deploy-fpc.outputs.url }} next.fpc-operator.aztec-labs.com --token=${{ secrets.VERCEL_TOKEN }} --scope=${{ secrets.VERCEL_ORG_ID }}
+
       # ── Swap deployment ────────────────────────────────────────────────
       - name: Pull Vercel Environment (Swap)
         env:
           VERCEL_PROJECT_ID: ${{ secrets.SWAP_PROJECT_ID }}
-        run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }} --cwd apps/swap
+        run: |
+          vercel pull --yes --environment=$VERCEL_ENV_SLOT --token=${{ secrets.VERCEL_TOKEN }} --cwd apps/swap
+          if [ "$VERCEL_ENV_SLOT" = "development" ] && [ -f apps/swap/.vercel/.env.development.local ]; then
+            mv apps/swap/.vercel/.env.development.local apps/swap/.vercel/.env.preview.local
+          fi
 
       - name: Build and deploy Swap
         id: deploy-swap
@@ -211,6 +257,12 @@ jobs:
             DEPLOY_URL=$(vercel deploy --prebuilt --token=${{ secrets.VERCEL_TOKEN }} --archive=tgz --yes --cwd apps/swap)
           fi
           echo "url=$DEPLOY_URL" >> $GITHUB_OUTPUT
+
+      - name: Alias Swap to next subdomain
+        if: github.event_name == 'push' && github.ref == 'refs/heads/next'
+        env:
+          VERCEL_PROJECT_ID: ${{ secrets.SWAP_PROJECT_ID }}
+        run: vercel alias set ${{ steps.deploy-swap.outputs.url }} next.swap.aztec-labs.com --token=${{ secrets.VERCEL_TOKEN }} --scope=${{ secrets.VERCEL_ORG_ID }}
 
       # ── PR Comment ─────────────────────────────────────────────────────
       - name: Comment deployment URLs on PR

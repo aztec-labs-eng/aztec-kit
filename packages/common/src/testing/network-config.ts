@@ -3,18 +3,20 @@
  * Node-only — scripts pass these to `@aztec/aztec.js/ethereum` clients.
  */
 
-export const VALID_NETWORKS = ["local", "testnet"] as const;
+export const VALID_NETWORKS = ["local", "testnet", "nextnet"] as const;
 export type NetworkName = (typeof VALID_NETWORKS)[number];
 
 export const NETWORK_URLS: Record<NetworkName, string> = {
   local: "http://localhost:8080",
   testnet: "https://rpc.testnet.aztec-labs.com",
+  nextnet: "https://aztec-nextnet.alexghr.me",
 };
 
 /** L1 parameters the bridging scripts need. Keep in sync with the rollup. */
 export const L1_DEFAULTS: Record<NetworkName, { l1RpcUrl: string; l1ChainId: number }> = {
   local: { l1RpcUrl: "http://localhost:8545", l1ChainId: 31337 },
   testnet: { l1RpcUrl: "https://sepolia.drpc.org", l1ChainId: 11155111 },
+  nextnet: { l1RpcUrl: "https://sepolia.drpc.org", l1ChainId: 11155111 },
 };
 
 /**
@@ -55,4 +57,5 @@ export type PaymentMode = (typeof VALID_PAYMENT_MODES)[number];
 export const DEFAULT_PAYMENT_MODE: Record<NetworkName, PaymentMode> = {
   local: "sponsoredfpc",
   testnet: "feejuice",
+  nextnet: "feejuice",
 };

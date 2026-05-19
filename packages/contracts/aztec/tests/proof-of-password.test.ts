@@ -26,19 +26,23 @@ describe("ProofOfPassword", () => {
   let recipientAddress: AztecAddress;
 
   beforeAll(async () => {
-    const {
-      receipt: { contract: rawToken },
-    } = await TokenContract.deploy(ctx.wallet, ctx.admin, "GregoCoin", "GC", 18).send({
+    const { contract: rawToken } = await TokenContract.deploy(
+      ctx.wallet,
+      ctx.admin,
+      "GregoCoin",
+      "GC",
+      18,
+    ).send({
       from: ctx.admin,
-      wait: { returnReceipt: true },
     });
     token = rawToken;
 
-    const {
-      receipt: { contract: rawPop },
-    } = await ProofOfPasswordContract.deploy(ctx.wallet, token.address, PASSWORD).send({
+    const { contract: rawPop } = await ProofOfPasswordContract.deploy(
+      ctx.wallet,
+      token.address,
+      PASSWORD,
+    ).send({
       from: ctx.admin,
-      wait: { returnReceipt: true },
     });
     pop = rawPop;
 

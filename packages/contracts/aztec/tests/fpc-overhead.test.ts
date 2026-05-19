@@ -66,11 +66,14 @@ beforeAll(async () => {
 describe("FPC gas overhead", () => {
   beforeAll(async () => {
     // ── Deploy token and set up accounts ──────────────────────────────
-    const {
-      receipt: { contract: rawToken, instance: tokenInstance },
-    } = await TokenContract.deploy(ctx.wallet, ctx.admin, "OverheadToken", "OT", 18).send({
+    const { contract: rawToken, instance: tokenInstance } = await TokenContract.deploy(
+      ctx.wallet,
+      ctx.admin,
+      "OverheadToken",
+      "OT",
+      18,
+    ).send({
       from: ctx.admin,
-      wait: { returnReceipt: true },
     });
     const token = rawToken;
 
@@ -142,7 +145,7 @@ describe("FPC gas overhead", () => {
           fee: { estimateGas: true, estimatedGasPadding: 0 },
           additionalScopes: [ctx.admin, ctx.fpc.address],
         });
-      subscribePublicGas = toGas(estimatedGas);
+      subscribePublicGas = toGas(estimatedGas!);
 
       // Execute subscribe to create subscription for the sponsor test.
       // Use the just-measured `subscribePublicGas` directly (it's the full
@@ -194,7 +197,7 @@ describe("FPC gas overhead", () => {
           fee: { estimateGas: true, estimatedGasPadding: 0 },
           additionalScopes: [ctx.admin, ctx.fpc.address],
         });
-      sponsorPublicGas = toGas(estimatedGas);
+      sponsorPublicGas = toGas(estimatedGas!);
     }
 
     // Measure calibrate (public). `calibrate` is top-of-stack like
@@ -243,7 +246,7 @@ describe("FPC gas overhead", () => {
           skipTxValidation: true,
           skipFeeEnforcement: true,
         });
-      calibratePublicGas = toGas(estimatedGas);
+      calibratePublicGas = toGas(estimatedGas!);
     }
 
     // ── Private subscribe + sponsor ──────────────────────────────────
@@ -282,7 +285,7 @@ describe("FPC gas overhead", () => {
           fee: { estimateGas: true, estimatedGasPadding: 0 },
           additionalScopes: [ctx.admin, ctx.fpc.address],
         });
-      subscribePrivateGas = toGas(estimatedGas);
+      subscribePrivateGas = toGas(estimatedGas!);
     }
 
     // Execute subscribe (unique nonce for the real tx). Use the just-
@@ -343,7 +346,7 @@ describe("FPC gas overhead", () => {
           fee: { estimateGas: true, estimatedGasPadding: 0 },
           additionalScopes: [ctx.admin, ctx.fpc.address],
         });
-      sponsorPrivateGas = toGas(estimatedGas);
+      sponsorPrivateGas = toGas(estimatedGas!);
     }
 
     // Measure calibrate (private)
@@ -383,7 +386,7 @@ describe("FPC gas overhead", () => {
           skipTxValidation: true,
           skipFeeEnforcement: true,
         });
-      calibratePrivateGas = toGas(estimatedGas);
+      calibratePrivateGas = toGas(estimatedGas!);
     }
 
     // ── Print all measurements ───────────────────────────────────────

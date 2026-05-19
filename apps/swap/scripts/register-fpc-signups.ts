@@ -4,7 +4,7 @@
  * `maxFee` per signup.
  *
  * Inputs:
- *   --network <local|testnet>
+ *   --network <local|testnet|nextnet>
  *   FPC_ADDRESS      — hex AztecAddress of the deployed FPC (from fpc-operator/deploy-fpc)
  *   FPC_ADMIN_SECRET — FPC admin secret (signup txs must be sent by the FPC deployer)
  *   FPC_SECRET       — the contract key secret the FPC was deployed with, so the
@@ -18,7 +18,7 @@
  *
  * Calibration behaviour:
  *   - `local`    : skipped. Uses the hardcoded `maxFee` fallback.
- *   - `testnet`  : runs the FPC's `calibrate` helper to get gas limits, then
+ *   - `testnet` : runs the FPC's `calibrate` helper to get gas limits, then
  *                  multiplies by the clustec P75-of-last-2000-blocks maxFeePerGas
  *                  with a 2× safety multiplier (what the dashboard UI does).
  */
@@ -38,7 +38,11 @@ import { AMMContractArtifact } from "@aztec-kit/contracts-aztec/artifacts/AMM";
 import { TokenContractArtifact } from "@aztec-kit/contracts-aztec/artifacts/Token";
 import { SubscriptionFPC, fpcSubscribeOverhead } from "@aztec-kit/contracts-aztec/subscription-fpc";
 import { Gas } from "@aztec/stdlib/gas";
-import { fetchFeeStats, computeMaxFeeFromP75 } from "@aztec-kit/common/fees";
+import {
+  fetchFeeStats,
+  computeMaxFeeFromP75,
+  computeMaxFeeFromCurrent,
+} from "@aztec-kit/common/fees";
 
 import {
   parseNetwork,
@@ -57,6 +61,13 @@ import type { EmbeddedWallet } from "@aztec/wallets/embedded";
 
 const P75_BLOCK_RANGE = 2000;
 const P75_MULTIPLIER = 2;
+/**
+ * Multiplier applied when we fall back to the node's current min fees (clustec
+ * indexer unavailable). The P75 already accounts for historical spread so 2×
+ * is enough; current min fees are the floor right now with no headroom, so we
+ * need a much wider buffer. Matches the 10× used by the e2e local flow.
+ */
+const CURRENT_FEE_FALLBACK_MULTIPLIER = 10;
 
 /** Default sponsorship policy; individual specs can override any field. */
 const SIGNUP_POLICY = {
@@ -186,6 +197,7 @@ async function main() {
 
     const { maxFee, gasLimits, hasPublicCall } = await pickSignupParams({
       network,
+      node,
       fpc,
       wallet,
       admin,
@@ -343,10 +355,13 @@ async function resolveSignups(
  * runtime callers can add the appropriate FPC overhead. `maxFee` on
  * testnet is sized from the P75 of per-gas prices against the full
  * subscribe-path cost; on local it falls back to a hardcoded policy value
- * because there's no P75 feed.
+ * because there's no P75 feed. If clustec doesn't index the network (e.g.
+ * nextnet today) we fall back to the node's current min fees × a wider
+ * multiplier — matches the manual UI escape hatch the e2e test uses.
  */
 async function pickSignupParams(params: {
   network: NetworkName;
+  node: AztecNode;
   fpc: SubscriptionFPC;
   wallet: EmbeddedWallet;
   admin: AztecAddress;
@@ -357,7 +372,7 @@ async function pickSignupParams(params: {
   gasLimits: { daGas: number; l2Gas: number };
   hasPublicCall: boolean;
 }> {
-  const { network, fpc, wallet, admin, signup, contracts } = params;
+  const { network, node, fpc, wallet, admin, signup, contracts } = params;
 
   const contract = Contract.at(signup.contractAddress, signup.artifact, wallet);
   const args = signup.sampleArgs({
@@ -384,13 +399,29 @@ async function pickSignupParams(params: {
     const subscribeTotal = new Gas(gasLimits.daGas, gasLimits.l2Gas).add(
       fpcSubscribeOverhead(hasPublicCall),
     );
-    const stats = await fetchFeeStats(network, P75_BLOCK_RANGE);
-    maxFee = computeMaxFeeFromP75(
-      { daGas: Number(subscribeTotal.daGas), l2Gas: Number(subscribeTotal.l2Gas) },
-      { daGas: 0, l2Gas: 0 },
-      stats,
-      P75_MULTIPLIER,
-    );
+    const subscribeGas = {
+      daGas: Number(subscribeTotal.daGas),
+      l2Gas: Number(subscribeTotal.l2Gas),
+    };
+    const zeroTeardown = { daGas: 0, l2Gas: 0 };
+
+    try {
+      const stats = await fetchFeeStats(network, P75_BLOCK_RANGE);
+      maxFee = computeMaxFeeFromP75(subscribeGas, zeroTeardown, stats, P75_MULTIPLIER);
+    } catch (err) {
+      const reason = err instanceof Error ? err.message : String(err);
+      console.error(
+        `  clustec P75 fetch failed (${reason}); falling back to node min fees × ${CURRENT_FEE_FALLBACK_MULTIPLIER}`,
+      );
+      const minFees = await node.getCurrentMinFees();
+      maxFee = computeMaxFeeFromCurrent(
+        subscribeGas,
+        zeroTeardown,
+        BigInt(minFees.feePerDaGas),
+        BigInt(minFees.feePerL2Gas),
+        CURRENT_FEE_FALLBACK_MULTIPLIER,
+      );
+    }
   }
 
   return { maxFee, gasLimits, hasPublicCall };

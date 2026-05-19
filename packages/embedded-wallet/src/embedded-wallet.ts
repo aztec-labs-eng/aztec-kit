@@ -39,6 +39,10 @@ import {
   computeContractSalt,
   serializeSigningKey,
 } from "./initializerless-account";
+import { SimulatedSchnorrInitializerlessAccountContractArtifact } from "@aztec-kit/contracts-aztec/artifacts/SimulatedSchnorrInitializerlessAccount";
+import { getContractClassFromArtifact } from "@aztec/stdlib/contract";
+import { ExtendedAccountContractsProvider } from "./account-contracts-provider";
+import { INITIALIZERLESS_TYPE } from "./initializerless-account-type";
 import { registerSqliteInspectors } from "./sqlite-inspector";
 import { EncryptionKeyMismatchError, type StoreName } from "./encryption-key-mismatch-error";
 import { GasSettings } from "@aztec/stdlib/gas";
@@ -82,8 +86,7 @@ async function openEncryptedOrPlain(
   }
 }
 
-/** The initializerless type string — cast to AccountType for WalletDB storage. */
-export const INITIALIZERLESS_TYPE = "schnorr-initializerless" as AccountType;
+export { INITIALIZERLESS_TYPE } from "./initializerless-account-type";
 
 /** Extra options supported by this wallet on top of `EmbeddedWalletOptions`. */
 export type EmbeddedWalletExtraOptions = {
@@ -121,6 +124,19 @@ export class EmbeddedWallet extends EmbeddedWalletBase {
    * our overridden `stop()` can release the SAH Pool's OPFS lock on the way out.
    */
   #walletStore?: { close?: () => Promise<void> };
+
+  /**
+   * Wraps the provider before handing it to the base so simulation's
+   * stub-account dispatch recognizes `schnorr-initializerless`. The base's
+   * `static create` instantiates the wallet via `new this(...)`, so our
+   * constructor runs for every subclass `create` path (browser + node) and
+   * `initStubClasses()` (called by base right after construction) already
+   * sees the extended provider.
+   */
+  constructor(...args: ConstructorParameters<typeof EmbeddedWalletBase>) {
+    const [pxe, aztecNode, walletDB, accountContracts, log] = args;
+    super(pxe, aztecNode, walletDB, new ExtendedAccountContractsProvider(accountContracts), log);
+  }
 
   /**
    * Overrides `EmbeddedWalletBase.create` with our defaults:
@@ -239,6 +255,20 @@ export class EmbeddedWallet extends EmbeddedWalletBase {
     if (this.#walletStore?.close) {
       await this.#walletStore.close();
     }
+  }
+
+  /**
+   * Registers ONLY our 'schnorr-initializerless' stub class with PXE — apps
+   * built on this wallet only ever create initializerless accounts, so the
+   * base's schnorr/ecdsaK/ecdsaR stub registrations would just bloat PXE's
+   * class registry. If a consumer needs to simulate txs from a schnorr or
+   * ecdsa account, override this method again and call `super.initStubClasses()`.
+   */
+  override async initStubClasses(): Promise<void> {
+    const artifact = SimulatedSchnorrInitializerlessAccountContractArtifact;
+    await this.pxe.registerContractClass(artifact);
+    const { id } = await getContractClassFromArtifact(artifact);
+    this.stubClassIds.set(INITIALIZERLESS_TYPE, id);
   }
 
   /**

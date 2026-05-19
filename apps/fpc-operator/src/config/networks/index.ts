@@ -19,7 +19,7 @@ export interface NetworkConfig {
 const modules = import.meta.glob<{ default: NetworkConfig }>("./*.json", { eager: true });
 
 /** Preference order; unknown ids sort alphabetically at the end. */
-const PREFERRED_ORDER = ["local", "testnet"];
+const PREFERRED_ORDER = ["local", "nextnet", "testnet"];
 
 const NETWORKS: NetworkConfig[] = Object.values(modules)
   .map((m) => m.default)

@@ -38,11 +38,14 @@ describe("FPC getters", () => {
 
   beforeAll(async () => {
     // Deploy token
-    const {
-      receipt: { contract: rawToken },
-    } = await TokenContract.deploy(ctx.wallet, ctx.admin, "GetterToken", "GT", 18).send({
+    const { contract: rawToken } = await TokenContract.deploy(
+      ctx.wallet,
+      ctx.admin,
+      "GetterToken",
+      "GT",
+      18,
+    ).send({
       from: ctx.admin,
-      wait: { returnReceipt: true },
     });
     token = rawToken;
 

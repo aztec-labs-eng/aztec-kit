@@ -42,6 +42,35 @@ import {
 } from "@aztec/telemetry-client";
 import { getGenesisValues } from "@aztec/world-state/testing";
 import { AnvilTestWatcher } from "@aztec/aztec/testing";
+import { CppPublicTxSimulator } from "@aztec/simulator/server";
+
+// v5 routes every public-tx simulation through `@aztec/native`'s native AVM
+// (NAPI BlockingCall on dedicated std::threads). On macOS arm64 inside a
+// vitest fork worker, the native AVM crashes the worker with SIGBUS — a
+// memory-access fault from inside the C++ code, confirmed via patched
+// `emitUnexpectedExit` showing `signal=SIGBUS`. The same call hangs (but
+// doesn't crash) in direct `node`, so this is a fork()-context-specific
+// upstream bug in `@aztec/native`. Vitest 4 / pool config / Node flags
+// can't reach that code path.
+//
+// `CppPublicTxSimulator extends PublicTxSimulator` and the base class already
+// ships a pure-TS `simulate(tx)` method (used in v4 and still in v5, just no
+// longer on the default factory path). We replace the override on
+// `CppPublicTxSimulator.prototype` with one that delegates to the TS grandparent,
+// so `Measured*` / `Telemetry*` subclasses' `super.simulate(tx)` lands on TS.
+// All telemetry + measurement layers still run; only the AVM engine changes.
+// This file is test-only — never imported by deployed app code.
+const __PublicTxSimulatorProto = Object.getPrototypeOf(CppPublicTxSimulator.prototype) as {
+  simulate: (tx: unknown) => Promise<unknown>;
+};
+const __tsSimulate = __PublicTxSimulatorProto.simulate;
+(
+  CppPublicTxSimulator.prototype as unknown as {
+    simulate: (tx: unknown) => Promise<unknown>;
+  }
+).simulate = function (this: unknown, tx) {
+  return __tsSimulate.call(this, tx);
+};
 import { type ChildProcess } from "node:child_process";
 import { createWriteStream } from "node:fs";
 import { mkdir, mkdtemp, rm } from "node:fs/promises";
@@ -122,7 +151,7 @@ export async function setupLocalNetwork(opts: LocalNetworkOptions = {}): Promise
 
   // ── 4. Genesis ─────────────────────────────────────────────────────
   const fundedAddresses = opts.fundedAddresses ?? [];
-  const { genesisArchiveRoot, prefilledPublicData, fundingNeeded } = await getGenesisValues(
+  const { genesisArchiveRoot, genesis, fundingNeeded } = await getGenesisValues(
     fundedAddresses,
     opts.initialAccountFeeJuice,
   );
@@ -141,7 +170,10 @@ export async function setupLocalNetwork(opts: LocalNetworkOptions = {}): Promise
     feeJuicePortalInitialBalance: fundingNeeded,
     realVerifier: false,
   });
-  config.l1Contracts = deployL1.l1ContractAddresses;
+  // v5 flattened the L1 addresses onto `AztecNodeConfig` (via L1ReaderConfig
+  // extending L1ContractAddresses), so we spread them rather than nesting
+  // under a `l1Contracts` key.
+  Object.assign(config, deployL1.l1ContractAddresses);
   config.rollupVersion = deployL1.rollupVersion;
 
   // ── 6. Watcher ─────────────────────────────────────────────────────
@@ -158,7 +190,7 @@ export async function setupLocalNetwork(opts: LocalNetworkOptions = {}): Promise
   const node = await AztecNodeService.createAndSync(
     config,
     { telemetry, dateProvider },
-    { prefilledPublicData },
+    { genesis },
   );
 
   const stop = async () => {

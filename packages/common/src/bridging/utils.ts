@@ -7,6 +7,7 @@
  * `process.env`.
  */
 import type { AztecNode } from "@aztec/aztec.js/node";
+import type { AztecNodeDebug } from "@aztec/stdlib/interfaces/client";
 import type { AztecAddress } from "@aztec/aztec.js/addresses";
 import { L1FeeJuicePortalManager } from "@aztec/aztec.js/ethereum";
 import { isL1ToL2MessageReady } from "@aztec/aztec.js/messaging";
@@ -171,12 +172,17 @@ export async function advanceL1ToL2Message(
     import("@aztec/aztec/testing"),
   ]);
   const nodeDebug = createAztecNodeDebugClient(nodeUrl);
+  // v5's `warpL2TimeAtLeastBy` wants `AztecNode & AztecNodeDebug` (it reads
+  // the current L1 timestamp via the regular API before warping). Both
+  // clients target the same URL and expose methods as own properties on the
+  // rpc proxy, so a shallow merge is safe.
+  const fullNode = Object.assign({}, node, nodeDebug) as AztecNode & AztecNodeDebug;
   const cheatCodes = await CheatCodes.create([l1RpcUrl], node, new DateProvider());
 
   const deadline = Date.now() + timeoutMs;
   while (Date.now() < deadline) {
     if (await isL1ToL2MessageReady(node, messageHash)) return;
-    await cheatCodes.warpL2TimeAtLeastBy(nodeDebug, WARP_BY_SECONDS);
+    await cheatCodes.warpL2TimeAtLeastBy(fullNode, WARP_BY_SECONDS);
     await new Promise((r) => setTimeout(r, POLL_INTERVAL_MS));
   }
   throw new Error(`L1→L2 message ${messageHash.toString()} did not become available in time`);

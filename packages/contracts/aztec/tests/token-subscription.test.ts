@@ -33,11 +33,14 @@ describe("Token transfer subscription (multi-use)", () => {
   let privateHasPublicCall: boolean;
 
   beforeAll(async () => {
-    const {
-      receipt: { contract: rawToken, instance: tokenInstance },
-    } = await TokenContract.deploy(ctx.wallet, ctx.admin, "TestToken", "TT", 18).send({
+    const { contract: rawToken, instance: tokenInstance } = await TokenContract.deploy(
+      ctx.wallet,
+      ctx.admin,
+      "TestToken",
+      "TT",
+      18,
+    ).send({
       from: ctx.admin,
-      wait: { returnReceipt: true },
     });
     token = rawToken;
 
@@ -175,11 +178,14 @@ describe("Public token transfer subscription", () => {
   let publicHasPublicCall: boolean;
 
   beforeAll(async () => {
-    const {
-      receipt: { contract: rawToken },
-    } = await TokenContract.deploy(ctx.wallet, ctx.admin, "PublicToken", "PT", 18).send({
+    const { contract: rawToken } = await TokenContract.deploy(
+      ctx.wallet,
+      ctx.admin,
+      "PublicToken",
+      "PT",
+      18,
+    ).send({
       from: ctx.admin,
-      wait: { returnReceipt: true },
     });
     token = rawToken;
 

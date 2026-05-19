@@ -129,11 +129,8 @@ export async function setupTestContext(): Promise<FPCTestContext> {
   const instance = await deployMethod.getInstance();
   await wallet.registerContract(instance, SubscriptionFPC.artifact, FPC_SECRET_KEY);
 
-  const {
-    receipt: { contract: rawFpc },
-  } = await deployMethod.send({
+  const { contract: rawFpc } = await deployMethod.send({
     from: admin,
-    wait: { returnReceipt: true },
   });
   const fpc = new SubscriptionFPC(rawFpc);
 

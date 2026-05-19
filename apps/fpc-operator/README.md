@@ -8,7 +8,7 @@ Operator dashboard for deploying and running a [SubscriptionFPC](../../packages/
 yarn workspace @aztec-kit/fpc-operator dev
 ```
 
-Requires an Aztec node (local sandbox or testnet RPC).
+Requires an Aztec node (local sandbox or testnet/nextnet RPC).
 
 ## UI
 
@@ -19,14 +19,14 @@ Requires an Aztec node (local sandbox or testnet RPC).
 
 ## Scripts
 
-All run with `yarn workspace @aztec-kit/fpc-operator <name>`. Each accepts `--network local|testnet`.
+All run with `yarn workspace @aztec-kit/fpc-operator <name>`. Each accepts `--network local|testnet|nextnet`.
 
 | Script                   | Purpose                                                                                                                                                 |
 | ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `deploy-admin:<network>` | Deploy the FPC-admin schnorr account. Local: SponsoredFPC pays. Testnet: bridges FJ + claims in the deploy tx.                                          |
 | `deploy-fpc:<network>`   | Deploy the SubscriptionFPC contract, then bridge FJ to it so it can sponsor gas. Writes a gitignored backup JSON to `backups/<network>.fpc-admin.json`. |
 
-Run via `yarn setup:local` / `yarn setup:testnet` at the repo root (orchestrates admins + contracts + FPC + sign_ups).
+Run via `yarn setup:local` / `yarn setup:testnet` / `yarn setup:nextnet` at the repo root (orchestrates admins + contracts + FPC + sign_ups).
 
 ## Env vars
 
