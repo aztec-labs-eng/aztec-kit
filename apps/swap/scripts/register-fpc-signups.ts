@@ -37,7 +37,7 @@ import { ProofOfPasswordContractArtifact } from "@aztec-kit/contracts-aztec/arti
 import { AMMContractArtifact } from "@aztec-kit/contracts-aztec/artifacts/AMM";
 import { TokenContractArtifact } from "@aztec-kit/contracts-aztec/artifacts/Token";
 import { SubscriptionFPC, fpcSubscribeOverhead } from "@aztec-kit/contracts-aztec/subscription-fpc";
-import { Gas } from "@aztec/stdlib/gas";
+import { Gas, ManaUsageEstimate } from "@aztec/stdlib/gas";
 import {
   fetchFeeStats,
   computeMaxFeeFromP75,
@@ -411,14 +411,17 @@ async function pickSignupParams(params: {
     } catch (err) {
       const reason = err instanceof Error ? err.message : String(err);
       console.error(
-        `  clustec P75 fetch failed (${reason}); falling back to node min fees × ${CURRENT_FEE_FALLBACK_MULTIPLIER}`,
+        `  clustec P75 fetch failed (${reason}); falling back to node predicted min fees × ${CURRENT_FEE_FALLBACK_MULTIPLIER}`,
       );
-      const minFees = await node.getCurrentMinFees();
+      const predicted = await node.getPredictedMinFees(ManaUsageEstimate.Limit);
+      const worst = predicted.length
+        ? predicted.reduce((acc, f) => (f.feePerL2Gas > acc.feePerL2Gas ? f : acc))
+        : await node.getCurrentMinFees();
       maxFee = computeMaxFeeFromCurrent(
         subscribeGas,
         zeroTeardown,
-        BigInt(minFees.feePerDaGas),
-        BigInt(minFees.feePerL2Gas),
+        BigInt(worst.feePerDaGas),
+        BigInt(worst.feePerL2Gas),
         CURRENT_FEE_FALLBACK_MULTIPLIER,
       );
     }
