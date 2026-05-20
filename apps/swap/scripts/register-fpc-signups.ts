@@ -42,6 +42,7 @@ import {
   fetchFeeStats,
   computeMaxFeeFromP75,
   computeMaxFeeFromCurrent,
+  fetchMaxBlockGasFees,
 } from "@aztec-kit/common/fees";
 
 import {
@@ -62,12 +63,14 @@ import type { EmbeddedWallet } from "@aztec/wallets/embedded";
 const P75_BLOCK_RANGE = 2000;
 const P75_MULTIPLIER = 2;
 /**
- * Multiplier applied when we fall back to the node's current min fees (clustec
- * indexer unavailable). The P75 already accounts for historical spread so 2×
- * is enough; current min fees are the floor right now with no headroom, so we
- * need a much wider buffer. Matches the 10× used by the e2e local flow.
+ * Range and multiplier for the node-walked historical fallback used when no
+ * clustec indexer is available (e.g. nextnet). We take the `max` of
+ * `header.globalVariables.gasFees` across the last N blocks as a proxy for
+ * the worst-case `maxFeesPerGas` the wallet will commit. `× 2` matches the
+ * testnet P75 multiplier — start small, bump if the assertion still fires.
  */
-const CURRENT_FEE_FALLBACK_MULTIPLIER = 10;
+const HISTORICAL_BLOCK_RANGE = 1000;
+const HISTORICAL_FEE_MULTIPLIER = 2;
 
 /** Default sponsorship policy; individual specs can override any field. */
 const SIGNUP_POLICY = {
@@ -411,15 +414,18 @@ async function pickSignupParams(params: {
     } catch (err) {
       const reason = err instanceof Error ? err.message : String(err);
       console.error(
-        `  clustec P75 fetch failed (${reason}); falling back to node min fees × ${CURRENT_FEE_FALLBACK_MULTIPLIER}`,
+        `  clustec fetch failed (${reason}); falling back to node-walked max block gasFees over last ${HISTORICAL_BLOCK_RANGE} blocks × ${HISTORICAL_FEE_MULTIPLIER}`,
       );
-      const minFees = await node.getCurrentMinFees();
+      const peak = await fetchMaxBlockGasFees(node, HISTORICAL_BLOCK_RANGE);
+      console.error(
+        `  peak gasFees over blocks ${peak.fromBlock}..${peak.toBlock} (n=${peak.sampleSize}): feePerDaGas=${peak.feePerDaGas} feePerL2Gas=${peak.feePerL2Gas}`,
+      );
       maxFee = computeMaxFeeFromCurrent(
         subscribeGas,
         zeroTeardown,
-        BigInt(minFees.feePerDaGas),
-        BigInt(minFees.feePerL2Gas),
-        CURRENT_FEE_FALLBACK_MULTIPLIER,
+        peak.feePerDaGas,
+        peak.feePerL2Gas,
+        HISTORICAL_FEE_MULTIPLIER,
       );
     }
   }

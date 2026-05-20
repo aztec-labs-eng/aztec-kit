@@ -1,26 +1,26 @@
 {
   "id": "nextnet",
-  "nodeUrl": "https://aztec-nextnet.alexghr.me",
+  "nodeUrl": "https://nextnet.aztec-labs.com",
   "chainId": "11155111",
   "rollupVersion": "960120478",
   "contracts": {
-    "goCoin": "0x14845fb4ebed07e994f2e245ed945dcdf72dd1cf29188f047b1d65dbb02ac5c5",
-    "goCoinPremium": "0x24f7125f34ea6ec014a87ccdf40317fe0df0983d7499f91a024f6f655b232cce",
-    "amm": "0x018d8e0f8ff1e173b754a4e987b5ba31f99302157197fb196110f032ae20189a",
-    "liquidityToken": "0x2c0f747dca1b89aaa37ac38ff506f8f56832f405cce941372d639a7f569bd3e5",
-    "pop": "0x09c264ef8a38484646049258f1010ef25cc00856d347d08445432600ffc15cd0",
+    "goCoin": "0x2176092c60b28822d821aae00b6a9c452d12684bc8585c9d12255260e33a2d93",
+    "goCoinPremium": "0x0f9a9271ec8a5a9f9d2adfc443d09701f2de9066c92c4935347ea5db973d79e2",
+    "amm": "0x204d93123d73aa464511f81392f708614a7ccdb6fdf602d0a0f4006bc163c2dd",
+    "liquidityToken": "0x2db813553ef42d961a7cffd011f9b7976cbcf597d576e4260d7d8cc6a0627de4",
+    "pop": "0x1878d43be1109f18345a648763eda61669938a8be2965f693258efa9aae148a2",
     "sponsoredFPC": "0x1114a201e7b0680b2b75bc47be3abebbc54caf83f471e12b66c8a1abfa4478dd",
-    "salt": "0x0000000000000000000000000000000000000000000000000000000000000000"
+    "salt": "0x000000000000000000000000000000000000000000000000000000000000007b"
   },
   "deployer": {
-    "address": "0x092c879b37132316e01570ee32911e17c543d48c2e3d9eca5e7a1fea4846a7da"
+    "address": "0x255d5ebb7dc80fa97a9849935852de9d9984bca5e53a69ba9439b5ebe925f875"
   },
-  "deployedAt": "2026-05-19T09:06:49.754Z",
+  "deployedAt": "2026-05-20T13:27:46.845Z",
   "subscriptionFPC": {
-    "address": "0x0b70cef299b052b950147adeafbabd3d9e30835bdec28428812eed6f3cc2aa25",
+    "address": "0x041f6084335f0e0c0849d6e32ab0b051c0599a9c5e4752a9b622ac500e396df8",
     "secretKey": "0x000000000000000000000000000000000000000000000000000000000000002c",
     "functions": {
-      "0x09c264ef8a38484646049258f1010ef25cc00856d347d08445432600ffc15cd0": {
+      "0x1878d43be1109f18345a648763eda61669938a8be2965f693258efa9aae148a2": {
         "0xa539bd29": {
           "configIndex": 0,
           "gasLimits": {
@@ -30,7 +30,7 @@
           "hasPublicCall": true
         }
       },
-      "0x018d8e0f8ff1e173b754a4e987b5ba31f99302157197fb196110f032ae20189a": {
+      "0x204d93123d73aa464511f81392f708614a7ccdb6fdf602d0a0f4006bc163c2dd": {
         "0xfd228669": {
           "configIndex": 0,
           "gasLimits": {
@@ -40,7 +40,7 @@
           "hasPublicCall": true
         }
       },
-      "0x14845fb4ebed07e994f2e245ed945dcdf72dd1cf29188f047b1d65dbb02ac5c5": {
+      "0x2176092c60b28822d821aae00b6a9c452d12684bc8585c9d12255260e33a2d93": {
         "0x859e4f61": {
           "configIndex": 0,
           "gasLimits": {
@@ -50,7 +50,7 @@
           "hasPublicCall": false
         }
       },
-      "0x24f7125f34ea6ec014a87ccdf40317fe0df0983d7499f91a024f6f655b232cce": {
+      "0x0f9a9271ec8a5a9f9d2adfc443d09701f2de9066c92c4935347ea5db973d79e2": {
         "0x859e4f61": {
           "configIndex": 0,
           "gasLimits": {

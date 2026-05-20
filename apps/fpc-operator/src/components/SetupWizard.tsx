@@ -25,7 +25,7 @@ interface SetupWizardProps {
 }
 
 export function SetupWizard({ onComplete, onFpcAddressComputed }: SetupWizardProps) {
-  const { status, wallet, address, node } = useWallet();
+  const { status, wallet, address, node, error: walletError } = useWallet();
   const { activeNetwork } = useNetwork();
   const [activeStep, setActiveStep] = useState(0);
   const [fpcAddress, setFpcAddress] = useState<string | null>(null);
@@ -122,7 +122,26 @@ export function SetupWizard({ onComplete, onFpcAddressComputed }: SetupWizardPro
                 {status === "loading" ? "Creating embedded wallet..." : "Computing FPC address..."}
               </Typography>
             </Box>
-            {status === "error" && <Alert severity="error">Failed to initialize wallet</Alert>}
+            {status === "error" && (
+              <Alert severity="error">
+                Failed to initialize wallet
+                {walletError && (
+                  <Box
+                    component="pre"
+                    sx={{
+                      mt: 1,
+                      mb: 0,
+                      whiteSpace: "pre-wrap",
+                      wordBreak: "break-word",
+                      fontSize: "0.75rem",
+                      fontFamily: "monospace",
+                    }}
+                  >
+                    {walletError}
+                  </Box>
+                )}
+              </Alert>
+            )}
           </StepContent>
         </Step>
 

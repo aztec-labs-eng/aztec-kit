@@ -158,6 +158,14 @@ jobs:
       # PRs → development. `vercel build` has no "development" target, so for
       # PR pulls we rename the dropped .env.development.local to .env.preview.local
       # so the subsequent preview build picks it up.
+      #
+      # We ALSO override Vercel's git ref detection for PR deploys. Without
+      # this, Vercel reads CI env vars on `pull_request_target` and decides
+      # the deployment's branch from the PR base (`next`), then routes the
+      # build through its `next`-branch preview alias and pulls Preview-scope
+      # env vars server-side — the very thing we're trying to avoid. Pinning
+      # `VERCEL_GIT_COMMIT_REF` to a per-PR string detaches the deployment
+      # from any branch alias and gives each PR its own unique preview URL.
       - name: Resolve Vercel environment slot
         run: |
           if [ "${{ github.event_name }}" == "push" ] && [ "${{ github.ref }}" == "refs/heads/main" ]; then
@@ -168,6 +176,10 @@ jobs:
             echo "VERCEL_ENV_SLOT=preview" >> "$GITHUB_ENV"
           else
             echo "VERCEL_ENV_SLOT=development" >> "$GITHUB_ENV"
+          fi
+          if [ "${{ github.event_name }}" == "pull_request_target" ]; then
+            echo "VERCEL_GIT_COMMIT_REF=pr-${{ github.event.pull_request.number }}" >> "$GITHUB_ENV"
+            echo "VERCEL_GIT_COMMIT_SHA=${{ github.event.pull_request.head.sha }}" >> "$GITHUB_ENV"
           fi
 
       # ── Bridge deployment ──────────────────────────────────────────────

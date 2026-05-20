@@ -8,7 +8,13 @@ export default defineConfig(({ mode }) => {
   return {
     base: "./",
     logLevel: process.env.CI ? "error" : undefined,
-    server: { port: 5174 },
+    // Pin the port + fail rather than auto-bump. OPFS storage is keyed by
+    // origin (scheme+host+port); a drifting port means the wallet writes a
+    // sqlite OPFS file under :5174 one session and tries to read it under
+    // :5175 the next, ending up with stale or unreadable stores. `strictPort`
+    // makes Vite refuse to start on a taken port instead of silently picking
+    // another one.
+    server: { port: 5174, strictPort: true },
     resolve: {
       alias: {
         "@aztec-kit/embedded-wallet/ui": resolve(
