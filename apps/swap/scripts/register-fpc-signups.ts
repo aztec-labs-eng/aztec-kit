@@ -65,9 +65,9 @@ const P75_MULTIPLIER = 2;
  * Multiplier applied when we fall back to the node's current min fees (clustec
  * indexer unavailable). The P75 already accounts for historical spread so 2×
  * is enough; current min fees are the floor right now with no headroom, so we
- * need a much wider buffer. Matches the 10× used by the e2e local flow.
+ * need a much wider buffer.
  */
-const CURRENT_FEE_FALLBACK_MULTIPLIER = 10;
+const CURRENT_FEE_FALLBACK_MULTIPLIER = 20;
 
 /** Default sponsorship policy; individual specs can override any field. */
 const SIGNUP_POLICY = {
