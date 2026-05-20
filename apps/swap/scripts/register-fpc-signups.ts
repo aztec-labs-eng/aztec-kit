@@ -37,11 +37,12 @@ import { ProofOfPasswordContractArtifact } from "@aztec-kit/contracts-aztec/arti
 import { AMMContractArtifact } from "@aztec-kit/contracts-aztec/artifacts/AMM";
 import { TokenContractArtifact } from "@aztec-kit/contracts-aztec/artifacts/Token";
 import { SubscriptionFPC, fpcSubscribeOverhead } from "@aztec-kit/contracts-aztec/subscription-fpc";
-import { Gas, ManaUsageEstimate } from "@aztec/stdlib/gas";
+import { Gas } from "@aztec/stdlib/gas";
 import {
   fetchFeeStats,
   computeMaxFeeFromP75,
   computeMaxFeeFromCurrent,
+  fetchMaxBlockGasFees,
 } from "@aztec-kit/common/fees";
 
 import {
@@ -62,12 +63,14 @@ import type { EmbeddedWallet } from "@aztec/wallets/embedded";
 const P75_BLOCK_RANGE = 2000;
 const P75_MULTIPLIER = 2;
 /**
- * Multiplier applied when we fall back to the node's current min fees (clustec
- * indexer unavailable). The P75 already accounts for historical spread so 2×
- * is enough; current min fees are the floor right now with no headroom, so we
- * need a much wider buffer.
+ * Range and multiplier for the node-walked historical fallback used when no
+ * clustec indexer is available (e.g. nextnet). We take the `max` of
+ * `header.globalVariables.gasFees` across the last N blocks as a proxy for
+ * the worst-case `maxFeesPerGas` the wallet will commit. `× 2` matches the
+ * testnet P75 multiplier — start small, bump if the assertion still fires.
  */
-const CURRENT_FEE_FALLBACK_MULTIPLIER = 20;
+const HISTORICAL_BLOCK_RANGE = 1000;
+const HISTORICAL_FEE_MULTIPLIER = 2;
 
 /** Default sponsorship policy; individual specs can override any field. */
 const SIGNUP_POLICY = {
@@ -411,18 +414,18 @@ async function pickSignupParams(params: {
     } catch (err) {
       const reason = err instanceof Error ? err.message : String(err);
       console.error(
-        `  clustec P75 fetch failed (${reason}); falling back to node predicted min fees × ${CURRENT_FEE_FALLBACK_MULTIPLIER}`,
+        `  clustec fetch failed (${reason}); falling back to node-walked max block gasFees over last ${HISTORICAL_BLOCK_RANGE} blocks × ${HISTORICAL_FEE_MULTIPLIER}`,
       );
-      const predicted = await node.getPredictedMinFees(ManaUsageEstimate.Limit);
-      const worst = predicted.length
-        ? predicted.reduce((acc, f) => (f.feePerL2Gas > acc.feePerL2Gas ? f : acc))
-        : await node.getCurrentMinFees();
+      const peak = await fetchMaxBlockGasFees(node, HISTORICAL_BLOCK_RANGE);
+      console.error(
+        `  peak gasFees over blocks ${peak.fromBlock}..${peak.toBlock} (n=${peak.sampleSize}): feePerDaGas=${peak.feePerDaGas} feePerL2Gas=${peak.feePerL2Gas}`,
+      );
       maxFee = computeMaxFeeFromCurrent(
         subscribeGas,
         zeroTeardown,
-        BigInt(worst.feePerDaGas),
-        BigInt(worst.feePerL2Gas),
-        CURRENT_FEE_FALLBACK_MULTIPLIER,
+        peak.feePerDaGas,
+        peak.feePerL2Gas,
+        HISTORICAL_FEE_MULTIPLIER,
       );
     }
   }

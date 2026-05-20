@@ -124,7 +124,10 @@ export function aztecVitePlugin(options: AztecVitePluginOptions = {}): Plugin[] 
     },
   };
 
-  const plugins: Plugin[] = [configPlugin, nodePolyfillsFix({ include: ["buffer", "path"] })];
+  const plugins: Plugin[] = [
+    configPlugin,
+    nodePolyfillsFix({ include: ["buffer", "path", "tty"] }),
+  ];
 
   if (isLegacyVite) {
     plugins.push(wasmContentTypePlugin());
