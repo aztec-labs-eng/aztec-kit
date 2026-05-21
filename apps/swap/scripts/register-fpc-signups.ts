@@ -29,6 +29,7 @@ import { Contract } from "@aztec/aztec.js/contracts";
 import { AztecAddress } from "@aztec/stdlib/aztec-address";
 import { FunctionSelector } from "@aztec/stdlib/abi";
 import { Fr } from "@aztec/foundation/curves/bn254";
+import { TxStatus } from "@aztec/stdlib/tx";
 import {
   SubscriptionFPCContract,
   SubscriptionFPCContractArtifact,
@@ -217,7 +218,14 @@ async function main() {
         maxFee,
         signup.maxUsers,
       )
-      .send({ from: admin, fee: { paymentMethod } });
+      .send({
+        from: admin,
+        fee: { paymentMethod },
+        // Upstream `EmbeddedWallet.sendTx`'s "default to PROPOSED" is a dead
+        // mutation; `waitForTx` falls back to CHECKPOINTED otherwise. Pin
+        // explicitly so scripts don't block on L1 publication.
+        wait: { waitForStatus: TxStatus.PROPOSED, timeout: 120 },
+      });
 
     console.error(
       `  sign_up ok — maxFee=${maxFee} gasLimits=${gasLimits.daGas}/${gasLimits.l2Gas} hasPublicCall=${hasPublicCall}`,

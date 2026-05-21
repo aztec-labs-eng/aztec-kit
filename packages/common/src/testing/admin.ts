@@ -11,6 +11,7 @@ import { Fr } from "@aztec/foundation/curves/bn254";
 import { ContractInitializationStatus } from "@aztec/aztec.js/wallet";
 import { FeeJuiceContract } from "@aztec/aztec.js/protocol";
 import { FeeJuicePaymentMethodWithClaim } from "@aztec/aztec.js/fee";
+import { TxStatus } from "@aztec/stdlib/tx";
 import { NO_FROM } from "@aztec/aztec.js/account";
 import { getSchnorrAccountContractAddress } from "@aztec/accounts/schnorr";
 
@@ -165,7 +166,10 @@ export async function deployAdmin(params: DeployAdminParams): Promise<AztecAddre
       fee: { paymentMethod: sponsoredPaymentMethod },
       skipClassPublication: true,
       skipInstancePublication: true,
-      wait: { timeout: 120 },
+      // Pin PROPOSED — upstream's EmbeddedWallet default-to-PROPOSED is dead
+      // code (mutates a local that's never forwarded), so `waitForTx` falls
+      // back to CHECKPOINTED unless we set it explicitly.
+      wait: { waitForStatus: TxStatus.PROPOSED, timeout: 120 },
     });
   } else if (mode === "prefunded") {
     // Admin already holds public FJ (someone bridged + claimed externally —
@@ -177,7 +181,10 @@ export async function deployAdmin(params: DeployAdminParams): Promise<AztecAddre
       from: NO_FROM,
       skipClassPublication: true,
       skipInstancePublication: true,
-      wait: { timeout: 120 },
+      // Pin PROPOSED — upstream's EmbeddedWallet default-to-PROPOSED is dead
+      // code (mutates a local that's never forwarded), so `waitForTx` falls
+      // back to CHECKPOINTED unless we set it explicitly.
+      wait: { waitForStatus: TxStatus.PROPOSED, timeout: 120 },
     });
   } else {
     // bridge
@@ -199,7 +206,10 @@ export async function deployAdmin(params: DeployAdminParams): Promise<AztecAddre
       fee: { paymentMethod: new FeeJuicePaymentMethodWithClaim(adminAddress, claim) },
       skipClassPublication: true,
       skipInstancePublication: true,
-      wait: { timeout: 120 },
+      // Pin PROPOSED — upstream's EmbeddedWallet default-to-PROPOSED is dead
+      // code (mutates a local that's never forwarded), so `waitForTx` falls
+      // back to CHECKPOINTED unless we set it explicitly.
+      wait: { waitForStatus: TxStatus.PROPOSED, timeout: 120 },
     });
   }
 

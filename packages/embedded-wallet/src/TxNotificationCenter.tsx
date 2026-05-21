@@ -33,6 +33,7 @@ interface LivePhaseTiming extends PhaseTiming {
 }
 
 const ACTIVE_PHASE_COLORS: Record<string, string> = {
+  syncing: "#90caf9",
   simulating: "#ce93d8",
   proving: "#f48fb1",
   sending: "#2196f3",
@@ -63,6 +64,7 @@ const formatDurationLong = (ms: number): string => {
 };
 
 const PHASE_LABELS: Record<string, string> = {
+  syncing: "Syncing",
   simulating: "Simulating",
   proving: "Proving",
   sending: "Sending",

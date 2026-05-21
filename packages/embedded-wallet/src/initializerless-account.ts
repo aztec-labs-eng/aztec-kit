@@ -111,11 +111,8 @@ export class SchnorrInitializerlessAuthWitnessProvider implements AuthWitnessPro
 
   async createAuthWit(messageHash: Fr): Promise<AuthWitness> {
     const schnorr = new Schnorr();
-    const signature = await schnorr.constructSignature(
-      messageHash.toBuffer(),
-      this.signingPrivateKey,
-    );
-    return new AuthWitness(messageHash, [...signature.toBuffer()]);
+    const signature = await schnorr.constructSignature(messageHash, this.signingPrivateKey);
+    return new AuthWitness(messageHash, signature.toLimbFields());
   }
 }
 
