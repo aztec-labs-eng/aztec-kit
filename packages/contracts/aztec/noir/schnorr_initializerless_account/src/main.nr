@@ -60,16 +60,22 @@ pub contract SchnorrInitializerlessAccount {
 
         // Safety: The witness is only used as a "magical value" that makes the
         // signature verification below pass.
-        let witness: [Field; 64] = unsafe { get_auth_witness(outer_hash) };
-        let mut signature: [u8; 64] = [0; 64];
-        for i in 0..64 {
-            signature[i] = witness[i] as u8;
-        }
+        //
+        // v5 schnorr verification uses field-element signing with the signature
+        // packed as 4 limbs (s_hi, s_lo, e_hi, e_lo) and the message passed as
+        // a Field, not as 32 BE bytes -- matches upstream `SchnorrAccount`. The
+        // TS-side `createAuthWit` must serialize via `signature.toLimbFields()`
+        // for this to verify.
+        let limbs: [Field; 4] = unsafe { get_auth_witness(outer_hash) };
+        let signature = (
+            std::embedded_curve_ops::EmbeddedCurveScalar::new(limbs[0], limbs[1]),
+            std::embedded_curve_ops::EmbeddedCurveScalar::new(limbs[2], limbs[3]),
+        );
 
         let pub_key =
             std::embedded_curve_ops::EmbeddedCurvePoint { x: public_key.x, y: public_key.y };
 
-        schnorr::verify_signature(pub_key, signature, outer_hash.to_be_bytes::<32>())
+        schnorr::verify_signature(pub_key, signature, outer_hash)
     }
 
     #[external("utility")]
@@ -84,17 +90,16 @@ pub contract SchnorrInitializerlessAccount {
             inner_hash,
         );
 
-        let witness: [Field; 64] = get_auth_witness(message_hash);
-        let mut signature: [u8; 64] = [0; 64];
-        for i in 0..64 {
-            signature[i] = witness[i] as u8;
-        }
+        let limbs: [Field; 4] = get_auth_witness(message_hash);
+        let signature = (
+            std::embedded_curve_ops::EmbeddedCurveScalar::new(limbs[0], limbs[1]),
+            std::embedded_curve_ops::EmbeddedCurveScalar::new(limbs[2], limbs[3]),
+        );
 
         let pub_key =
             std::embedded_curve_ops::EmbeddedCurvePoint { x: public_key.x, y: public_key.y };
 
-        let valid_in_private =
-            schnorr::verify_signature(pub_key, signature, message_hash.to_be_bytes::<32>());
+        let valid_in_private = schnorr::verify_signature(pub_key, signature, message_hash);
         let nullifier = compute_authwit_nullifier(self.address, inner_hash);
         let siloed_nullifier = compute_siloed_nullifier(consumer, nullifier);
         let (low_leaf_preimage, _witness) =

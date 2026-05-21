@@ -412,6 +412,21 @@ export class EmbeddedWallet extends EmbeddedWalletBase {
     };
 
     try {
+      // The PXE created by the embedded-wallet entrypoints runs with
+      // `autoSync: false`, so no other call inside this method will pull a
+      // fresh anchor block on its own. Doing it once here means simulate +
+      // prove + send all share the same view of the chain — and we get to
+      // report the sync as its own progress phase instead of having it
+      // disappear inside the simulation timing breakdown.
+      emit("syncing");
+      const syncStart = Date.now();
+      await this.pxe.sync();
+      phases.push({
+        name: "Sync",
+        duration: Date.now() - syncStart,
+        color: "#90caf9",
+      });
+
       const feeOptions = await this.completeFeeOptions({
         from: opts.from,
         feePayer: executionPayload.feePayer,
@@ -457,7 +472,9 @@ export class EmbeddedWallet extends EmbeddedWalletBase {
         const t = simStats.timings;
         const prepareDuration = simElapsed - t.total;
         if (prepareDuration > 10) breakdown.push({ label: "Prepare", duration: prepareDuration });
-        if (t.sync > 0) breakdown.push({ label: "Sync", duration: t.sync });
+        // `t.sync` is intentionally not surfaced here — with `autoSync: false`
+        // the up-front `this.pxe.sync()` is the only sync that runs and we
+        // report it as its own top-level phase.
         if (t.perFunction.length > 0) {
           const witgenTotal = t.perFunction.reduce((sum, fn) => sum + fn.time, 0);
           breakdown.push({
@@ -520,7 +537,9 @@ export class EmbeddedWallet extends EmbeddedWalletBase {
       const stats = provenTx.stats;
       if (stats?.timings) {
         const t = stats.timings;
-        if (t.sync && t.sync > 0) phases.push({ name: "Sync", duration: t.sync, color: "#90caf9" });
+        // `t.sync` here would only be non-zero if the base layer re-synced;
+        // we've turned `autoSync` off and done one explicit sync at the top
+        // of this method, so any reading here would be 0 and just noise.
         if (t.perFunction?.length > 0) {
           const witgenTotal = t.perFunction.reduce(
             (sum: number, fn: { time: number }) => sum + fn.time,

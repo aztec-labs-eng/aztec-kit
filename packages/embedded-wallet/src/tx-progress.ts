@@ -5,7 +5,14 @@
  * Completed/errored events are persisted to localStorage, scoped by account address.
  */
 
-export type TxPhase = "simulating" | "proving" | "sending" | "mining" | "complete" | "error";
+export type TxPhase =
+  | "syncing"
+  | "simulating"
+  | "proving"
+  | "sending"
+  | "mining"
+  | "complete"
+  | "error";
 
 export interface PhaseTiming {
   name: string;
