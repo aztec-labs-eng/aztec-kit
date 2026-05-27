@@ -1,10 +1,31 @@
 name: Deploy to Vercel
 
+# ─────────────────────────────────────────────────────────────────────────────
+# Two-project Vercel model
+# ─────────────────────────────────────────────────────────────────────────────
+# Each app has TWO Vercel projects, one per long-lived branch:
+#   - `aztec-kit-<app>`      → production = main, preview = PRs against main
+#   - `aztec-kit-<app>-next` → production = next, preview = PRs against next
+#
+# Per-app project IDs are stored as repo secrets:
+#   BRIDGE_PROJECT_ID  / BRIDGE_PROJECT_ID_NEXT
+#   FPC_PROJECT_ID     / FPC_PROJECT_ID_NEXT
+#   SWAP_PROJECT_ID    / SWAP_PROJECT_ID_NEXT
+#
+# Production domains (next.<app>.aztec-labs.com) are configured on the *-next
+# Vercel projects, so prod-slot deploys auto-alias — no manual `vercel alias
+# set` step.
+#
+# This file is the SOURCE OF TRUTH for both branches. `pull_request_target`
+# runs the workflow from the base ref, so PRs targeting `next` run this file
+# from `next`'s checkout — keep both branches' copies of this file in sync.
+# ─────────────────────────────────────────────────────────────────────────────
+
 on:
-  # On push to main, deploy to production unconditionally.
   push:
     branches:
       - main
+      - next
   # On PRs, deploy preview after CI passes. pull_request_target runs in the
   # context of the base repo so it has access to secrets (needed for Vercel
   # deploys + PR comments) — we wait for the CI workflow on the PR head to
@@ -14,7 +35,7 @@ on:
   workflow_dispatch:
     inputs:
       production:
-        description: "Deploy to production"
+        description: "Deploy to production (false → preview deploy on the dispatch ref's project)"
         required: false
         default: true
         type: boolean
@@ -60,7 +81,7 @@ jobs:
             );
 
   wait-for-ci:
-    # Only gate on CI for PRs — push to main and manual dispatch skip this.
+    # Only gate on CI for PRs — push to main/next and manual dispatch skip this.
     needs: [authorize]
     if: github.event_name == 'pull_request_target'
     runs-on: ubuntu-latest
@@ -122,9 +143,9 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     needs: [authorize, wait-for-ci]
-    # On push to main and workflow_dispatch, authorize + wait-for-ci are both
-    # skipped — allow deploy through. On PRs, require wait-for-ci to have
-    # succeeded (which in turn requires authorize to have succeeded).
+    # On push and workflow_dispatch, authorize + wait-for-ci are both skipped
+    # — allow deploy through. On PRs, require wait-for-ci to have succeeded
+    # (which in turn requires authorize to have succeeded).
     if: ${{ always() && (needs.wait-for-ci.result == 'success' || (needs.wait-for-ci.result == 'skipped' && github.event_name != 'pull_request_target')) }}
 
     steps:
@@ -150,18 +171,63 @@ jobs:
       - name: Install Vercel CLI
         run: npm install --global vercel@latest
 
+      # Pick the project-ID set and env slot based on which branch this run
+      # targets. PRs pin to their `base.ref`; push/dispatch pin to `github.ref`.
+      #
+      # branch → project IDs:
+      #   main → BRIDGE_PROJECT_ID / FPC_PROJECT_ID / SWAP_PROJECT_ID
+      #   next → BRIDGE_PROJECT_ID_NEXT / FPC_PROJECT_ID_NEXT / SWAP_PROJECT_ID_NEXT
+      #
+      # event → slot:
+      #   pull_request_target           → preview
+      #   push                          → production (of the branch's project)
+      #   workflow_dispatch (prod=true) → production
+      #   workflow_dispatch (prod=false)→ preview
+      - name: Resolve project IDs and Vercel env slot
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request_target" ]; then
+            BRANCH="${{ github.event.pull_request.base.ref }}"
+          else
+            BRANCH="${GITHUB_REF#refs/heads/}"
+          fi
+
+          case "$BRANCH" in
+            main)
+              echo "BRIDGE_PROJECT_ID_RESOLVED=${{ secrets.BRIDGE_PROJECT_ID }}" >> "$GITHUB_ENV"
+              echo "FPC_PROJECT_ID_RESOLVED=${{ secrets.FPC_PROJECT_ID }}" >> "$GITHUB_ENV"
+              echo "SWAP_PROJECT_ID_RESOLVED=${{ secrets.SWAP_PROJECT_ID }}" >> "$GITHUB_ENV"
+              ;;
+            next)
+              echo "BRIDGE_PROJECT_ID_RESOLVED=${{ secrets.BRIDGE_PROJECT_ID_NEXT }}" >> "$GITHUB_ENV"
+              echo "FPC_PROJECT_ID_RESOLVED=${{ secrets.FPC_PROJECT_ID_NEXT }}" >> "$GITHUB_ENV"
+              echo "SWAP_PROJECT_ID_RESOLVED=${{ secrets.SWAP_PROJECT_ID_NEXT }}" >> "$GITHUB_ENV"
+              ;;
+            *)
+              echo "Unsupported branch for deploy: $BRANCH"
+              exit 1
+              ;;
+          esac
+
+          if [ "${{ github.event_name }}" = "pull_request_target" ]; then
+            echo "VERCEL_ENV_SLOT=preview" >> "$GITHUB_ENV"
+          elif [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.production }}" != "true" ]; then
+            echo "VERCEL_ENV_SLOT=preview" >> "$GITHUB_ENV"
+          else
+            echo "VERCEL_ENV_SLOT=production" >> "$GITHUB_ENV"
+          fi
+
       # ── Bridge deployment ──────────────────────────────────────────────
       - name: Pull Vercel Environment (Bridge)
         env:
-          VERCEL_PROJECT_ID: ${{ secrets.BRIDGE_PROJECT_ID }}
-        run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }} --cwd apps/bridge
+          VERCEL_PROJECT_ID: ${{ env.BRIDGE_PROJECT_ID_RESOLVED }}
+        run: vercel pull --yes --environment=$VERCEL_ENV_SLOT --token=${{ secrets.VERCEL_TOKEN }} --cwd apps/bridge
 
       - name: Build and deploy Bridge
         id: deploy-bridge
         env:
-          VERCEL_PROJECT_ID: ${{ secrets.BRIDGE_PROJECT_ID }}
+          VERCEL_PROJECT_ID: ${{ env.BRIDGE_PROJECT_ID_RESOLVED }}
         run: |
-          if ([ "${{ github.event_name }}" == "push" ] && [ "${{ github.ref }}" == "refs/heads/main" ]) || ([ "${{ github.event_name }}" == "workflow_dispatch" ] && [ "${{ inputs.production }}" == "true" ]); then
+          if [ "$VERCEL_ENV_SLOT" = "production" ]; then
             vercel build --prod --token=${{ secrets.VERCEL_TOKEN }} --cwd apps/bridge
             DEPLOY_URL=$(vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }} --archive=tgz --yes --cwd apps/bridge)
           else
@@ -173,16 +239,16 @@ jobs:
       # ── FPC Operator deployment ────────────────────────────────────────
       - name: Pull Vercel Environment (FPC Operator)
         env:
-          VERCEL_PROJECT_ID: ${{ secrets.FPC_PROJECT_ID }}
-        run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }} --cwd apps/fpc-operator
+          VERCEL_PROJECT_ID: ${{ env.FPC_PROJECT_ID_RESOLVED }}
+        run: vercel pull --yes --environment=$VERCEL_ENV_SLOT --token=${{ secrets.VERCEL_TOKEN }} --cwd apps/fpc-operator
 
       - name: Build and deploy FPC Operator
         id: deploy-fpc
         env:
-          VERCEL_PROJECT_ID: ${{ secrets.FPC_PROJECT_ID }}
+          VERCEL_PROJECT_ID: ${{ env.FPC_PROJECT_ID_RESOLVED }}
           VITE_BRIDGE_URL: ${{ vars.VITE_BRIDGE_URL }}
         run: |
-          if ([ "${{ github.event_name }}" == "push" ] && [ "${{ github.ref }}" == "refs/heads/main" ]) || ([ "${{ github.event_name }}" == "workflow_dispatch" ] && [ "${{ inputs.production }}" == "true" ]); then
+          if [ "$VERCEL_ENV_SLOT" = "production" ]; then
             vercel build --prod --token=${{ secrets.VERCEL_TOKEN }} --cwd apps/fpc-operator
             DEPLOY_URL=$(vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }} --archive=tgz --yes --cwd apps/fpc-operator)
           else
@@ -194,16 +260,16 @@ jobs:
       # ── Swap deployment ────────────────────────────────────────────────
       - name: Pull Vercel Environment (Swap)
         env:
-          VERCEL_PROJECT_ID: ${{ secrets.SWAP_PROJECT_ID }}
-        run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }} --cwd apps/swap
+          VERCEL_PROJECT_ID: ${{ env.SWAP_PROJECT_ID_RESOLVED }}
+        run: vercel pull --yes --environment=$VERCEL_ENV_SLOT --token=${{ secrets.VERCEL_TOKEN }} --cwd apps/swap
 
       - name: Build and deploy Swap
         id: deploy-swap
         env:
-          VERCEL_PROJECT_ID: ${{ secrets.SWAP_PROJECT_ID }}
+          VERCEL_PROJECT_ID: ${{ env.SWAP_PROJECT_ID_RESOLVED }}
           VITE_WEB_WALLET_URL: ${{ vars.VITE_WEB_WALLET_URL }}
         run: |
-          if ([ "${{ github.event_name }}" == "push" ] && [ "${{ github.ref }}" == "refs/heads/main" ]) || ([ "${{ github.event_name }}" == "workflow_dispatch" ] && [ "${{ inputs.production }}" == "true" ]); then
+          if [ "$VERCEL_ENV_SLOT" = "production" ]; then
             vercel build --prod --token=${{ secrets.VERCEL_TOKEN }} --cwd apps/swap
             DEPLOY_URL=$(vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }} --archive=tgz --yes --cwd apps/swap)
           else
