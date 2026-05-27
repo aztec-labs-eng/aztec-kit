@@ -54,7 +54,10 @@ export async function computeSigningKeyImmutablesHash(key: SigningPublicKey): Pr
   return immutables.computeImmutablesHash(await serializeSigningKey(key));
 }
 
-export async function createSigningKeyCapsule(contractAddress: AztecAddress, key: SigningPublicKey) {
+export async function createSigningKeyCapsule(
+  contractAddress: AztecAddress,
+  key: SigningPublicKey,
+) {
   return immutables.createImmutablesCapsule(contractAddress, await serializeSigningKey(key));
 }
 
