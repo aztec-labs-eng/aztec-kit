@@ -1,8 +1,26 @@
 mod public_key;
 
-use aztec::macros::aztec;
+use aztec::{
+    macros::{aztec, AztecConfig},
+    messages::{
+        discovery::{ComputeNoteHash, ComputeNoteNullifier, CustomMessageHandler},
+        processing::offchain::OffchainInboxSync,
+    },
+    protocol::address::AztecAddress,
+};
 
-#[aztec]
+/// Empty override to opt-out of state syncing. This contract does not hold private state,
+/// so runnning the sync process just results in unnecessary RPC calls
+unconstrained fn no_sync(
+    _contract_address: AztecAddress,
+    _compute_note_hash: ComputeNoteHash,
+    _compute_note_nullifier: ComputeNoteNullifier,
+    _process_custom_message: Option<CustomMessageHandler>,
+    _offchain_inbox_sync: Option<OffchainInboxSync>,
+    _scope: AztecAddress,
+) {}
+
+#[aztec(AztecConfig::new().custom_sync_state(crate::no_sync))]
 pub contract SchnorrInitializerlessAccount {
     use aztec::{
         authwit::{
@@ -31,8 +49,8 @@ pub contract SchnorrInitializerlessAccount {
     }
 
     #[external("utility")]
-    unconstrained fn store_immutables(capsule_data: [Field; 3]) {
-        Immutables::store(self.context, capsule_data);
+    unconstrained fn store_immutables(serialized_immutables: [Field; 2]) {
+        Immutables::store(self.context, serialized_immutables);
     }
 
     #[external("private")]
@@ -116,9 +134,4 @@ pub contract SchnorrInitializerlessAccount {
         let public_key = immutables.public_key;
         (public_key.x, public_key.y)
     }
-
-    /// Empty override to opt-out of state syncing. This contract does not hold private state,
-    /// so runnning the sync process just results in unnecessary RPC calls
-    #[external("utility")]
-    unconstrained fn sync_state(scope: AztecAddress) {}
 }

@@ -16,18 +16,19 @@
 /// ## What It Generates
 ///
 /// - `Serialize` and `Deserialize` implementations (if not already implemented)
-/// - `Immutables::init(context: &mut PrivateContext)` - Loads and verifies immutables against contract salt
+/// - `Immutables::init(context: &mut PrivateContext)` - Loads and verifies immutables against `instance.immutables_hash`
 /// - `Immutables::init_unconstrained(context: UtilityContext)` - Unconstrained load without verification
 ///
 /// ## Verification Method
 ///
-/// The capsule stores a flat array: `[actual_salt, field_0, field_1, ...]` where `field_N` are the
-/// serialized immutable fields. Verification:
+/// The capsule stores the serialized immutable fields: `[field_0, field_1, ...]`. Verification:
 /// 1. Load capsule data from storage
-/// 2. Compute `salt = poseidon2_hash(capsule_data)`
-/// 3. Verify `salt == instance.salt`
+/// 2. Compute `expected = poseidon2_hash(capsule_data)`
+/// 3. Verify `expected == instance.immutables_hash`
 ///
-/// This allows contracts with initializers to use immutables without conflicting with `initialization_hash`.
+/// `immutables_hash` is a first-class field on `ContractInstance` (AZIP-9) that's folded into
+/// `salted_initialization_hash` during address derivation, so the contract address commits to
+/// the immutables without abusing `salt`.
 ///
 /// ## Requirements
 ///
@@ -60,30 +61,20 @@ pub comptime fn immutables(s: TypeDefinition) -> Quoted {
             pub fn init(context: &mut aztec::context::PrivateContext) -> Immutables {
                 let address = context.this_address();
 
-                // Safety: capsule_data is verified against salt committed in contract address
-                let capsule_data: [Field; 1 + $serialized_len] = unsafe {
+                // Safety: capsule_data is verified against immutables_hash committed in contract address
+                let serialized_immutables: [Field; $serialized_len] = unsafe {
                     aztec::oracle::capsules::load(address, $IMMUTABLES_SLOT, address)
                         .unwrap_or_else(|| panic(f"Immutables not found in capsule for contract {address}"))
                 };
 
-                // Compute salt from entire capsule data
-                let salt = aztec::protocol::hash::poseidon2_hash(capsule_data);
-
-                // Get contract instance to access salt
+                let expected = aztec::protocol::hash::poseidon2_hash(serialized_immutables);
                 let instance = aztec::oracle::get_contract_instance::get_contract_instance(address);
 
-                // Verify derived salt matches contract instance salt
                 assert_eq(
-                    salt,
-                    instance.salt,
-                    "Immutables do not match contract salt",
+                    expected,
+                    instance.immutables_hash,
+                    "Immutables do not match instance immutables_hash",
                 );
-
-                // Extract serialized immutables (skip first element which is actual_salt)
-                let mut serialized_immutables: [Field; $serialized_len] = [0; $serialized_len];
-                for i in 0..$serialized_len {
-                    serialized_immutables[i] = capsule_data[i + 1];
-                }
 
                 aztec::protocol::traits::Deserialize::deserialize(serialized_immutables)
             }
@@ -91,31 +82,24 @@ pub comptime fn immutables(s: TypeDefinition) -> Quoted {
             pub unconstrained fn init_unconstrained(context: aztec::context::UtilityContext) -> Immutables {
                 let address = context.this_address();
 
-                let capsule_data: [Field; 1 + $serialized_len] = aztec::oracle::capsules::load(address, $IMMUTABLES_SLOT, address)
+                let serialized_immutables: [Field; $serialized_len] = aztec::oracle::capsules::load(address, $IMMUTABLES_SLOT, address)
                     .unwrap_or_else(|| panic(f"Immutables not found in capsule for contract {address}"));
-
-                // Extract serialized immutables (skip first element which is actual_salt)
-                let mut serialized_immutables: [Field; $serialized_len] = [0; $serialized_len];
-                for i in 0..$serialized_len {
-                    serialized_immutables[i] = capsule_data[i + 1];
-                }
 
                 aztec::protocol::traits::Deserialize::deserialize(serialized_immutables)
             }
 
-            pub unconstrained fn store(context: aztec::context::UtilityContext, capsule_data: [Field; 1 + $serialized_len]) {
+            pub unconstrained fn store(context: aztec::context::UtilityContext, serialized_immutables: [Field; $serialized_len]) {
                 let address = context.this_address();
 
-                // Validate: hash(capsule_data) must match instance.salt before storing
-                let salt = aztec::protocol::hash::poseidon2_hash(capsule_data);
+                let expected = aztec::protocol::hash::poseidon2_hash(serialized_immutables);
                 let instance = aztec::oracle::get_contract_instance::get_contract_instance(address);
                 assert_eq(
-                    salt,
-                    instance.salt,
-                    "Immutables data does not match contract salt, refusing to store",
+                    expected,
+                    instance.immutables_hash,
+                    "Immutables data does not match instance immutables_hash, refusing to store",
                 );
 
-                aztec::oracle::capsules::store(address, $IMMUTABLES_SLOT, capsule_data, address);
+                aztec::oracle::capsules::store(address, $IMMUTABLES_SLOT, serialized_immutables, address);
             }
         }
 

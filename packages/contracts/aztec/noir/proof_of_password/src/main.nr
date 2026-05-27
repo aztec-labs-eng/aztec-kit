@@ -24,10 +24,7 @@ pub contract ProofOfPassword {
     fn constructor(go_coin_address: AztecAddress, password: str<31>) {
         let field_compressed_str = FieldCompressedString::from_string(password);
         let password_hash = poseidon2_hash(field_compressed_str.serialize());
-        self.enqueue(ProofOfPassword::at(self.address)._init_storage(
-            go_coin_address,
-            password_hash,
-        ));
+        self.enqueue(ProofOfPassword::at(self.address)._init_storage(go_coin_address, password_hash));
     }
 
     #[external("public")]
@@ -53,6 +50,6 @@ pub contract ProofOfPassword {
         // knowing the password and an address is sufficient to know if someone has used this
         // contract or not. But at least, they need the password
         let nullifier = poseidon2_hash([to.to_field(), field_compressed_str.serialize()[0]]);
-        self.context.push_nullifier(nullifier);
+        self.context.push_nullifier_unsafe(nullifier);
     }
 }

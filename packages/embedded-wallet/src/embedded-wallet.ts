@@ -7,8 +7,12 @@
  * Storage layout for initializerless accounts in WalletDB:
  *   type:       'schnorr-initializerless' (cast to AccountType — WalletDB stores as a raw string)
  *   secretKey:  the account secret key (Fr)
- *   salt:       the actualSalt (Fr) — the derived salt is recomputed on the fly
+ *   salt:       the contract instance salt (Fr) — plain random salt under AZIP-9
  *   signingKey: the signing private key (Fq buffer, derivable from secretKey but stored for consistency)
+ *
+ * The signing key is committed via `ContractInstance.immutables_hash`, not via
+ * the salt. `instance.immutables_hash = poseidon2(serialized_immutables)`; the
+ * capsule at IMMUTABLES_SLOT holds `serialized_immutables` directly.
  */
 
 import { collectOffchainEffects, type ExecutionPayload, TxStatus } from "@aztec/stdlib/tx";
@@ -36,9 +40,9 @@ import { createLogger } from "@aztec/foundation/log";
 import { Fr } from "@aztec/foundation/curves/bn254";
 import {
   createSchnorrInitializerlessAccount,
-  computeContractSalt,
   serializeSigningKey,
 } from "./initializerless-account";
+import { computeImmutablesHash } from "./immutables";
 import { SimulatedSchnorrInitializerlessAccountContractArtifact } from "@aztec-kit/contracts-aztec/artifacts/SimulatedSchnorrInitializerlessAccount";
 import { getContractClassFromArtifact } from "@aztec/stdlib/contract";
 import { ExtendedAccountContractsProvider } from "./account-contracts-provider";
@@ -275,11 +279,15 @@ export class EmbeddedWallet extends EmbeddedWalletBase {
    * Override to add the 'schnorr-initializerless' account type.
    *
    * For this type:
-   *   - `salt` is the actualSalt (not derived) — we compute the derived salt on the fly
-   *   - `signingKey` is the Fq signing private key buffer (standard, derivable from secret)
+   *   - `salt` is a plain random salt — under AZIP-9 the signing key is committed
+   *     via `instance.immutables_hash`, not the salt.
+   *   - `signingKey` is the Fq signing private key buffer (standard, derivable from secret).
    *   - The AccountContract returns undefined from getInitializationFunctionAndArgs()
-   *     so AccountManager computes the instance with initializationHash = Fr.ZERO
-   *   - After registration, we store the immutables capsule in PXE
+   *     so `initializationHash = Fr.ZERO`.
+   *   - On *first* registration with PXE, we also store the immutables capsule.
+   *     Subsequent loads skip both — PXE persists the capsule alongside the
+   *     contract instance, so re-storing on every load would be wasted work.
+   *     If PXE state is wiped, the missing-instance check below re-runs both.
    */
   protected override async createAccountInternal(
     type: AccountType,
@@ -291,33 +299,33 @@ export class EmbeddedWallet extends EmbeddedWalletBase {
       return super.createAccountInternal(type, secret, salt, signingKey);
     }
 
-    // `salt` here is the actualSalt. Derive the contract salt from it + signing public key.
-    const actualSalt = salt;
     const { account: accountContract, signingPublicKey } =
       await createSchnorrInitializerlessAccount(secret);
-    const derivedSalt = await computeContractSalt(actualSalt, signingPublicKey);
 
-    // AccountManager.create() uses the derived salt for address computation.
-    // getInitializationFunctionAndArgs() returns undefined → initializationHash = Fr.ZERO.
-    const accountManager = await AccountManager.create(this, secret, accountContract, derivedSalt);
+    const artifact = await accountContract.getContractArtifact();
+    const serializedImmutables = await serializeSigningKey(signingPublicKey);
+    const immutablesHash = await computeImmutablesHash(serializedImmutables);
 
+    const accountManager = await AccountManager.create(this, secret, accountContract, {
+      salt,
+      immutablesHash,
+    });
     const instance = accountManager.getInstance();
+
     const existingInstance = await this.pxe.getContractInstance(instance.address);
     if (!existingInstance) {
-      const artifact = await accountContract.getContractArtifact();
-      await this.registerContract(instance, artifact, accountManager.getSecretKey());
-    }
+      await this.registerContract(instance, artifact, secret);
 
-    // Always store/refresh the immutables capsule so the contract can verify the signing key.
-    // This is idempotent — store_immutables validates against the salt before persisting.
-    const artifact = await accountContract.getContractArtifact();
-    const capsuleData = [actualSalt, ...(await serializeSigningKey(signingPublicKey))];
-    const storeAbi = artifact.functions.find((f) => f.name === "store_immutables");
-    if (storeAbi) {
-      const storeCall = new ContractFunctionInteraction(this, instance.address, storeAbi, [
-        capsuleData,
-      ]);
-      await storeCall.simulate({ from: instance.address });
+      // First-time setup: store the immutables capsule so the contract can verify
+      // the signing key. PXE keeps the capsule across loads; subsequent calls
+      // through this path skip the store.
+      const storeAbi = artifact.functions.find((f) => f.name === "store_immutables");
+      if (storeAbi) {
+        const storeCall = new ContractFunctionInteraction(this, instance.address, storeAbi, [
+          serializedImmutables,
+        ]);
+        await storeCall.simulate({ from: instance.address });
+      }
     }
 
     return accountManager;
@@ -327,19 +335,18 @@ export class EmbeddedWallet extends EmbeddedWalletBase {
    * Creates and stores a new initializerless Schnorr account.
    * Returns the AccountManager — the account is immediately usable (no deployment needed).
    */
-  async createInitializerlessAccount(secretKey?: Fr, actualSalt?: Fr): Promise<AccountManager> {
+  async createInitializerlessAccount(secretKey?: Fr, salt?: Fr): Promise<AccountManager> {
     const sk = secretKey ?? Fr.random();
-    const as = actualSalt ?? Fr.random();
+    const s = salt ?? Fr.random();
 
     // Derive signing key for WalletDB storage (standard Fq buffer)
     const { signingPrivateKey } = await createSchnorrInitializerlessAccount(sk);
 
-    // Store actualSalt in the `salt` field. The derived salt is computed in createAccountInternal.
     return this.createAndStoreAccount(
       "main",
       INITIALIZERLESS_TYPE,
       sk,
-      as, // actualSalt — NOT the derived salt
+      s,
       signingPrivateKey.toBuffer(),
     );
   }

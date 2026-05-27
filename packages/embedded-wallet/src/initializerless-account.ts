@@ -2,9 +2,9 @@
  * Initializerless Schnorr Account
  *
  * An account contract that doesn't require deployment/initialization.
- * The signing key is committed via the contract salt using the immutables pattern.
- * This means the account can sign and send transactions immediately after PXE
- * registration — no on-chain deployment needed.
+ * The signing key is committed via `ContractInstance.immutables_hash` (AZIP-9).
+ * After PXE registration + a one-time capsule store, the account can sign and
+ * send transactions immediately — no on-chain deployment needed.
  */
 
 import {
@@ -50,20 +50,12 @@ export async function serializeSigningKey(key: SigningPublicKey): Promise<Fr[]> 
   });
 }
 
-export async function computeContractSalt(actualSalt: Fr, key: SigningPublicKey): Promise<Fr> {
-  return immutables.computeContractSalt(actualSalt, await serializeSigningKey(key));
+export async function computeSigningKeyImmutablesHash(key: SigningPublicKey): Promise<Fr> {
+  return immutables.computeImmutablesHash(await serializeSigningKey(key));
 }
 
-export async function createSigningKeyCapsule(
-  contractAddress: AztecAddress,
-  actualSalt: Fr,
-  key: SigningPublicKey,
-) {
-  return immutables.createImmutablesCapsule(
-    contractAddress,
-    actualSalt,
-    await serializeSigningKey(key),
-  );
+export async function createSigningKeyCapsule(contractAddress: AztecAddress, key: SigningPublicKey) {
+  return immutables.createImmutablesCapsule(contractAddress, await serializeSigningKey(key));
 }
 
 // ---------------------------------------------------------------------------

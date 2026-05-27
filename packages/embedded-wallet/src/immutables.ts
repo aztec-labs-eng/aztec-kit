@@ -4,10 +4,13 @@
  * Contract-agnostic utilities for the initializerless immutables pattern.
  * Any contract using the `#[immutables]` Noir macro can use these functions.
  *
- * Pattern:
- * 1. Salt derivation: `salt = poseidon2_hash([actual_salt, ...serialized_immutables])`
- * 2. Capsule storage: `[actual_salt, ...serialized_immutables]` stored at IMMUTABLES_SLOT
- * 3. Runtime verification: Noir hashes capsule data and verifies against `instance.salt`
+ * Pattern (post AZIP-9):
+ * 1. `immutablesHash = poseidon2_hash(serialized_immutables)` is committed via
+ *    `ContractInstance.immutablesHash`, which folds into address derivation.
+ * 2. Capsule stored at IMMUTABLES_SLOT contains the serialized immutables directly
+ *    (no salt prefix).
+ * 3. Runtime verification: Noir hashes capsule data and verifies against
+ *    `instance.immutables_hash`.
  */
 
 import { Fr } from "@aztec/aztec.js/fields";
@@ -146,22 +149,16 @@ export function serializeFromLayout(
 // Low-level building blocks
 // ---------------------------------------------------------------------------
 
-export async function computeContractSalt(actualSalt: Fr, serializedImmutables: Fr[]): Promise<Fr> {
-  const result = await poseidon2Hash([actualSalt, ...serializedImmutables]);
+export async function computeImmutablesHash(serializedImmutables: Fr[]): Promise<Fr> {
+  const result = await poseidon2Hash(serializedImmutables);
   return new Fr(result.toBigInt());
 }
 
 export function createImmutablesCapsule(
   contractAddress: AztecAddress,
-  actualSalt: Fr,
   serializedImmutables: Fr[],
 ): Capsule {
-  return new Capsule(
-    contractAddress,
-    IMMUTABLES_SLOT,
-    [actualSalt, ...serializedImmutables],
-    contractAddress,
-  );
+  return new Capsule(contractAddress, IMMUTABLES_SLOT, serializedImmutables, contractAddress);
 }
 
 // ---------------------------------------------------------------------------
@@ -169,7 +166,7 @@ export function createImmutablesCapsule(
 // ---------------------------------------------------------------------------
 
 export interface ImmutablesInstanceOptions {
-  actualSalt?: Fr;
+  salt?: Fr;
   publicKeys?: PublicKeys;
   deployer?: AztecAddress;
   secretKey?: Fr;
@@ -177,7 +174,8 @@ export interface ImmutablesInstanceOptions {
 
 export interface CreateImmutablesInstanceResult {
   instance: ContractInstanceWithAddress;
-  actualSalt: Fr;
+  salt: Fr;
+  immutablesHash: Fr;
 }
 
 export async function createImmutablesInstance(
@@ -185,24 +183,25 @@ export async function createImmutablesInstance(
   serializedImmutables: Fr[],
   options?: ImmutablesInstanceOptions,
 ): Promise<CreateImmutablesInstanceResult> {
-  const actualSalt = options?.actualSalt ?? Fr.random();
-  const salt = await computeContractSalt(actualSalt, serializedImmutables);
+  const salt = options?.salt ?? Fr.random();
+  const immutablesHash = await computeImmutablesHash(serializedImmutables);
 
   // No initializer path: initializationHash = Fr.ZERO
   const contractClass = await getContractClassFromArtifact(artifact);
   const rawInstance: ContractInstance = {
-    version: 1,
+    version: 2,
     salt,
     deployer: options?.deployer ?? AztecAddress.ZERO,
     currentContractClassId: contractClass.id,
     originalContractClassId: contractClass.id,
     initializationHash: Fr.ZERO,
+    immutablesHash,
     publicKeys: options?.publicKeys ?? PublicKeys.default(),
   };
   const address = await computeContractAddressFromInstance(rawInstance);
   const instance: ContractInstanceWithAddress = { ...rawInstance, address };
 
-  return { instance, actualSalt };
+  return { instance, salt, immutablesHash };
 }
 
 /**
@@ -213,14 +212,10 @@ export async function computeImmutablesAddress(
   serializedImmutables: Fr[],
   options?: ImmutablesInstanceOptions,
 ): Promise<{ address: AztecAddress; capsuleData: Fr[] }> {
-  const { instance, actualSalt } = await createImmutablesInstance(
-    artifact,
-    serializedImmutables,
-    options,
-  );
+  const { instance } = await createImmutablesInstance(artifact, serializedImmutables, options);
   return {
     address: instance.address,
-    capsuleData: [actualSalt, ...serializedImmutables],
+    capsuleData: serializedImmutables,
   };
 }
 
@@ -244,11 +239,7 @@ export async function deployWithImmutables(
   serializedImmutables: Fr[],
   options?: DeployWithImmutablesOptions,
 ): Promise<DeployWithImmutablesResult> {
-  const { instance, actualSalt } = await createImmutablesInstance(
-    artifact,
-    serializedImmutables,
-    options,
-  );
+  const { instance } = await createImmutablesInstance(artifact, serializedImmutables, options);
 
   // Register the contract with the wallet (PXE)
   await wallet.registerContract(instance, artifact, options?.secretKey);
@@ -263,7 +254,6 @@ export async function deployWithImmutables(
   }
 
   // Persist immutables to PXE's CapsuleStore via store_immutables utility function
-  const capsuleData = [actualSalt, ...serializedImmutables];
   const storeImmutablesAbi = artifact.functions.find((f) => f.name === "store_immutables");
   if (!storeImmutablesAbi) {
     throw new Error(`store_immutables function not found in artifact ${artifact.name}`);
@@ -271,12 +261,12 @@ export async function deployWithImmutables(
   const accounts = await wallet.getAccounts();
   const deployerAddress = accounts[0]?.item ?? AztecAddress.ZERO;
   const storeCall = new ContractFunctionInteraction(wallet, instance.address, storeImmutablesAbi, [
-    capsuleData,
+    serializedImmutables,
   ]);
   await storeCall.simulate({
     from: deployerAddress,
     additionalScopes: [instance.address],
   });
 
-  return { instance, capsuleData };
+  return { instance, capsuleData: serializedImmutables };
 }
