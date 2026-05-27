@@ -19,7 +19,7 @@ set -euo pipefail
 
 NETWORK="${1:-}"
 if [ -z "${NETWORK}" ]; then
-  echo "usage: $0 <local|testnet>" >&2
+  echo "usage: $0 <local|testnet|nextnet>" >&2
   exit 1
 fi
 
