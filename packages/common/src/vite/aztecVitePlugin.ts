@@ -108,7 +108,17 @@ export function aztecVitePlugin(options: AztecVitePluginOptions = {}): Plugin[] 
       }
 
       // Vite 8+: Rolldown pre-bundler handles worker/wasm assets correctly —
-      // no excludes or CJS includes needed. `oxc.target` covers user source;
+      // but `@aztec/noir-acvm_js` is special. When it's pre-bundled, callers
+      // that import it through different dep entry points (e.g. via
+      // `@aztec/wallets/embedded` AND via `@aztec/simulator/client`) end up
+      // with two JS wrapper modules around the same wasm instance, and the
+      // wasm-bindgen-futures executor inside acvm_js panics with "RefCell
+      // already borrowed" the next time something tries to push a task to its
+      // task queue while another wrapper is mid-poll. Keep it out of the
+      // pre-bundle so each importer resolves the same singleton module from
+      // `node_modules/@aztec/noir-acvm_js/web/acvm_js.js`.
+      //
+      // `oxc.target` covers user source;
       // `optimizeDeps.rolldownOptions.transform.target` is needed in addition
       // to downlevel pre-bundled deps in `node_modules/.vite/deps/*` (without
       // it, the deps ship native async/await even when es2016 is requested,
@@ -118,6 +128,16 @@ export function aztecVitePlugin(options: AztecVitePluginOptions = {}): Plugin[] 
         ...base,
         oxc: { target },
         optimizeDeps: {
+          // Keep wasm-bindgen JS-glue modules out of the pre-bundle so each
+          // importer resolves the same singleton from `node_modules`. If
+          // Rolldown ever splits them across multiple chunks, the duplicated
+          // JS wrappers each get their own copy of the singleton state
+          // (`__wbindgen_*`, the wasm-bindgen-futures executor queue) but
+          // share the same underlying wasm instance — the resulting state
+          // divergence surfaces as JsFuture::finish RefCell panics, wasm
+          // memory-OOB, or "closure invoked recursively or after being
+          // dropped" the next time wasm calls back into JS.
+          exclude: ["@aztec/noir-acvm_js", "@aztec/noir-noirc_abi"],
           rolldownOptions: { transform: { target } },
         },
       };
