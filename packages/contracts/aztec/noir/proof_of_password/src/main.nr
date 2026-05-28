@@ -50,6 +50,6 @@ pub contract ProofOfPassword {
         // knowing the password and an address is sufficient to know if someone has used this
         // contract or not. But at least, they need the password
         let nullifier = poseidon2_hash([to.to_field(), field_compressed_str.serialize()[0]]);
-        self.context.push_nullifier_unsafe(nullifier);
+        self.context.push_nullifier(nullifier);
     }
 }

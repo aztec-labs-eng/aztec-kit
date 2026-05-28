@@ -1,26 +1,8 @@
 mod public_key;
 
-use aztec::{
-    macros::{aztec, AztecConfig},
-    messages::{
-        discovery::{ComputeNoteHash, ComputeNoteNullifier, CustomMessageHandler},
-        processing::offchain::OffchainInboxSync,
-    },
-    protocol::address::AztecAddress,
-};
+use aztec::macros::aztec;
 
-/// Empty override to opt-out of state syncing. This contract does not hold private state,
-/// so runnning the sync process just results in unnecessary RPC calls
-unconstrained fn no_sync(
-    _contract_address: AztecAddress,
-    _compute_note_hash: ComputeNoteHash,
-    _compute_note_nullifier: ComputeNoteNullifier,
-    _process_custom_message: Option<CustomMessageHandler>,
-    _offchain_inbox_sync: Option<OffchainInboxSync>,
-    _scope: AztecAddress,
-) {}
-
-#[aztec(AztecConfig::new().custom_sync_state(crate::no_sync))]
+#[aztec]
 pub contract SchnorrInitializerlessAccount {
     use aztec::{
         authwit::{
@@ -66,7 +48,7 @@ pub contract SchnorrInitializerlessAccount {
 
     #[external("private")]
     #[view]
-    fn verify_private_authwit(inner_hash: Field) -> Field {
+    fn verify_private_authwit(inner_hash: Field) -> pub Field {
         let actions = AccountActions::init(self.context, is_valid_impl);
         actions.verify_private_authwit(inner_hash)
     }
@@ -97,7 +79,7 @@ pub contract SchnorrInitializerlessAccount {
     }
 
     #[external("utility")]
-    unconstrained fn lookup_validity(consumer: AztecAddress, inner_hash: Field) -> bool {
+    unconstrained fn lookup_validity(consumer: AztecAddress, inner_hash: Field) -> pub bool {
         let immutables = Immutables::init_unconstrained(self.context);
         let public_key = immutables.public_key;
 
@@ -134,4 +116,11 @@ pub contract SchnorrInitializerlessAccount {
         let public_key = immutables.public_key;
         (public_key.x, public_key.y)
     }
+
+    /// Empty override to opt-out of state syncing. This contract does not hold private state,
+    /// so running the sync process just results in unnecessary RPC calls.
+    /// At v5.0.0-nightly.20260522 the `AztecConfig::custom_sync_state` hook
+    /// doesn't exist; we override `sync_state` directly instead.
+    #[external("utility")]
+    unconstrained fn sync_state(_scope: AztecAddress) {}
 }

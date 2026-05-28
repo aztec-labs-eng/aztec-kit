@@ -42,7 +42,9 @@ import {
   createSchnorrInitializerlessAccount,
   serializeSigningKey,
 } from "./initializerless-account";
-import { computeImmutablesHash } from "./immutables";
+import { createImmutablesInstance } from "./immutables";
+import { createAccountManagerWithInstance } from "./account-manager-from-instance";
+import { deriveKeys } from "@aztec/stdlib/keys";
 import { SimulatedSchnorrInitializerlessAccountContractArtifact } from "@aztec-kit/contracts-aztec/artifacts/SimulatedSchnorrInitializerlessAccount";
 import { getContractClassFromArtifact } from "@aztec/stdlib/contract";
 import { ExtendedAccountContractsProvider } from "./account-contracts-provider";
@@ -304,13 +306,25 @@ export class EmbeddedWallet extends EmbeddedWalletBase {
 
     const artifact = await accountContract.getContractArtifact();
     const serializedImmutables = await serializeSigningKey(signingPublicKey);
-    const immutablesHash = await computeImmutablesHash(serializedImmutables);
 
-    const accountManager = await AccountManager.create(this, secret, accountContract, {
+    // `AccountManager.create` at v5.0.0-nightly.20260522 doesn't accept an
+    // `immutablesHash` option (the `opts` shape landed in 20260526). Build the
+    // instance with the right `publicKeys` + `immutablesHash` ourselves and
+    // shove it into AccountManager via the JS-public positional constructor.
+    // See `account-manager-from-instance.ts`.
+    const { publicKeys } = await deriveKeys(secret);
+    const { instance } = await createImmutablesInstance(artifact, serializedImmutables, {
       salt,
-      immutablesHash,
+      publicKeys,
+      secretKey: secret,
     });
-    const instance = accountManager.getInstance();
+    const accountManager = createAccountManagerWithInstance(
+      this,
+      secret,
+      accountContract,
+      instance,
+      salt,
+    );
 
     const existingInstance = await this.pxe.getContractInstance(instance.address);
     if (!existingInstance) {
