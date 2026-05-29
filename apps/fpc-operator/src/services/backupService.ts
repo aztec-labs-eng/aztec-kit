@@ -13,7 +13,14 @@ import {
 
 // ── Backup format ────────────────────────────────────────────────────
 
-const BACKUP_VERSION = 1;
+// v2 (current): admin.salt is the plain contract instance salt.
+//
+// v1 (pre AZIP-9 immutables_hash migration): admin.salt held the `actualSalt`
+// of the old salt-abuse pattern; the contract address was derived from
+// `salt = hash(actualSalt, signingKey)` with `immutablesHash = 0`. The new
+// address derivation folds `immutablesHash` into the salted initialization
+// hash, so v1 keys can't be restored to the same address — rejected on import.
+const BACKUP_VERSION = 2;
 const NETWORK_KEY = "aztec_kit_network";
 
 export interface BackupData {
@@ -91,7 +98,13 @@ export async function parseAndValidateBackup(
   const obj = parsed as Record<string, unknown>;
 
   if (obj.version !== BACKUP_VERSION) {
-    errors.push(`Unsupported backup version: ${obj.version} (expected ${BACKUP_VERSION})`);
+    if (obj.version === 1) {
+      errors.push(
+        "This backup was created before the immutables_hash migration. The admin account it points to can't be restored to the same address under the current derivation — create a fresh account and re-bind your FPC.",
+      );
+    } else {
+      errors.push(`Unsupported backup version: ${obj.version} (expected ${BACKUP_VERSION})`);
+    }
   }
 
   const admin = obj.admin as Record<string, unknown> | undefined;

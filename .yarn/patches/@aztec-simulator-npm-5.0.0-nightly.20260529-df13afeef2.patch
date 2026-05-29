@@ -1,0 +1,35 @@
+diff --git a/dest/private/acvm_wasm.js b/dest/private/acvm_wasm.js
+index 13c6f36f400c0c6a77917b0e239920880bf14300..a3038a555b01764afe9ac25469935a5254b57c9f 100644
+--- a/dest/private/acvm_wasm.js
++++ b/dest/private/acvm_wasm.js
+@@ -4,6 +4,17 @@ import initACVM, { executeCircuit } from '@aztec/noir-acvm_js';
+ import initAbi from '@aztec/noir-noirc_abi';
+ import { acvm } from './acvm/acvm.js';
+ import { enrichNoirError } from './circuit_simulator.js';
++// Memoised wasm initialisation, shared across every WASMSimulator instance.
++// initAbi/initACVM (wasm-bindgen --target web) are async and only short-circuit
++// on `wasm !== undefined` AFTER instantiation completes -- they do NOT dedup
++// in-flight calls. The PXE runs per-scope note syncs in parallel, so several
++// init() calls race the first instantiation: each creates its own
++// WebAssembly.Instance and the last finalize overwrites acvm_js's module-global
++// `wasm`, leaving wasm-bindgen JsFuture closures created against one instance to
++// fire against another's memory -- a cross-instance use-after-free surfacing as
++// "RefCell already borrowed" / "closure invoked recursively or after being
++// dropped". Sharing one in-flight promise makes every caller await one instance.
++let wasmInitPromise;
+ export class WASMSimulator {
+     log;
+     constructor(loggerOrBindings){
+@@ -14,10 +25,11 @@ export class WASMSimulator {
+         // web environment. For the node environment, this
+         // is a no-op.
+         if (typeof initAbi === 'function') {
+-            /** @ts-expect-error The node bundle doesn't include these default imports, so TS complains */ await Promise.all([
++            /** @ts-expect-error The node bundle doesn't include these default imports, so TS complains */ wasmInitPromise ??= Promise.all([
+                 initAbi(),
+                 initACVM()
+             ]);
++            await wasmInitPromise;
+         }
+     }
+     async executeProtocolCircuit(input, artifact, callback) {

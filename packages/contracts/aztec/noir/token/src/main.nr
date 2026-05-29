@@ -262,10 +262,7 @@ pub contract Token {
         self.storage.balances.at(from).sub(amount).deliver(MessageDelivery.OFFCHAIN);
         self.storage.balances.at(to).add(amount).deliver(MessageDelivery.OFFCHAIN);
 
-        self.emit(Transfer { from, to, amount }).deliver_to(
-            to,
-            MessageDelivery.OFFCHAIN,
-        );
+        self.emit(Transfer { from, to, amount }).deliver_to(to, MessageDelivery.OFFCHAIN);
     }
 
     #[internal("private")]
@@ -314,7 +311,7 @@ pub contract Token {
     fn cancel_authwit(inner_hash: Field) {
         let on_behalf_of = self.msg_sender();
         let nullifier = compute_authwit_nullifier(on_behalf_of, inner_hash);
-        self.context.push_nullifier(nullifier);
+        self.context.push_nullifier_unsafe(nullifier);
     }
     // docs:end:cancel_authwit
 

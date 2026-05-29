@@ -1,9 +1,9 @@
 /**
  * E2E Tests for the Initializerless Schnorr Account
  *
- * Verifies that the initializerless immutables pattern works end-to-end:
+ * Verifies that the AZIP-9 immutables_hash pattern works end-to-end:
  * - Account creation produces correct addresses
- * - Immutables are stored and verified against the contract salt
+ * - Immutables are stored and verified against `instance.immutables_hash`
  * - The account can sign and send transactions without deployment
  * - Different keys/salts produce different addresses
  */
@@ -22,7 +22,7 @@ import {
 } from "@aztec-kit/contracts-aztec/artifacts/SchnorrInitializerlessAccount";
 import { setupLocalNetwork, type LocalNetwork } from "@aztec-kit/common/testing";
 import {
-  computeContractSalt,
+  computeSigningKeyImmutablesHash,
   createSchnorrInitializerlessAccount,
   serializeSigningKey,
   createSigningKeyCapsule,
@@ -40,8 +40,8 @@ const SIGNING_KEY_2: SigningPublicKey = {
   x: new Fr(333n),
   y: new Fr(444n),
 };
-const ACTUAL_SALT_1 = new Fr(12345n);
-const ACTUAL_SALT_2 = new Fr(54321n);
+const SALT_1 = new Fr(12345n);
+const SALT_2 = new Fr(54321n);
 
 describe("SchnorrInitializerlessAccount", () => {
   let network: LocalNetwork;
@@ -72,35 +72,30 @@ describe("SchnorrInitializerlessAccount", () => {
   // -- Pure computation tests (no deployment) --
 
   it("should produce different addresses for different signing keys", async () => {
-    const result1 = await computeSchnorrAccountAddress(SIGNING_KEY_1, ACTUAL_SALT_1);
-    const result2 = await computeSchnorrAccountAddress(SIGNING_KEY_2, ACTUAL_SALT_1);
+    const result1 = await computeSchnorrAccountAddress(SIGNING_KEY_1, SALT_1);
+    const result2 = await computeSchnorrAccountAddress(SIGNING_KEY_2, SALT_1);
 
     expect(result1.toString()).not.toBe(result2.toString());
   });
 
-  it("should produce different addresses for different actualSalt", async () => {
-    const result1 = await computeSchnorrAccountAddress(SIGNING_KEY_1, ACTUAL_SALT_1);
-    const result2 = await computeSchnorrAccountAddress(SIGNING_KEY_1, ACTUAL_SALT_2);
+  it("should produce different addresses for different salts", async () => {
+    const result1 = await computeSchnorrAccountAddress(SIGNING_KEY_1, SALT_1);
+    const result2 = await computeSchnorrAccountAddress(SIGNING_KEY_1, SALT_2);
 
     expect(result1.toString()).not.toBe(result2.toString());
   });
 
-  it("should compute correct contract salt", async () => {
-    const salt = await computeContractSalt(ACTUAL_SALT_1, SIGNING_KEY_1);
+  it("should compute immutables_hash from signing key alone (salt-independent)", async () => {
+    const hash1 = await computeSigningKeyImmutablesHash(SIGNING_KEY_1);
+    expect(hash1.toBigInt()).not.toBe(0n);
 
-    expect(salt.toBigInt()).not.toBe(0n);
+    // Same key → same hash (salt is not an input)
+    const hash1Again = await computeSigningKeyImmutablesHash(SIGNING_KEY_1);
+    expect(hash1.toBigInt()).toBe(hash1Again.toBigInt());
 
-    // Same inputs → same salt
-    const salt2 = await computeContractSalt(ACTUAL_SALT_1, SIGNING_KEY_1);
-    expect(salt.toBigInt()).toBe(salt2.toBigInt());
-
-    // Different key → different salt
-    const differentSalt = await computeContractSalt(ACTUAL_SALT_1, SIGNING_KEY_2);
-    expect(salt.toBigInt()).not.toBe(differentSalt.toBigInt());
-
-    // Different actualSalt → different salt
-    const saltWithDifferentActual = await computeContractSalt(ACTUAL_SALT_2, SIGNING_KEY_1);
-    expect(salt.toBigInt()).not.toBe(saltWithDifferentActual.toBigInt());
+    // Different key → different hash
+    const hash2 = await computeSigningKeyImmutablesHash(SIGNING_KEY_2);
+    expect(hash1.toBigInt()).not.toBe(hash2.toBigInt());
   });
 
   // -- Deployment tests --
@@ -175,23 +170,20 @@ describe("SchnorrInitializerlessAccount", () => {
 
     const contract = SchnorrInitializerlessAccountContract.at(instance.address, wallet);
 
-    // Wrong signing key — produces a different capsule that won't match the salt
+    // Wrong signing key — produces a different capsule that won't match the
+    // committed `instance.immutables_hash`.
     const wrongKey: SigningPublicKey = {
       x: new Fr(signingPublicKey.x.toBigInt() + 1n),
       y: new Fr(signingPublicKey.y.toBigInt() + 1n),
     };
-    const wrongCapsule = await createSigningKeyCapsule(
-      instance.address,
-      Fr.random(), // wrong actualSalt too — guarantees salt mismatch
-      wrongKey,
-    );
+    const wrongCapsule = await createSigningKeyCapsule(instance.address, wrongKey);
 
     await expect(
       contract.methods
         .get_signing_public_key()
         .with({ capsules: [wrongCapsule] })
         .simulate({ from: alice, additionalScopes: [instance.address] }),
-    ).rejects.toThrow("Immutables do not match contract salt");
+    ).rejects.toThrow("Immutables do not match instance immutables_hash");
   });
 });
 
@@ -199,12 +191,12 @@ describe("SchnorrInitializerlessAccount", () => {
 
 async function computeSchnorrAccountAddress(
   key: SigningPublicKey,
-  actualSalt: Fr,
+  salt: Fr,
 ): Promise<AztecAddress> {
   const { address } = await computeImmutablesAddress(
     SchnorrInitializerlessAccountContractArtifact,
     await serializeSigningKey(key),
-    { actualSalt },
+    { salt },
   );
   return address;
 }
