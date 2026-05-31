@@ -104,7 +104,7 @@ contract SubscriptionFPC {
             .slots
             .at(self.address)
             .insert(SlotNote { config_id, max_uses, max_fee, users: max_users })
-            .deliver(MessageDelivery.ONCHAIN_UNCONSTRAINED);
+            .deliver(MessageDelivery::onchain_unconstrained());
     }
 
     #[external("private")]
@@ -150,7 +150,7 @@ contract SubscriptionFPC {
                         config_id,
                     },
                 )
-                .deliver(MessageDelivery.ONCHAIN_UNCONSTRAINED)
+                .deliver(MessageDelivery::onchain_unconstrained())
         }
 
         assert_fee_within_max(self.context.gas_settings(), subscription.max_fee);
@@ -289,7 +289,7 @@ contract SubscriptionFPC {
                         config_id,
                     },
                 )
-                .deliver(MessageDelivery.ONCHAIN_UNCONSTRAINED)
+                .deliver(MessageDelivery::onchain_unconstrained())
         }
 
         assert_fee_within_max(self.context.gas_settings(), slot.max_fee);
@@ -310,7 +310,7 @@ contract SubscriptionFPC {
             .subscriptions
             .at(user)
             .insert(SubscriptionNote { uses: slot.max_uses - 1, max_fee: slot.max_fee, config_id })
-            .deliver(MessageDelivery.ONCHAIN_UNCONSTRAINED);
+            .deliver(MessageDelivery::onchain_unconstrained());
 
         // We allow calling the sponsored function in the same tx as the subscription
         self.internal._call_sponsored_fn(call);
