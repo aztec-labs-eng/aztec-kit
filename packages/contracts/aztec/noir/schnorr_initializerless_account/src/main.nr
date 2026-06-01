@@ -34,7 +34,6 @@ pub contract SchnorrInitializerlessAccount {
         oracle::{
             auth_witness::get_auth_witness,
             get_nullifier_membership_witness::get_low_nullifier_membership_witness,
-            notes::set_sender_for_tags,
         },
         protocol::address::AztecAddress,
     };
@@ -56,10 +55,6 @@ pub contract SchnorrInitializerlessAccount {
     #[external("private")]
     #[allow_phase_change]
     fn entrypoint(app_payload: AppPayload, fee_payment_method: u8, cancellable: bool) {
-        // Safety: set_sender_for_tags is an oracle call that registers this account
-        // as the sender for private note delivery in nested calls.
-        unsafe { set_sender_for_tags(self.address) };
-
         let actions = AccountActions::init(self.context, is_valid_impl);
         actions.entrypoint(app_payload, fee_payment_method, cancellable);
     }

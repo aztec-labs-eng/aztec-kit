@@ -24,7 +24,6 @@ contract SubscriptionFPC {
         state_vars::{Owned, PrivateSet, PublicImmutable},
         utils::comparison::Comparator,
     };
-    use aztec::oracle::notes::set_sender_for_tags;
 
     /// Asserts that the transaction's max possible fee is within the FPC's allowance (`max_fee`).
     ///
@@ -92,19 +91,12 @@ contract SubscriptionFPC {
             selector.to_field(),
             current_index.to_field(),
         ]);
-        // Safety: The sender for tags is only used to compute unconstrained shared secrets for emitting logs.
-        // Since this value is only used for unconstrained tagging and not for any constrained logic,
-        // it is safe to set from a constrained context.
-        unsafe {
-            set_sender_for_tags(self.address);
-        }
-
         self
             .storage
             .slots
             .at(self.address)
             .insert(SlotNote { config_id, max_uses, max_fee, users: max_users })
-            .deliver(MessageDelivery.ONCHAIN_UNCONSTRAINED);
+            .deliver(MessageDelivery::onchain_unconstrained().with_sender(self.address));
     }
 
     #[external("private")]
@@ -121,13 +113,6 @@ contract SubscriptionFPC {
             call.function_selector.to_field(),
             current_index.to_field(),
         ]);
-
-        // Safety: The sender for tags is only used to compute unconstrained shared secrets for emitting logs.
-        // Since this value is only used for unconstrained tagging and not for any constrained logic,
-        // it is safe to set from a constrained context.
-        unsafe {
-            set_sender_for_tags(user);
-        }
 
         // Assert the user still has an active subscription
         let options = NoteGetterOptions::new().set_limit(1).select(
@@ -150,7 +135,7 @@ contract SubscriptionFPC {
                         config_id,
                     },
                 )
-                .deliver(MessageDelivery.ONCHAIN_UNCONSTRAINED)
+                .deliver(MessageDelivery::onchain_unconstrained().with_sender(user))
         }
 
         assert_fee_within_max(self.context.gas_settings(), subscription.max_fee);
@@ -232,13 +217,6 @@ contract SubscriptionFPC {
             .get_preimage();
         assert(result == IS_VALID_SELECTOR, "Message not authorized by account");
 
-        // Safety: The sender for tags is only used to compute unconstrained shared secrets for emitting logs.
-        // Since this value is only used for unconstrained tagging and not for any constrained logic,
-        // it is safe to set from a constrained context.
-        unsafe {
-            set_sender_for_tags(user);
-        }
-
         self.context.end_setup();
         self.internal._call_sponsored_fn(call);
     }
@@ -257,13 +235,6 @@ contract SubscriptionFPC {
             call.function_selector.to_field(),
             current_index.to_field(),
         ]);
-
-        // Safety: The sender for tags is only used to compute unconstrained shared secrets for emitting logs.
-        // Since this value is only used for unconstrained tagging and not for any constrained logic,
-        // it is safe to set from a constrained context.
-        unsafe {
-            set_sender_for_tags(self.address);
-        }
 
         let options = NoteGetterOptions::new().set_limit(1).select(
             SlotNote::properties().config_id,
@@ -289,7 +260,7 @@ contract SubscriptionFPC {
                         config_id,
                     },
                 )
-                .deliver(MessageDelivery.ONCHAIN_UNCONSTRAINED)
+                .deliver(MessageDelivery::onchain_unconstrained().with_sender(self.address))
         }
 
         assert_fee_within_max(self.context.gas_settings(), slot.max_fee);
@@ -298,19 +269,12 @@ contract SubscriptionFPC {
         self.context.set_as_fee_payer();
         self.context.end_setup();
 
-        // Safety: The sender for tags is only used to compute unconstrained shared secrets for emitting logs.
-        // Since this value is only used for unconstrained tagging and not for any constrained logic,
-        // it is safe to set from a constrained context.
-        unsafe {
-            set_sender_for_tags(user);
-        }
-
         self
             .storage
             .subscriptions
             .at(user)
             .insert(SubscriptionNote { uses: slot.max_uses - 1, max_fee: slot.max_fee, config_id })
-            .deliver(MessageDelivery.ONCHAIN_UNCONSTRAINED);
+            .deliver(MessageDelivery::onchain_unconstrained().with_sender(user));
 
         // We allow calling the sponsored function in the same tx as the subscription
         self.internal._call_sponsored_fn(call);
