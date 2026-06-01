@@ -108,9 +108,7 @@ export default defineConfig({
     {
       name: "wallet-encryption",
       testMatch: /06-wallet-encryption\.spec\.ts$/,
-      // No dependencies: this test only needs the local Aztec network
-      // (spawned by globalSetup) and the swap dev server. It doesn't
-      // exercise any contract flows so the 01-05 setup chain is unnecessary.
+      dependencies: ["swap-deploy"],
       use: { ...desktopChrome, baseURL: "http://localhost:5175" },
     },
   ],
