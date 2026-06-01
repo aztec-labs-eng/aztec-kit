@@ -16,7 +16,7 @@
 import type { Account, AccountContract } from "@aztec/aztec.js/account";
 import type { Fq } from "@aztec/foundation/curves/bn254";
 import type { ContractArtifact } from "@aztec/stdlib/abi";
-import type { CompleteAddress, ContractInstanceWithAddress } from "@aztec/stdlib/contract";
+import type { CompleteAddress } from "@aztec/stdlib/contract";
 import { EmbeddedWallet as EmbeddedWalletBase, type AccountType } from "@aztec/wallets/embedded";
 
 import { SimulatedSchnorrInitializerlessAccountContractArtifact } from "@aztec-kit/contracts-aztec/artifacts/SimulatedSchnorrInitializerlessAccount";
@@ -43,13 +43,6 @@ export class ExtendedAccountContractsProvider implements AccountContractsProvide
 
   getEcdsaKAccountContract(signingKey: Buffer): Promise<AccountContract> {
     return this.inner.getEcdsaKAccountContract(signingKey);
-  }
-
-  getMulticallContract(): Promise<{
-    instance: ContractInstanceWithAddress;
-    artifact: ContractArtifact;
-  }> {
-    return this.inner.getMulticallContract();
   }
 
   getStubAccountContractArtifact(type: AccountType): Promise<ContractArtifact> {

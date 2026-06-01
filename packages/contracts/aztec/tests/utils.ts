@@ -15,6 +15,11 @@ import { Fr } from "@aztec/aztec.js/fields";
 import { deriveKeys } from "@aztec/aztec.js/keys";
 import { getContractInstanceFromInstantiationParams } from "@aztec/stdlib/contract";
 import { FeeJuiceContract } from "@aztec/aztec.js/protocol";
+import { publishContractClass, publishInstance } from "@aztec/aztec.js/deployment";
+import {
+  AuthRegistryArtifact,
+  getStandardAuthRegistry,
+} from "@aztec/standard-contracts/auth-registry";
 import { SubscriptionFPC } from "../lib/subscription-fpc.js";
 import { SubscriptionFPCContractArtifact } from "../noir/artifacts/SubscriptionFPC.js";
 import { setupLocalNetwork } from "@aztec-kit/common/testing";
@@ -94,6 +99,26 @@ export interface FPCTestContext extends TestContext {
 }
 
 /**
+ * Publishes the standard AuthRegistry (contract class + canonical instance) and
+ * registers its artifact with PXE.
+ */
+async function ensureAuthRegistryPublished(
+  wallet: EmbeddedWallet,
+  from: AztecAddress,
+): Promise<void> {
+  const { instance, contractClass } = await getStandardAuthRegistry();
+  if (
+    !(await wallet.getContractClassMetadata(contractClass.id)).isContractClassPubliclyRegistered
+  ) {
+    await (await publishContractClass(wallet, AuthRegistryArtifact)).send({ from });
+  }
+  if (!(await wallet.getContractMetadata(instance.address)).isContractPublished) {
+    await publishInstance(wallet, instance).send({ from });
+  }
+  await wallet.registerContract(instance, AuthRegistryArtifact);
+}
+
+/**
  * Spins up a fresh in-process sandbox (anvil + L1 contracts + AztecNode),
  * derives the admin from the first initial test account, and deploys a
  * SubscriptionFPC whose address was included in the genesis pre-funded
@@ -116,6 +141,10 @@ export async function setupTestContext(): Promise<FPCTestContext> {
   // puts the instance in the PXE but doesn't publish its code — every tx the
   // admin sends has to hit a live account contract.
   await deployFundedSchnorrAccounts(wallet, [testAccount]);
+
+  // AuthRegistry is no longer a genesis protocol contract — publish it so the
+  // public authwit path (sponsored `transfer_in_public`) can dispatch into it.
+  await ensureAuthRegistryPublished(wallet, admin);
 
   const feeJuice = FeeJuiceContract.at(wallet);
 
