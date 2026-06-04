@@ -96,7 +96,7 @@ export interface FPCTestContext extends TestContext {
   fpc: SubscriptionFPC;
   fpcInstance: ContractInstanceWithAddress;
   fpcSecretKey: Fr;
-  userWallet: EmbeddedWallet
+  userWallet: EmbeddedWallet;
 }
 
 /**
