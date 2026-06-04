@@ -44,7 +44,7 @@ describe("Token transfer subscription (multi-use)", () => {
     });
     token = rawToken;
 
-    userWallet = await EmbeddedWallet.create(ctx.node, { ephemeral: true });
+    userWallet = ctx.userWallet;
 
     await userWallet.registerContract(ctx.fpcInstance, SubscriptionFPC.artifact, ctx.fpcSecretKey);
     await userWallet.registerContract(tokenInstance, TokenContractArtifact);

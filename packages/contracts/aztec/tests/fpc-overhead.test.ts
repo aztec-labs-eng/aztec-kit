@@ -14,7 +14,6 @@
  */
 
 import { describe, it, expect, beforeAll } from "vitest";
-import { EmbeddedWallet } from "@aztec/wallets/embedded";
 import { Fr } from "@aztec/aztec.js/fields";
 import { Gas } from "@aztec/stdlib/gas";
 import { randomBytes } from "@aztec/foundation/crypto/random";
@@ -77,9 +76,7 @@ describe("FPC gas overhead", () => {
     });
     const token = rawToken;
 
-    const userWallet = await EmbeddedWallet.create(ctx.node, {
-      ephemeral: true,
-    });
+    const userWallet = await ctx.createUserWallet();
     await userWallet.registerContract(ctx.fpcInstance, SubscriptionFPC.artifact, ctx.fpcSecretKey);
     await userWallet.registerContract(tokenInstance, TokenContractArtifact);
 

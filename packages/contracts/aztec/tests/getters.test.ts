@@ -8,7 +8,6 @@
  */
 
 import { describe, it, expect, beforeAll } from "vitest";
-import { EmbeddedWallet } from "@aztec/wallets/embedded";
 import { Fr } from "@aztec/aztec.js/fields";
 import { Gas } from "@aztec/stdlib/gas";
 import { randomBytes } from "@aztec/foundation/crypto/random";
@@ -105,9 +104,7 @@ describe("FPC getters", () => {
 
   it("decrements slots and creates subscription after subscribe", async () => {
     // Create a user and subscribe
-    const userWallet = await EmbeddedWallet.create(ctx.node, {
-      ephemeral: true,
-    });
+    const userWallet = ctx.userWallet;
     await userWallet.registerContract(ctx.fpcInstance, SubscriptionFPC.artifact, ctx.fpcSecretKey);
 
     const tokenInstance = await ctx.node.getContract(token.address);
