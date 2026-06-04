@@ -76,7 +76,7 @@ describe("FPC gas overhead", () => {
     });
     const token = rawToken;
 
-    const userWallet = await ctx.createUserWallet();
+    const userWallet = ctx.userWallet;
     await userWallet.registerContract(ctx.fpcInstance, SubscriptionFPC.artifact, ctx.fpcSecretKey);
     await userWallet.registerContract(tokenInstance, TokenContractArtifact);
 
