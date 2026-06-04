@@ -41,6 +41,7 @@ export {
 export {
   setupLocalNetwork,
   setupLocalNetworkCli,
+  TEST_FEE_PADDING,
   type LocalNetwork,
   type LocalNetworkOptions,
   type LocalNetworkCli,

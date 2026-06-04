@@ -22,7 +22,7 @@ import {
 } from "@aztec/standard-contracts/auth-registry";
 import { SubscriptionFPC } from "../lib/subscription-fpc.js";
 import { SubscriptionFPCContractArtifact } from "../noir/artifacts/SubscriptionFPC.js";
-import { setupLocalNetwork } from "@aztec-kit/common/testing";
+import { setupLocalNetwork, TEST_FEE_PADDING } from "@aztec-kit/common/testing";
 
 /**
  * Fixed secret used for the SubscriptionFPC across all tests. Combined with
@@ -96,6 +96,7 @@ export interface FPCTestContext extends TestContext {
   fpc: SubscriptionFPC;
   fpcInstance: ContractInstanceWithAddress;
   fpcSecretKey: Fr;
+  userWallet: EmbeddedWallet;
 }
 
 /**
@@ -135,7 +136,16 @@ export async function setupTestContext(): Promise<FPCTestContext> {
     fundedAddresses: [admin, fpcAddress],
   });
 
-  const wallet = await EmbeddedWallet.create(network.node, { ephemeral: true });
+  // The in-process network runs the AutomineSequencer, whose congestion fee
+  // swings between estimate and inclusion; pad each wallet's max fee so txs
+  // don't bounce off `maxFeesPerGas < gasFees`. See TEST_FEE_PADDING.
+  const createWallet = async (): Promise<EmbeddedWallet> => {
+    const wallet = await EmbeddedWallet.create(network.node, { ephemeral: true });
+    wallet.setMinFeePadding(TEST_FEE_PADDING);
+    return wallet;
+  };
+
+  const wallet = await createWallet();
   const [testAccount] = await getInitialTestAccountsData();
   // Deploy the admin's schnorr account contract on-chain. Registration alone
   // puts the instance in the PXE but doesn't publish its code — every tx the
@@ -171,6 +181,7 @@ export async function setupTestContext(): Promise<FPCTestContext> {
     fpc,
     fpcInstance: instance,
     fpcSecretKey: FPC_SECRET_KEY,
+    userWallet: await createWallet(),
     stop: network.stop,
   };
 }
