@@ -254,4 +254,31 @@ describe("Failure cases", () => {
       }),
     ).rejects.toThrow(/Gas settings exceed subscription max_fee/);
   });
+
+  it("rejects a second sign_up at the same config_id", async () => {
+    // sign_up emits a per-config uniqueness nullifier so the admin can't
+    // stack a second, differently priced SlotNote on the same
+    // (app, selector, configIndex). A repeat sign_up must fail; a fresh
+    // config index must still succeed.
+    const UNIQ_INDEX = FAILURE_INDEX + 2;
+    const MAX_FEE = 1_000_000_000_000_000_000n;
+    const sample = await token.methods
+      .transfer_in_private(ctx.admin, recipientAddress, 1n, 0)
+      .getFunctionCall();
+
+    await ctx.fpc.methods
+      .sign_up(sample.to, sample.selector, UNIQ_INDEX, 1, MAX_FEE, 1)
+      .send({ from: ctx.admin });
+
+    await expect(
+      ctx.fpc.methods
+        .sign_up(sample.to, sample.selector, UNIQ_INDEX, 1, MAX_FEE, 1)
+        .send({ from: ctx.admin }),
+    ).rejects.toThrow();
+
+    // A different config index on the same (app, selector) is unaffected.
+    await ctx.fpc.methods
+      .sign_up(sample.to, sample.selector, UNIQ_INDEX + 1, 1, MAX_FEE, 1)
+      .send({ from: ctx.admin });
+  });
 });
