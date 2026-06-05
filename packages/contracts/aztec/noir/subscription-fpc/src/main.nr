@@ -91,6 +91,12 @@ contract SubscriptionFPC {
             selector.to_field(),
             current_index.to_field(),
         ]);
+
+        // Enforce one sign-up per (app, selector, configIndex). `sign_up` only
+        // *appends* slots, so re-running it at a config_id that already has
+        // slots silently stacks a second, differently priced SlotNote
+        self.context.push_nullifier_unsafe(poseidon2_hash([config_id]));
+
         self
             .storage
             .slots
