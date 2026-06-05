@@ -22,7 +22,7 @@
     "dist"
   ],
   "scripts": {
-    "clean": "rm -rf ./dist ./noir/artifacts ./noir/target",
+    "clean": "rm -rf ./dist ./noir/codegenCache.json ./noir/target",
     "compile": "cd noir && aztec compile",
     "codegen": "cd noir && aztec codegen ./target -o artifacts",
     "build": "yarn compile && yarn codegen && tsc -p tsconfig.build.json && mkdir -p dist/noir/target && cp noir/target/*.json dist/noir/target/",

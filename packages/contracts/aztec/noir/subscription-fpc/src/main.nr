@@ -92,6 +92,12 @@ contract SubscriptionFPC {
             selector.to_field(),
             current_index.to_field(),
         ]);
+
+        // Enforce one sign-up per (app, selector, configIndex). `sign_up` only
+        // *appends* slots, so re-running it at a config_id that already has
+        // slots silently stacks a second, differently priced SlotNote
+        self.context.push_nullifier(poseidon2_hash([config_id]));
+
         // Safety: The sender for tags is only used to compute unconstrained shared secrets for emitting logs.
         // Since this value is only used for unconstrained tagging and not for any constrained logic,
         // it is safe to set from a constrained context.
