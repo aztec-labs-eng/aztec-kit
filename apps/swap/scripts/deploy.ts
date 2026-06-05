@@ -321,6 +321,17 @@ function writeNetworkConfig(
   fs.mkdirSync(configDir, { recursive: true });
 
   const configPath = path.join(configDir, `${network}.json`);
+
+  // Preserve the existing `subscriptionFPC` block across redeploys. The FPC is
+  // deployed/signed-up out of band (fpc-operator), and `register-fpc-signups`
+  // reads the last-used config index from this block to advance to a fresh
+  // `config_id` on each run (sign_up now reverts on a duplicate). Rebuilding
+  // the config from scratch here used to wipe it, resetting the index to 0
+  // every deploy and silently stacking stale-priced slots on the same FPC.
+  const existing = fs.existsSync(configPath)
+    ? JSON.parse(fs.readFileSync(configPath, "utf-8"))
+    : {};
+
   const config = {
     id: network,
     nodeUrl,
@@ -339,6 +350,7 @@ function writeNetworkConfig(
       address: deploymentInfo.deployerAddress,
     },
     deployedAt: new Date().toISOString(),
+    ...(existing.subscriptionFPC ? { subscriptionFPC: existing.subscriptionFPC } : {}),
   };
 
   fs.writeFileSync(configPath, JSON.stringify(config, null, 2));

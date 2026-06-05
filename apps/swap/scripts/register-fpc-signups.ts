@@ -181,6 +181,33 @@ async function main() {
   // imported back into the UI to hydrate the dashboard.
   const backupApps: SignedUpApp[] = [];
 
+  // Pick the config index for this run. `config_id = hash(app, selector,
+  // configIndex)` keys the (private) slot and subscription sets, and `sign_up`
+  // only ever *appends* a slot while emitting a per-config uniqueness nullifier
+  // — so re-running it at a config_id we've already used now reverts on-chain
+  // (duplicate nullifier). We must therefore advance the index on every re-run
+  // against the same FPC. The last index lives in the swap network config's
+  // `subscriptionFPC` block, which `deploy.ts` now preserves across redeploys
+  // (it used to wipe it, which is why the index never advanced). A brand-new
+  // FPC (different address or secret) starts at 0.
+  const existingFpc = config.subscriptionFPC;
+  const reusingSameFpc =
+    existingFpc?.address === fpcAddress.toString() &&
+    existingFpc?.secretKey === fpcSecret.toString();
+  const existingIndices: number[] =
+    reusingSameFpc && existingFpc?.functions
+      ? Object.values(
+          existingFpc.functions as Record<string, Record<string, { configIndex?: number }>>,
+        ).flatMap((bySelector) => Object.values(bySelector).map((f) => Number(f.configIndex ?? 0)))
+      : [];
+  const targetConfigIndex = existingIndices.length > 0 ? Math.max(...existingIndices) + 1 : 0;
+  if (targetConfigIndex > 0) {
+    console.error(
+      `Existing signup on FPC ${fpcAddress.toString()} (same address + secret) — ` +
+        `bumping config index ${Math.max(...existingIndices)} → ${targetConfigIndex} to a fresh config_id.`,
+    );
+  }
+
   for (const signup of resolved) {
     console.error(`\nSigning up ${signup.aliasKey}.${signup.functionName}...`);
 
@@ -197,7 +224,7 @@ async function main() {
       .sign_up(
         signup.contractAddress,
         signup.selector,
-        0, // configIndex
+        targetConfigIndex,
         signup.maxUses,
         maxFee,
         signup.maxUsers,
@@ -205,13 +232,13 @@ async function main() {
       .send({ from: admin, fee: { paymentMethod } });
 
     console.error(
-      `  sign_up ok — maxFee=${maxFee} gasLimits=${gasLimits.daGas}/${gasLimits.l2Gas} hasPublicCall=${hasPublicCall}`,
+      `  sign_up ok — configIndex=${targetConfigIndex} maxFee=${maxFee} gasLimits=${gasLimits.daGas}/${gasLimits.l2Gas} hasPublicCall=${hasPublicCall}`,
     );
 
     const key = signup.contractAddress.toString();
     functions[key] = functions[key] ?? {};
     functions[key][signup.selector.toString()] = {
-      configIndex: 0,
+      configIndex: targetConfigIndex,
       gasLimits,
       hasPublicCall,
     };
@@ -219,7 +246,7 @@ async function main() {
     backupApps.push({
       appAddress: key,
       functionSelector: signup.selector.toString(),
-      configIndex: 0,
+      configIndex: targetConfigIndex,
       maxUses: signup.maxUses,
       maxFee: maxFee.toString(),
       maxUsers: signup.maxUsers,
