@@ -149,7 +149,7 @@ export async function ensurePlaintextMigrationDone(rollupAddress: string): Promi
 }
 
 /**
- * Called when EmbeddedWallet.create throws EncryptionKeyMismatchError.
+ * Called when EmbeddedWallet.create throws EmbeddedWalletEncryptionError.
  * Wipes:
  *   - The encrypted OPFS dirs for this rollup.
  *   - The CryptoKey in IndexedDB (so the next page load generates a

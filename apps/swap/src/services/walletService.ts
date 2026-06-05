@@ -14,7 +14,7 @@ import {
   type DiscoverySession,
 } from "@aztec/wallet-sdk/manager";
 import type { AztecAddress } from "@aztec/aztec.js/addresses";
-import { EmbeddedWallet, EncryptionKeyMismatchError } from "@aztec-kit/embedded-wallet";
+import { EmbeddedWallet, EmbeddedWalletEncryptionError } from "@aztec-kit/embedded-wallet";
 import type { NetworkConfig } from "../config/networks";
 import {
   ensurePlaintextMigrationDone,
@@ -62,10 +62,12 @@ export async function createEmbeddedWallet(
       getEncryptionKey: () => exportRawKey(cryptoKey),
     });
   } catch (err) {
-    if (err instanceof EncryptionKeyMismatchError) {
+    if (err instanceof EmbeddedWalletEncryptionError) {
       // On-disk data is encrypted with a key we no longer have (user
       // cleared IndexedDB but not OPFS, or some other key/data drift).
-      // Wipe both sides and force a re-onboard via reload.
+      // Wipe both sides and force a re-onboard via reload. `err.storeName`
+      // tells us which store failed; we wipe both anyway because keeping
+      // half-stale state would be more confusing than a clean restart.
       await resetWalletKeyAndStorage(rollupHex);
       throw new Error(
         "Wallet storage was reset due to an encryption key mismatch. Please reload the page.",
