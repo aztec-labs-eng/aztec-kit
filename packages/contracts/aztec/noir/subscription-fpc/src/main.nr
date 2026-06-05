@@ -94,9 +94,7 @@ contract SubscriptionFPC {
 
         // Enforce one sign-up per (app, selector, configIndex). `sign_up` only
         // *appends* slots, so re-running it at a config_id that already has
-        // slots silently stacks a second, differently priced SlotNote — a later
-        // subscriber can pop the stale one and freeze its low max_fee. A
-        // config-scoped nullifier makes a duplicate sign_up fail at the kernel.
+        // slots silently stacks a second, differently priced SlotNote
         self.context.push_nullifier_unsafe(poseidon2_hash([config_id]));
 
         self
