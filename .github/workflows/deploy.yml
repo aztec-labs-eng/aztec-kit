@@ -156,7 +156,17 @@ jobs:
           # so we deploy the actual proposed changes.
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
+      # pull_request_target runs this workflow from the BASE branch (next), but
+      # the setup action is resolved from the checked-out PR head. For PRs from
+      # the private v5 line that head's setup action pulls @aztec from the
+      # private registry + aztec-nr source from the private repo, so pass the
+      # credentials here. For next's own (public) builds the head's setup action
+      # ignores these inputs. Gated by the `authorize` job above.
       - uses: ./.github/actions/setup
+        with:
+          gcp-sa-key: ${{ secrets.GCP_NPM_SA_KEY }}
+          gh-app-id: ${{ vars.GH_APP_ID }}
+          gh-app-private-key: ${{ secrets.GH_APP_PRIVATE_KEY }}
 
       # Strip `local.json` from every app's network list before anything
       # builds. The apps pick up whatever JSONs exist under config/networks/
