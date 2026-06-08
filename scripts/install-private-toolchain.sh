@@ -135,6 +135,11 @@ cat > "$DIR/package.json" <<EOF
 EOF
 cat > "$DIR/.yarnrc.yml" <<EOF
 nodeLinker: node-modules
+# This is an isolated, exact-pinned install from the private registry (not the
+# workspace), and it legitimately creates a fresh lockfile here. Yarn auto-
+# enables hardened mode under PR events and would block that (YN0028), so turn
+# it off for this throwaway toolchain dir.
+enableHardenedMode: false
 npmScopes:
   aztec:
     npmRegistryServer: "https://us-west1-npm.pkg.dev/testnet-440309/aztec-npm"
