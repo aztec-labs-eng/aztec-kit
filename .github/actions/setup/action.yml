@@ -56,24 +56,25 @@ runs:
         owner: AztecProtocol
         repositories: aztec-packages-private
 
-    # Mint a short-lived access token for the private @aztec Artifact Registry
-    # from the service-account key. `.yarnrc.yml` read it via
-    # ${AZTEC_NPM_TOKEN}, so yarn install + the toolchain npm install authenticate.
-    - name: Authenticate to the private @aztec registry
-      id: gcp-auth
-      uses: google-github-actions/auth@c200f3691d83b41bf9bbd8638997a462592937ed # v2
-      with:
-        credentials_json: ${{ inputs.gcp-sa-key }}
-        token_format: access_token
-
-    - name: Export registry + private-git auth
+    # Mint the private @aztec Artifact Registry token from the service-account
+    # key via gcloud (scripts/registry-token.sh — a direct JWT→OAuth exchange
+    # that needs no extra IAM, unlike google-github-actions/auth's access_token
+    # path). gcloud is preinstalled on ubuntu-latest. .yarnrc.yml reads the
+    # token as ${AZTEC_NPM_TOKEN}, so yarn install + the toolchain authenticate.
+    - name: Registry token + private-git auth
       shell: bash
       env:
+        GCP_SA_KEY: ${{ inputs.gcp-sa-key }}
         GH_TOKEN: ${{ steps.app-token.outputs.token }}
       run: |
-        echo "AZTEC_NPM_TOKEN=${{ steps.gcp-auth.outputs.access_token }}" >> "$GITHUB_ENV"
+        KEY="$RUNNER_TEMP/gcp-sa.json"
+        printf '%s' "$GCP_SA_KEY" > "$KEY"
+        TOKEN="$(GCP_SA_KEY_FILE="$KEY" bash scripts/registry-token.sh)"
+        rm -f "$KEY"
+        echo "::add-mask::$TOKEN"
+        echo "AZTEC_NPM_TOKEN=$TOKEN" >> "$GITHUB_ENV"
         # nargo clones the private monorepo (aztec-nr source) over https; let it
-        # use the token. Source only — contract artifacts are compiled here.
+        # use the app token. Source only — contract artifacts are compiled here.
         git config --global url."https://x-access-token:${GH_TOKEN}@github.com/".insteadOf "https://github.com/"
 
     # Cache the yarn download store, install state, and every `node_modules`
