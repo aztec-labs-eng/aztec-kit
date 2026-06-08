@@ -161,7 +161,7 @@ jobs:
 
       - uses: ./.github/actions/setup
         with:
-          gcp-sa-key: ${{ secrets.GCP_NPM_SA_KEY }}
+          gcp-sa-key: ${{ secrets.GCP_SA_KEY_FILE }}
           gh-app-id: ${{ vars.GH_APP_ID }}
           gh-app-private-key: ${{ secrets.GH_APP_PRIVATE_KEY }}
 
