@@ -26,6 +26,9 @@ on:
     branches:
       - main
       - next
+      # v5-next deploys to the PREVIEW slot only (see slot logic below) so the
+      # team can view the private v5 line behind Vercel auth; never public.
+      - v5-next
   # On PRs, deploy preview after CI passes. pull_request_target runs in the
   # context of the base repo so it has access to secrets (needed for Vercel
   # deploys + PR comments) — we wait for the CI workflow on the PR head to
@@ -183,6 +186,7 @@ jobs:
       #   next → BRIDGE_PROJECT_ID_NEXT / FPC_PROJECT_ID_NEXT / SWAP_PROJECT_ID_NEXT
       #
       # event → slot:
+      #   any event on v5-next          → preview (never production)
       #   pull_request_target           → preview
       #   push                          → production (of the branch's project)
       #   workflow_dispatch (prod=true) → production
@@ -201,7 +205,10 @@ jobs:
               echo "FPC_PROJECT_ID_RESOLVED=${{ secrets.FPC_PROJECT_ID }}" >> "$GITHUB_ENV"
               echo "SWAP_PROJECT_ID_RESOLVED=${{ secrets.SWAP_PROJECT_ID }}" >> "$GITHUB_ENV"
               ;;
-            next)
+            next|v5-next)
+              # v5-next reuses the *-next Vercel project but is pinned to the
+              # PREVIEW slot below, so it lands as an auth-gated preview and
+              # never touches the next.* production domain.
               echo "BRIDGE_PROJECT_ID_RESOLVED=${{ secrets.BRIDGE_PROJECT_ID_NEXT }}" >> "$GITHUB_ENV"
               echo "FPC_PROJECT_ID_RESOLVED=${{ secrets.FPC_PROJECT_ID_NEXT }}" >> "$GITHUB_ENV"
               echo "SWAP_PROJECT_ID_RESOLVED=${{ secrets.SWAP_PROJECT_ID_NEXT }}" >> "$GITHUB_ENV"
@@ -212,7 +219,11 @@ jobs:
               ;;
           esac
 
-          if [ "${{ github.event_name }}" = "pull_request_target" ]; then
+          if [ "$BRANCH" = "v5-next" ]; then
+            # v5-next is preview-only — it must never produce a production
+            # (public) deploy, regardless of event (push / dispatch included).
+            echo "VERCEL_ENV_SLOT=preview" >> "$GITHUB_ENV"
+          elif [ "${{ github.event_name }}" = "pull_request_target" ]; then
             echo "VERCEL_ENV_SLOT=preview" >> "$GITHUB_ENV"
           elif [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.production }}" != "true" ]; then
             echo "VERCEL_ENV_SLOT=preview" >> "$GITHUB_ENV"
