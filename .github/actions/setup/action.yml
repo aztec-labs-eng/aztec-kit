@@ -45,6 +45,17 @@ runs:
       shell: bash
       run: corepack enable
 
+    # TEMP DEBUG: are the inputs (from vars/secrets) reaching this action? Prints
+    # booleans only, no values. Compare build (pull_request) vs deploy
+    # (pull_request_target). Remove once the deploy-secrets issue is resolved.
+    - name: debug input availability
+      shell: bash
+      run: |
+        echo "event=${{ github.event_name }}"
+        echo "gh-app-id present:          ${{ inputs.gh-app-id != '' }}"
+        echo "gh-app-private-key present: ${{ inputs.gh-app-private-key != '' }}"
+        echo "gcp-sa-key present:         ${{ inputs.gcp-sa-key != '' }}"
+
     # Installation token for the private monorepo (different org than this repo,
     # hence explicit owner). Scoped read-only to aztec-packages-private.
     - name: Mint token for the private repo (aztec-nr source)
