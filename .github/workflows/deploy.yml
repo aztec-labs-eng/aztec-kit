@@ -157,6 +157,10 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
       - uses: ./.github/actions/setup
+        with:
+          gcp-sa-key: ${{ secrets.GCP_NPM_SA_KEY }}
+          gh-app-id: ${{ vars.GH_APP_ID }}
+          gh-app-private-key: ${{ secrets.GH_APP_PRIVATE_KEY }}
 
       # Strip `local.json` from every app's network list before anything
       # builds. The apps pick up whatever JSONs exist under config/networks/

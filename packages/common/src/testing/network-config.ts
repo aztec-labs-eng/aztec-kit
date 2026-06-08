@@ -9,7 +9,7 @@ export type NetworkName = (typeof VALID_NETWORKS)[number];
 export const NETWORK_URLS: Record<NetworkName, string> = {
   local: "http://localhost:8080",
   testnet: "https://rpc.testnet.aztec-labs.com",
-  nextnet: "https://nextnet.aztec-labs.com",
+  nextnet: "http://136.118.97.239:8080",
 };
 
 /** L1 parameters the bridging scripts need. Keep in sync with the rollup. */

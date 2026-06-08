@@ -26,6 +26,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/setup
+        with:
+          gcp-sa-key: ${{ secrets.GCP_NPM_SA_KEY }}
+          gh-app-id: ${{ vars.GH_APP_ID }}
+          gh-app-private-key: ${{ secrets.GH_APP_PRIVATE_KEY }}
 
       - name: Format check
         run: yarn format
@@ -46,6 +50,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/setup
+        with:
+          gcp-sa-key: ${{ secrets.GCP_NPM_SA_KEY }}
+          gh-app-id: ${{ vars.GH_APP_ID }}
+          gh-app-private-key: ${{ secrets.GH_APP_PRIVATE_KEY }}
 
       - name: Run @aztec-kit/contracts-aztec integration tests
         run: yarn workspace @aztec-kit/contracts-aztec test
@@ -68,6 +76,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/setup
+        with:
+          gcp-sa-key: ${{ secrets.GCP_NPM_SA_KEY }}
+          gh-app-id: ${{ vars.GH_APP_ID }}
+          gh-app-private-key: ${{ secrets.GH_APP_PRIVATE_KEY }}
 
       # Hard guarantee that no test-state checkpoints leak in from any cache
       # path widening. `e2e/.state/` is per-run scratch: contract addresses
