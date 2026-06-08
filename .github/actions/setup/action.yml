@@ -37,7 +37,7 @@ runs:
   using: composite
   steps:
     - name: Set up Node.js
-      uses: actions/setup-node@v4
+      uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
       with:
         node-version: "24"
 
@@ -49,7 +49,7 @@ runs:
     # hence explicit owner). Scoped read-only to aztec-packages-private.
     - name: Mint token for the private repo (aztec-nr source)
       id: app-token
-      uses: actions/create-github-app-token@v1
+      uses: actions/create-github-app-token@d72941d797fd3113feb6b93fd0dec494b13a2547 # v1
       with:
         app-id: ${{ inputs.gh-app-id }}
         private-key: ${{ inputs.gh-app-private-key }}
@@ -61,7 +61,7 @@ runs:
     # ${AZTEC_NPM_TOKEN}, so yarn install + the toolchain npm install authenticate.
     - name: Authenticate to the private @aztec registry
       id: gcp-auth
-      uses: google-github-actions/auth@v2
+      uses: google-github-actions/auth@c200f3691d83b41bf9bbd8638997a462592937ed # v2
       with:
         credentials_json: ${{ inputs.gcp-sa-key }}
         token_format: access_token
@@ -80,7 +80,7 @@ runs:
     # tree across the workspace. Keyed on yarn.lock so any dependency bump
     # busts the cache automatically.
     - name: Restore yarn + node_modules cache
-      uses: actions/cache@v4
+      uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
       with:
         path: |
           .yarn/cache
@@ -116,7 +116,7 @@ runs:
     # find `anvil` after a cache hit.
     - name: Cache Aztec + Foundry
       id: aztec-cache
-      uses: actions/cache@v4
+      uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
       with:
         path: |
           ~/.aztec
@@ -170,7 +170,7 @@ runs:
     # the `restore-keys` fallback doesn't drag in the previous version's
     # `dist/` while `noir/target/` recompiles to the new version's output.
     - name: Cache turbo outputs
-      uses: actions/cache@v4
+      uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
       with:
         path: |
           .turbo

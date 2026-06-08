@@ -25,7 +25,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
       - uses: ./.github/actions/setup
         with:
           gcp-sa-key: ${{ secrets.GCP_NPM_SA_KEY }}
@@ -49,7 +49,7 @@ jobs:
     needs: build
     timeout-minutes: 45
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
       - uses: ./.github/actions/setup
         with:
           gcp-sa-key: ${{ secrets.GCP_NPM_SA_KEY }}
@@ -75,7 +75,7 @@ jobs:
     needs: build
     timeout-minutes: 60
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
       - uses: ./.github/actions/setup
         with:
           gcp-sa-key: ${{ secrets.GCP_NPM_SA_KEY }}
@@ -95,7 +95,7 @@ jobs:
       # registry/nativeDeps.js for ubuntu24.04-x64; bump `version` when the
       # list changes to bust the cache.
       - name: Install Playwright system deps
-        uses: awalsh128/cache-apt-pkgs-action@v1
+        uses: awalsh128/cache-apt-pkgs-action@0e3c11464a8cfae52ee6ceb2b33777bcc9187892 # v1
         with:
           version: playwright-deps-v2
           packages: >-
@@ -137,7 +137,7 @@ jobs:
 
       - name: Cache Playwright browsers
         id: playwright-cache
-        uses: actions/cache@v4
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
           path: ~/.cache/ms-playwright
           key: playwright-${{ runner.os }}-${{ steps.playwright-version.outputs.version }}
@@ -156,7 +156,7 @@ jobs:
 
       - name: Upload Playwright report
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: playwright-report
           # html-report/   — Playwright's HTML report (traces, videos)
