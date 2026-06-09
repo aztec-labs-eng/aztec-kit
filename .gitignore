@@ -66,3 +66,7 @@ apps/fpc-operator/backups/
 # Turbo
 .turbo
 codegenCache.json
+
+# Local secrets — gcloud SA key for the private @aztec registry; never committed.
+/.secrets/
+*-sa.json
