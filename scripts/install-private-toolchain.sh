@@ -135,6 +135,13 @@ cat > "$DIR/package.json" <<EOF
 EOF
 cat > "$DIR/.yarnrc.yml" <<EOF
 nodeLinker: node-modules
+# This is an isolated, exact-pinned install from the private registry (not the
+# workspace), and it legitimately creates a fresh lockfile here. Yarn would
+# block that (YN0028) via hardened mode (auto-enabled under PR events) and via
+# immutable installs (auto-enabled when CI=true), so disable both for this
+# throwaway toolchain dir. The workspace install keeps --immutable.
+enableHardenedMode: false
+enableImmutableInstalls: false
 npmScopes:
   aztec:
     npmRegistryServer: "https://us-west1-npm.pkg.dev/testnet-440309/aztec-npm"
