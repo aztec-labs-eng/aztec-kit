@@ -66,3 +66,8 @@ apps/fpc-operator/backups/
 # Turbo
 .turbo
 codegenCache.json
+
+# Local secrets — gcloud service-account key for the private @aztec npm
+# registry. Injected via env / CI secret; never committed.
+/.secrets/
+*-sa.json
