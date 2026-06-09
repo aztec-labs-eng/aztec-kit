@@ -16,9 +16,13 @@ name: Deploy to Vercel
 # Vercel projects, so prod-slot deploys auto-alias — no manual `vercel alias
 # set` step.
 #
-# This file is the SOURCE OF TRUTH for both branches. `pull_request_target`
-# runs the workflow from the base ref, so PRs targeting `next` run this file
-# from `next`'s checkout — keep both branches' copies of this file in sync.
+# SOURCE OF TRUTH = the DEFAULT branch (main). `pull_request_target` executes
+# the workflow file from the default branch regardless of the PR's base, so this
+# file (and the setup action it calls) must be replicated to the long-lived
+# branches but the version that actually runs for previews is main's. The setup
+# action is branch-aware: a PR head on the private channel (v5-next) triggers the
+# private toolchain flow; public heads use install.aztec.network. v5-next routes
+# to the *-next project's PREVIEW slot only (never the next.* production domain).
 # ─────────────────────────────────────────────────────────────────────────────
 
 on:
@@ -61,7 +65,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check author association or label
-        uses: actions/github-script@v7
+        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7
         with:
           script: |
             const trusted = ['OWNER', 'MEMBER', 'COLLABORATOR'];
@@ -94,7 +98,7 @@ jobs:
       # CI.
       - name: Wait for CI build
         id: build
-        uses: fountainhead/action-wait-for-check@v1.2.0
+        uses: fountainhead/action-wait-for-check@5a908a24814494009c4bb27c242ea38c93c593be # v1.2.0
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           checkName: build
@@ -110,7 +114,7 @@ jobs:
 
       - name: Wait for CI integration
         id: integration
-        uses: fountainhead/action-wait-for-check@v1.2.0
+        uses: fountainhead/action-wait-for-check@5a908a24814494009c4bb27c242ea38c93c593be # v1.2.0
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           checkName: integration
@@ -126,7 +130,7 @@ jobs:
 
       - name: Wait for CI e2e
         id: e2e
-        uses: fountainhead/action-wait-for-check@v1.2.0
+        uses: fountainhead/action-wait-for-check@5a908a24814494009c4bb27c242ea38c93c593be # v1.2.0
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           checkName: e2e
@@ -150,21 +154,17 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
         with:
           # pull_request_target defaults to the base ref — check out the PR head
           # so we deploy the actual proposed changes.
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
-      # pull_request_target runs this workflow from the BASE branch (next), but
-      # the setup action is resolved from the checked-out PR head. For PRs from
-      # the private v5 line that head's setup action pulls @aztec from the
-      # private registry + aztec-nr source from the private repo, so pass the
-      # credentials here. For next's own (public) builds the head's setup action
-      # ignores these inputs. Gated by the `authorize` job above.
       - uses: ./.github/actions/setup
         with:
-          gcp-sa-key: ${{ secrets.GCP_NPM_SA_KEY }}
+          # Used only when the PR-head branch is on the private channel (v5-next);
+          # public branches' setup action ignores them.
+          gcp-sa-key: ${{ secrets.GCP_SA_KEY_FILE }}
           gh-app-id: ${{ vars.GH_APP_ID }}
           gh-app-private-key: ${{ secrets.GH_APP_PRIVATE_KEY }}
 
@@ -185,10 +185,11 @@ jobs:
       # targets. PRs pin to their `base.ref`; push/dispatch pin to `github.ref`.
       #
       # branch → project IDs:
-      #   main → BRIDGE_PROJECT_ID / FPC_PROJECT_ID / SWAP_PROJECT_ID
-      #   next → BRIDGE_PROJECT_ID_NEXT / FPC_PROJECT_ID_NEXT / SWAP_PROJECT_ID_NEXT
+      #   main         → BRIDGE_PROJECT_ID / FPC_PROJECT_ID / SWAP_PROJECT_ID
+      #   next, v5-next → BRIDGE_PROJECT_ID_NEXT / FPC_PROJECT_ID_NEXT / SWAP_PROJECT_ID_NEXT
       #
       # event → slot:
+      #   any event on v5-next          → preview (never production)
       #   pull_request_target           → preview
       #   push                          → production (of the branch's project)
       #   workflow_dispatch (prod=true) → production
@@ -207,7 +208,9 @@ jobs:
               echo "FPC_PROJECT_ID_RESOLVED=${{ secrets.FPC_PROJECT_ID }}" >> "$GITHUB_ENV"
               echo "SWAP_PROJECT_ID_RESOLVED=${{ secrets.SWAP_PROJECT_ID }}" >> "$GITHUB_ENV"
               ;;
-            next)
+            next|v5-next)
+              # v5-next reuses the *-next Vercel project but is pinned to the
+              # PREVIEW slot below, so it never touches the next.* production domain.
               echo "BRIDGE_PROJECT_ID_RESOLVED=${{ secrets.BRIDGE_PROJECT_ID_NEXT }}" >> "$GITHUB_ENV"
               echo "FPC_PROJECT_ID_RESOLVED=${{ secrets.FPC_PROJECT_ID_NEXT }}" >> "$GITHUB_ENV"
               echo "SWAP_PROJECT_ID_RESOLVED=${{ secrets.SWAP_PROJECT_ID_NEXT }}" >> "$GITHUB_ENV"
@@ -218,7 +221,11 @@ jobs:
               ;;
           esac
 
-          if [ "${{ github.event_name }}" = "pull_request_target" ]; then
+          if [ "$BRANCH" = "v5-next" ]; then
+            # v5-next is preview-only — never a production (public) deploy,
+            # regardless of event (only PRs targeting v5-next reach here).
+            echo "VERCEL_ENV_SLOT=preview" >> "$GITHUB_ENV"
+          elif [ "${{ github.event_name }}" = "pull_request_target" ]; then
             echo "VERCEL_ENV_SLOT=preview" >> "$GITHUB_ENV"
           elif [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.production }}" != "true" ]; then
             echo "VERCEL_ENV_SLOT=preview" >> "$GITHUB_ENV"
@@ -291,7 +298,7 @@ jobs:
       # ── PR Comment ─────────────────────────────────────────────────────
       - name: Comment deployment URLs on PR
         if: github.event_name == 'pull_request_target'
-        uses: actions/github-script@v7
+        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7
         with:
           script: |
             const prNumber = context.payload.pull_request.number;

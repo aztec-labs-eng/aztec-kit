@@ -1,8 +1,12 @@
 name: Setup workspace
 description: >
   Install Node + corepack, restore cached yarn + aztec deps, install what's
-  missing, compile contract artifacts, and extend PATH with the aztec CLI.
-  Every job that needs a ready-to-use monorepo starts with this action.
+  missing, and extend PATH with the aztec CLI. Branch-aware: a branch whose
+  .yarnrc.yml points @aztec at the private Artifact Registry uses the private
+  toolchain flow (gcloud-minted token + GitHub App for aztec-nr + local
+  toolchain assembly); any other branch uses the public install.aztec.network
+  flow. This single action is the SOURCE OF TRUTH on the default branch and is
+  replicated to the long-lived branches.
 
 inputs:
   cache-suffix:
@@ -13,17 +17,34 @@ inputs:
       in cached node_modules can cross-contaminate between jobs.
     required: false
     default: ""
+  # The following are ONLY needed by branches on the private @aztec release
+  # channel (detected below). Public branches (main/next) ignore them.
+  gcp-sa-key:
+    description: GCP service-account JSON key for the private @aztec Artifact Registry.
+    required: false
+    default: ""
+  gh-app-id:
+    description: GitHub App ID able to read AztecProtocol/aztec-packages-private (aztec-nr source).
+    required: false
+    default: ""
+  gh-app-private-key:
+    description: Private key (PEM) matching gh-app-id.
+    required: false
+    default: ""
 
 outputs:
   aztec-version:
     description: Aztec version string extracted from apps/bridge/package.json.
     value: ${{ steps.aztec-version.outputs.version }}
+  private-channel:
+    description: "'true' when this branch consumes the private @aztec release channel."
+    value: ${{ steps.channel.outputs.private }}
 
 runs:
   using: composite
   steps:
     - name: Set up Node.js
-      uses: actions/setup-node@v4
+      uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
       with:
         node-version: "24"
 
@@ -31,11 +52,53 @@ runs:
       shell: bash
       run: corepack enable
 
-    # Cache the yarn download store, install state, and every `node_modules`
-    # tree across the workspace. Keyed on yarn.lock so any dependency bump
-    # busts the cache automatically.
+    # Single switch for the whole action: does this branch pull @aztec from the
+    # private registry? Detected from the committed .yarnrc.yml so it needs no
+    # input and travels with the branch.
+    - name: Detect release channel
+      id: channel
+      shell: bash
+      run: |
+        if grep -qF 'us-west1-npm.pkg.dev' .yarnrc.yml 2>/dev/null; then
+          echo "private=true" >> "$GITHUB_OUTPUT"
+          echo "Release channel: PRIVATE (Artifact Registry)"
+        else
+          echo "private=false" >> "$GITHUB_OUTPUT"
+          echo "Release channel: PUBLIC (npm + install.aztec.network)"
+        fi
+
+    # ── private channel only: auth ──────────────────────────────────────────
+    - name: Mint token for the private repo (aztec-nr source)
+      if: steps.channel.outputs.private == 'true'
+      id: app-token
+      uses: actions/create-github-app-token@d72941d797fd3113feb6b93fd0dec494b13a2547 # v1
+      with:
+        app-id: ${{ inputs.gh-app-id }}
+        private-key: ${{ inputs.gh-app-private-key }}
+        owner: AztecProtocol
+        repositories: aztec-packages-private
+
+    - name: Private registry token + git auth
+      if: steps.channel.outputs.private == 'true'
+      shell: bash
+      env:
+        GCP_SA_KEY: ${{ inputs.gcp-sa-key }}
+        GH_TOKEN: ${{ steps.app-token.outputs.token }}
+      run: |
+        # Mint the registry token via gcloud (direct JWT→OAuth, no IAM
+        # serviceAccountTokenCreator needed). .yarnrc.yml reads ${AZTEC_NPM_TOKEN}.
+        KEY="$RUNNER_TEMP/gcp-sa.json"
+        printf '%s' "$GCP_SA_KEY" > "$KEY"
+        TOKEN="$(GCP_SA_KEY_FILE="$KEY" bash scripts/registry-token.sh)"
+        rm -f "$KEY"
+        echo "::add-mask::$TOKEN"
+        echo "AZTEC_NPM_TOKEN=$TOKEN" >> "$GITHUB_ENV"
+        # nargo clones the private monorepo (aztec-nr source) over https.
+        git config --global url."https://x-access-token:${GH_TOKEN}@github.com/".insteadOf "https://github.com/"
+
+    # ── common: workspace install ─────────────────────────────────────────────
     - name: Restore yarn + node_modules cache
-      uses: actions/cache@v4
+      uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
       with:
         path: |
           .yarn/cache
@@ -58,28 +121,29 @@ runs:
       shell: bash
       run: |
         VERSION=$(jq -r '.dependencies["@aztec/aztec.js"]' apps/bridge/package.json)
-        VERSION_NO_V=${VERSION#v}
-        echo "version=$VERSION_NO_V" >> $GITHUB_OUTPUT
+        echo "version=${VERSION#v}" >> "$GITHUB_OUTPUT"
 
-    # Cache the full Aztec CLI install tree. The installer lays down files
-    # into multiple locations (~/.aztec/bin symlinks, ~/.aztec/versions/<v>/
-    # with bin/ + node_modules/, plus a version-pin config). Cache the whole
-    # ~/.aztec tree to avoid re-running the installer.
-    #
-    # `foundry` (anvil) is also installed by the script into ~/.foundry/bin
-    # during local-network spin-up. Cache that too so integration tests can
-    # find `anvil` after a cache hit.
+    # ── toolchain (cached across runs by version) ─────────────────────────────
     - name: Cache Aztec + Foundry
       id: aztec-cache
-      uses: actions/cache@v4
+      uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
       with:
         path: |
           ~/.aztec
           ~/.foundry
         key: aztec-${{ runner.os }}-${{ steps.aztec-version.outputs.version }}
 
-    - name: Install Aztec CLI
-      if: steps.aztec-cache.outputs.cache-hit != 'true'
+    # Private nightlies aren't on install.aztec.network / public npm — assemble
+    # the toolchain locally (public-noir nargo + private-registry bb/CLI).
+    - name: Install Aztec toolchain (private)
+      if: steps.channel.outputs.private == 'true' && steps.aztec-cache.outputs.cache-hit != 'true'
+      shell: bash
+      env:
+        GH_TOKEN: ${{ steps.app-token.outputs.token }}
+      run: bash scripts/install-private-toolchain.sh
+
+    - name: Install Aztec toolchain (public)
+      if: steps.channel.outputs.private != 'true' && steps.aztec-cache.outputs.cache-hit != 'true'
       shell: bash
       run: |
         export CI=1
@@ -89,39 +153,17 @@ runs:
     - name: Update PATH
       shell: bash
       run: |
-        # `bin/` holds user-facing aztec-* symlinks; `node_modules/.bin/` holds
-        # JS CLIs. Native tools (nargo, forge, cast, anvil, chisel, noir-profiler)
-        # live in `internal-bin/` since v4.3.0-nightly.20260512-1 — the upstream
-        # installer no longer puts them on PATH (the shell-wrapper `aztec`
-        # prepends internal-bin to its child env, but the npm-shipped
-        # `node_modules/.bin/aztec` doesn't, so we add it ourselves).
-        echo "$HOME/.aztec/versions/${{ steps.aztec-version.outputs.version }}/bin" >> $GITHUB_PATH
-        echo "$HOME/.aztec/versions/${{ steps.aztec-version.outputs.version }}/internal-bin" >> $GITHUB_PATH
-        echo "$HOME/.aztec/versions/${{ steps.aztec-version.outputs.version }}/node_modules/.bin" >> $GITHUB_PATH
-        echo "$HOME/.foundry/bin" >> $GITHUB_PATH
+        # `bin/` holds user-facing aztec-* symlinks; native tools live in
+        # `internal-bin/`; JS CLIs in `node_modules/.bin/`. Add all three + foundry.
+        V="${{ steps.aztec-version.outputs.version }}"
+        echo "$HOME/.aztec/versions/$V/bin" >> "$GITHUB_PATH"
+        echo "$HOME/.aztec/versions/$V/internal-bin" >> "$GITHUB_PATH"
+        echo "$HOME/.aztec/versions/$V/node_modules/.bin" >> "$GITHUB_PATH"
+        echo "$HOME/.foundry/bin" >> "$GITHUB_PATH"
 
-    # Turbo's local cache + build outputs. Single source of truth for ALL
-    # compiled artifacts in any given run: `dist/`, `noir/target/`,
-    # `noir/artifacts/`, the ethereum codegen, etc. — every output `turbo.json`
-    # lists for the `build` task lives here.
-    #
-    # An earlier version had a second cache that stored just `noir/target` +
-    # `noir/artifacts` keyed on the noir-source hash, and a conditional
-    # pre-build compile step that primed it. That created two independent
-    # writers for the same files: when the contracts cache hit but the turbo
-    # cache fell back to a different (older) `restore-keys` prefix entry,
-    # the e2e job ended up with `noir/target/*.json` from one compile and
-    # `dist/noir/target/*.json` from a different compile. Class-id mismatch
-    # at signup time (PXE rejects the artifact). Folding everything into
-    # turbo's per-SHA cache keeps the two paths in lockstep.
-    #
-    # Not suffixed with `cache-suffix`: emitted artifacts are platform-
-    # independent, so any job can read what another wrote under the same SHA.
-    # The aztec-version is part of the key prefix so that on a version bump
-    # the `restore-keys` fallback doesn't drag in the previous version's
-    # `dist/` while `noir/target/` recompiles to the new version's output.
+    # Turbo's local cache + every build output (single source of truth per SHA).
     - name: Cache turbo outputs
-      uses: actions/cache@v4
+      uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
       with:
         path: |
           .turbo
