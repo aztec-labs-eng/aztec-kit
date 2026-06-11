@@ -118,14 +118,59 @@ export function aztecVitePlugin(options: AztecVitePluginOptions = {}): Plugin[] 
         ...base,
         oxc: { target },
         optimizeDeps: {
+          // `@aztec/standard-contracts` lazy loaders use a native JSON-module import
+          // attribute — `import('../../artifacts/*.json', { with: { type: 'json' } })`
+          // — whereas the equivalent `@aztec/protocol-contracts` loaders use a plain
+          // `import('../../artifacts/*.json')`. Vite always transforms `.json` into a
+          // `text/javascript` ES module, which a `with: { type: 'json' }` import refuses
+          // (the browser requires an `application/json` module type), so the embedded
+          // wallet fails to load its artifacts. `stripStandardContractsJsonAttr` below
+          // rewrites those imports to the plain form; excluding the package from the
+          // pre-bundle is required for that transform to run (Rolldown pre-bundling
+          // would otherwise inline these modules and bypass plugin `transform` hooks).
+          exclude: ["@aztec/standard-contracts"],
+          // Rolldown does not auto-interop the named exports of these CJS deps when
+          // they're reached transitively (e.g. `import { inspect } from 'util'` throws
+          // "does not provide an export named 'inspect'", crashing the bridge app).
+          // Force them through the pre-bundler's CJS→ESM interop. Mirrors the Vite ≤7
+          // `include` list above — the assumption that Vite 8 needs none was incomplete.
+          include: [
+            "pino",
+            "pino/browser",
+            "sha3",
+            "util",
+            "detect-node",
+            "lodash.chunk",
+            "lodash.clonedeepwith",
+          ],
           rolldownOptions: { transform: { target } },
         },
       };
     },
   };
 
+  // `@aztec/standard-contracts` lazily imports its artifacts with a native JSON-module
+  // attribute (`import('../../artifacts/*.json', { with: { type: 'json' } })`). Vite
+  // serves `.json` as a `text/javascript` ES module, which the browser rejects for a
+  // `type: 'json'` import — so artifact loading throws "Failed to fetch dynamically
+  // imported module". `@aztec/protocol-contracts` uses the attribute-free form and works.
+  // Strip the attribute so these match, deferring to Vite's standard JSON-as-ESM handling.
+  const stripStandardContractsJsonAttr: Plugin = {
+    name: "aztec-strip-standard-contracts-json-attr",
+    enforce: "pre",
+    transform(code, id) {
+      if (!id.includes("@aztec/standard-contracts")) return null;
+      const stripped = code.replace(
+        /,\s*\{\s*with:\s*\{\s*type:\s*['"]json['"]\s*\}\s*\}\s*\)/g,
+        ")",
+      );
+      return stripped === code ? null : { code: stripped, map: null };
+    },
+  };
+
   const plugins: Plugin[] = [
     configPlugin,
+    stripStandardContractsJsonAttr,
     nodePolyfillsFix({ include: ["buffer", "path", "tty"] }),
   ];
 
