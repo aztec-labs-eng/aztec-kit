@@ -9,7 +9,7 @@ import type { SendOptions } from "@aztec/aztec.js/wallet";
 import type { ExecutionPayload } from "@aztec/stdlib/tx";
 import { BaseWallet } from "@aztec/wallet-sdk/base-wallet";
 import { getInitialTestAccountsData } from "@aztec/accounts/testing";
-import { deployFundedSchnorrAccounts } from "@aztec/wallets/testing";
+import { createFundedInitializerlessAccounts } from "@aztec/wallets/testing";
 import type { AztecAddress } from "@aztec/aztec.js/addresses";
 import { Fr } from "@aztec/aztec.js/fields";
 import { deriveKeys } from "@aztec/aztec.js/keys";
@@ -147,10 +147,11 @@ export async function setupTestContext(): Promise<FPCTestContext> {
 
   const wallet = await createWallet();
   const [testAccount] = await getInitialTestAccountsData();
-  // Deploy the admin's schnorr account contract on-chain. Registration alone
-  // puts the instance in the PXE but doesn't publish its code — every tx the
-  // admin sends has to hit a live account contract.
-  await deployFundedSchnorrAccounts(wallet, [testAccount]);
+  // Create the admin's initializerless schnorr account in the wallet. These
+  // accounts need no deployment tx — creating one registers the instance and
+  // materializes its immutable signing key locally, and it's funded via genesis
+  // at its address (the same address `deriveAdminAddress` pre-funds above).
+  await createFundedInitializerlessAccounts(wallet, [testAccount]);
 
   // AuthRegistry is no longer a genesis protocol contract — publish it so the
   // public authwit path (sponsored `transfer_in_public`) can dispatch into it.
@@ -193,18 +194,25 @@ export interface GasValues {
   teardownGasLimits: { daGas: number; l2Gas: number };
 }
 
-export function toGas(estimatedGas: {
-  gasLimits: { daGas: bigint | number; l2Gas: bigint | number };
-  teardownGasLimits: { daGas: bigint | number; l2Gas: bigint | number };
+/**
+ * Maps the raw gas a simulation reports (`SimulationResult.gasUsed`, available
+ * when `includeMetadata: true`) into our {@link GasValues} shape. The nightly
+ * dropped the `fee.estimateGas` → `estimatedGas{gasLimits,...}` simulate API in
+ * favor of surfacing raw consumed gas; for an overhead *measurement* the raw
+ * `totalGas`/`teardownGas` is exactly what we want (no padding noise).
+ */
+export function toGas(gasUsed: {
+  totalGas: { daGas: bigint | number; l2Gas: bigint | number };
+  teardownGas: { daGas: bigint | number; l2Gas: bigint | number };
 }): GasValues {
   return {
     gasLimits: {
-      daGas: Number(estimatedGas.gasLimits.daGas),
-      l2Gas: Number(estimatedGas.gasLimits.l2Gas),
+      daGas: Number(gasUsed.totalGas.daGas),
+      l2Gas: Number(gasUsed.totalGas.l2Gas),
     },
     teardownGasLimits: {
-      daGas: Number(estimatedGas.teardownGasLimits.daGas),
-      l2Gas: Number(estimatedGas.teardownGasLimits.l2Gas),
+      daGas: Number(gasUsed.teardownGas.daGas),
+      l2Gas: Number(gasUsed.teardownGas.l2Gas),
     },
   };
 }

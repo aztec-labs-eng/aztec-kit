@@ -1,21 +1,4 @@
-export { EmbeddedWallet, INITIALIZERLESS_TYPE } from "./embedded-wallet";
-export {
-  SchnorrInitializerlessAccount,
-  SchnorrInitializerlessAuthWitnessProvider,
-  createSchnorrInitializerlessAccount,
-  computeSigningKeyImmutablesHash,
-  serializeSigningKey,
-  createSigningKeyCapsule,
-  type SigningPublicKey,
-} from "./initializerless-account";
+export { EmbeddedWallet } from "./embedded-wallet";
 export { txProgress, type TxPhase, type PhaseTiming, type TxProgressEvent } from "./tx-progress";
-export {
-  computeImmutablesHash,
-  createImmutablesCapsule,
-  createImmutablesInstance,
-  deployWithImmutables,
-  computeImmutablesAddress,
-  IMMUTABLES_SLOT,
-} from "./immutables";
 export { EncryptionKeyMismatchError } from "./encryption-key-mismatch-error";
 export type { StoreName } from "./encryption-key-mismatch-error";
