@@ -10,7 +10,7 @@ contract SubscriptionFPC {
             notes::note,
             storage::storage,
         },
-        messages::message_delivery::MessageDelivery,
+        messages::delivery::MessageDelivery,
         note::{
             note_getter_options::NoteGetterOptions, note_interface::NoteProperties,
             note_viewer_options::NoteViewerOptions,

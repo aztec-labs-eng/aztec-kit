@@ -175,7 +175,7 @@ export async function deployAdmin(params: DeployAdminParams): Promise<AztecAddre
     // Admin already holds public FJ (someone bridged + claimed externally —
     // e.g. the bridge UI in e2e). The aztec.js deploy machinery pays for
     // the init tx directly from that balance when no `fee` is provided.
-    // This mirrors `@aztec/wallets/testing::deployFundedSchnorrAccounts`.
+    // This mirrors `@aztec/wallets/testing::createFundedInitializerlessAccounts`.
     console.error(`Deploying ${label} using existing public FJ balance...`);
     await deployMethod.send({
       from: NO_FROM,

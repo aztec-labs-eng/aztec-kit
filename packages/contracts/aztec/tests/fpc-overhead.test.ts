@@ -133,16 +133,16 @@ describe("FPC gas overhead", () => {
 
       // Measure subscribe
       const noirCall = await buildNoirFunctionCall(sampleCall);
-      const { estimatedGas } = await adminFpc.methods
+      const { gasUsed } = await adminFpc.methods
         .subscribe(noirCall, PUBLIC_INDEX, ctx.admin)
         .with({ extraHashedArgs: await buildExtraHashedArgs(sampleCall) })
         .simulate({
           from: NO_FROM,
           sendMessagesAs: ctx.admin,
-          fee: { estimateGas: true, estimatedGasPadding: 0 },
+          includeMetadata: true,
           additionalScopes: [ctx.admin, ctx.fpc.address],
         });
-      subscribePublicGas = toGas(estimatedGas!);
+      subscribePublicGas = toGas(gasUsed!);
 
       // Execute subscribe to create subscription for the sponsor test.
       // Use the just-measured `subscribePublicGas` directly (it's the full
@@ -185,16 +185,16 @@ describe("FPC gas overhead", () => {
       const sampleCall = await action.getFunctionCall();
       const noirCall = await buildNoirFunctionCall(sampleCall);
 
-      const { estimatedGas } = await adminFpc.methods
+      const { gasUsed } = await adminFpc.methods
         .sponsor(noirCall, PUBLIC_INDEX, ctx.admin)
         .with({ extraHashedArgs: await buildExtraHashedArgs(sampleCall) })
         .simulate({
           from: NO_FROM,
           sendMessagesAs: ctx.admin,
-          fee: { estimateGas: true, estimatedGasPadding: 0 },
+          includeMetadata: true,
           additionalScopes: [ctx.admin, ctx.fpc.address],
         });
-      sponsorPublicGas = toGas(estimatedGas!);
+      sponsorPublicGas = toGas(gasUsed!);
     }
 
     // Measure calibrate (public). `calibrate` is top-of-stack like
@@ -230,7 +230,7 @@ describe("FPC gas overhead", () => {
         innerHash,
       });
 
-      const { estimatedGas } = await calibrateInteraction
+      const { gasUsed } = await calibrateInteraction
         .with({
           authWitnesses: [calibrateAuthwit],
           extraHashedArgs: await buildExtraHashedArgs(sampleCall),
@@ -238,12 +238,12 @@ describe("FPC gas overhead", () => {
         .simulate({
           from: NO_FROM,
           sendMessagesAs: ctx.admin,
-          fee: { estimateGas: true, estimatedGasPadding: 0 },
+          includeMetadata: true,
           additionalScopes: [ctx.admin, ctx.fpc.address],
           skipTxValidation: true,
           skipFeeEnforcement: true,
         });
-      calibratePublicGas = toGas(estimatedGas!);
+      calibratePublicGas = toGas(gasUsed!);
     }
 
     // ── Private subscribe + sponsor ──────────────────────────────────
@@ -270,7 +270,7 @@ describe("FPC gas overhead", () => {
       });
 
       const noirCall = await buildNoirFunctionCall(sampleCall);
-      const { estimatedGas } = await adminFpc.methods
+      const { gasUsed } = await adminFpc.methods
         .subscribe(noirCall, PRIVATE_INDEX, ctx.admin)
         .with({
           authWitnesses: [authwit],
@@ -279,10 +279,10 @@ describe("FPC gas overhead", () => {
         .simulate({
           from: NO_FROM,
           sendMessagesAs: ctx.admin,
-          fee: { estimateGas: true, estimatedGasPadding: 0 },
+          includeMetadata: true,
           additionalScopes: [ctx.admin, ctx.fpc.address],
         });
-      subscribePrivateGas = toGas(estimatedGas!);
+      subscribePrivateGas = toGas(gasUsed!);
     }
 
     // Execute subscribe (unique nonce for the real tx). Use the just-
@@ -331,7 +331,7 @@ describe("FPC gas overhead", () => {
       });
       const noirCall = await buildNoirFunctionCall(sampleCall);
 
-      const { estimatedGas } = await adminFpc.methods
+      const { gasUsed } = await adminFpc.methods
         .sponsor(noirCall, PRIVATE_INDEX, ctx.admin)
         .with({
           authWitnesses: [authwit],
@@ -340,10 +340,10 @@ describe("FPC gas overhead", () => {
         .simulate({
           from: NO_FROM,
           sendMessagesAs: ctx.admin,
-          fee: { estimateGas: true, estimatedGasPadding: 0 },
+          includeMetadata: true,
           additionalScopes: [ctx.admin, ctx.fpc.address],
         });
-      sponsorPrivateGas = toGas(estimatedGas!);
+      sponsorPrivateGas = toGas(gasUsed!);
     }
 
     // Measure calibrate (private)
@@ -370,7 +370,7 @@ describe("FPC gas overhead", () => {
         innerHash,
       });
 
-      const { estimatedGas } = await calibrateInteraction
+      const { gasUsed } = await calibrateInteraction
         .with({
           authWitnesses: [calibrateAuthwit, sponsoredAuthwit],
           extraHashedArgs: await buildExtraHashedArgs(sampleCall),
@@ -378,12 +378,12 @@ describe("FPC gas overhead", () => {
         .simulate({
           from: NO_FROM,
           sendMessagesAs: ctx.admin,
-          fee: { estimateGas: true, estimatedGasPadding: 0 },
+          includeMetadata: true,
           additionalScopes: [ctx.admin, ctx.fpc.address],
           skipTxValidation: true,
           skipFeeEnforcement: true,
         });
-      calibratePrivateGas = toGas(estimatedGas!);
+      calibratePrivateGas = toGas(gasUsed!);
     }
 
     // ── Print all measurements ───────────────────────────────────────
