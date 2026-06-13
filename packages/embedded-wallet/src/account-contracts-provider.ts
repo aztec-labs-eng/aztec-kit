@@ -37,6 +37,10 @@ export class ExtendedAccountContractsProvider implements AccountContractsProvide
     return this.inner.getSchnorrAccountContract(signingKey);
   }
 
+  getSchnorrInitializerlessAccountContract(signingKey: Fq): Promise<AccountContract> {
+    return this.inner.getSchnorrInitializerlessAccountContract(signingKey);
+  }
+
   getEcdsaRAccountContract(signingKey: Buffer): Promise<AccountContract> {
     return this.inner.getEcdsaRAccountContract(signingKey);
   }

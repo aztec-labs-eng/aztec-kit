@@ -167,7 +167,6 @@ export async function setupLocalNetwork(opts: LocalNetworkOptions = {}): Promise
     validatorPrivateKeys: new SecretValue<Hex[]>([privateKey]),
     coinbase: EthAddress.fromString(privateKeyToAddress(privateKey)),
     realProofs: false,
-    enforceTimeTable: false,
     enableDelayer: true,
     listenAddress: "127.0.0.1",
     minTxPoolAgeMs: 0,

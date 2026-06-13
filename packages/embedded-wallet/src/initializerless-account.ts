@@ -79,6 +79,10 @@ export class SchnorrInitializerlessAccount implements AccountContract {
     return loadArtifact();
   }
 
+  async getImmutablesHash(): Promise<Fr | undefined> {
+    return computeSigningKeyImmutablesHash(this.signingPublicKey);
+  }
+
   getAuthWitnessProvider(_address: CompleteAddress): AuthWitnessProvider {
     return new SchnorrInitializerlessAuthWitnessProvider(this.signingPrivateKey);
   }

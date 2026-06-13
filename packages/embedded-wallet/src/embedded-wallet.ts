@@ -23,8 +23,8 @@ import {
   type SendReturn,
   extractOffchainOutput,
   ContractFunctionInteraction,
-  getGasLimits,
 } from "@aztec/aztec.js/contracts";
+import { getGasLimits } from "@aztec/wallet-sdk/base-wallet";
 import { waitForTx } from "@aztec/aztec.js/node";
 import type { SendOptions } from "@aztec/aztec.js/wallet";
 import { CallAuthorizationRequest } from "@aztec/aztec.js/authorization";
@@ -520,7 +520,12 @@ export class EmbeddedWallet extends EmbeddedWalletBase {
 
       emit("proving");
       const provingStart = Date.now();
-      const estimated = getGasLimits(simulationResult, this.estimatedGasPadding);
+      const maxTxGasLimits = await this.getMaxTxGasLimits();
+      const estimated = getGasLimits(
+        simulationResult.gasUsed,
+        maxTxGasLimits,
+        this.estimatedGasPadding,
+      );
       this.log.verbose(
         `Estimated gas limits for tx: DA=${estimated.gasLimits.daGas} L2=${estimated.gasLimits.l2Gas} teardownDA=${estimated.teardownGasLimits.daGas} teardownL2=${estimated.teardownGasLimits.l2Gas}`,
       );
