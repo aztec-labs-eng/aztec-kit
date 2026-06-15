@@ -1,7 +1,7 @@
 /**
  * Historical block-base-fee aggregator for networks without a clustec
- * indexer (e.g. nextnet). Walks the last `blocks` block headers from the
- * node and returns the highest per-gas fees observed across the window.
+ * indexer. Walks the last `blocks` block headers from the node and returns
+ * the highest per-gas fees observed across the window.
  *
  * Why max instead of a percentile: the wallet at runtime commits
  * `predicted(Limit) × 1.5` as its `maxFeesPerGas`. The protocol's predicted

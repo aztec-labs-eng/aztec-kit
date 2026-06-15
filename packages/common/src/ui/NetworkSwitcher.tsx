@@ -12,7 +12,7 @@ import type { NetworkContextValue, NetworkLike } from "./createNetworkContext.ts
  * synchronously so the render flow stays predictable.
  *
  * When only one network is available the switcher renders nothing — keeps
- * the UI clean for dev-only local and prod-only testnet setups.
+ * the UI clean for single-network (dev-only or prod-only) setups.
  */
 
 export interface NetworkSwitcherProps<T extends NetworkLike> {

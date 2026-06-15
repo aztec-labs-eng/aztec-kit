@@ -2,12 +2,12 @@
 # Orchestrates a full swap-app deploy on the target network:
 #
 #   1. Deploy the swap admin (generates SWAP_ADMIN_SECRET if not set).
-#      On local: via SponsoredFPC. On testnet/nextnet: bridge + claim + deploy.
+#      On the local network: via SponsoredFPC. On remote networks: bridge + claim + deploy.
 #   2. Deploy swap contracts with that admin.
 #   3. Deploy the FPC admin (generates FPC_ADMIN_SECRET if not set). Same
 #      sponsoredfpc-vs-bridge split as step 1.
 #   4. Deploy the SubscriptionFPC and fund it with a bridged FJ balance.
-#   5. Register the swap-app signups on the FPC (calibrate on non-local).
+#   5. Register the swap-app signups on the FPC (calibrate on remote networks).
 #
 # Each step's stdout contains `export KEY=VAL` lines for the next step; we
 # capture them by eval-ing the greppable subset of output.
@@ -19,7 +19,7 @@ set -euo pipefail
 
 NETWORK="${1:-}"
 if [ -z "${NETWORK}" ]; then
-  echo "usage: $0 <local|testnet|nextnet>" >&2
+  echo "usage: $0 <network>" >&2
   exit 1
 fi
 

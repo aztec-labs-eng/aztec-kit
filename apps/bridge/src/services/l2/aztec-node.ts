@@ -1,4 +1,5 @@
-import { createAztecNodeClient, type AztecNode, waitForTx } from "@aztec/aztec.js/node";
+import { type AztecNode, waitForTx } from "@aztec/aztec.js/node";
+import { createNode } from "@aztec-kit/common/node";
 import { isL1ToL2MessageReady } from "@aztec/aztec.js/messaging";
 import { Fr } from "@aztec/foundation/curves/bn254";
 import { TxHash, TxStatus } from "@aztec/stdlib/tx";
@@ -9,12 +10,13 @@ import type { L1Addresses, MessageStatus } from "../types";
 
 // ── Cached Aztec Node Client ─────────────────────────────────────────
 
-let cachedNode: { url: string; client: AztecNode } | null = null;
+let cachedNode: { url: string; apiKey?: string; client: AztecNode } | null = null;
 
-export function getAztecNode(aztecNodeUrl: string): AztecNode {
-  if (cachedNode && cachedNode.url === aztecNodeUrl) return cachedNode.client;
-  const client = createAztecNodeClient(aztecNodeUrl);
-  cachedNode = { url: aztecNodeUrl, client };
+export function getAztecNode(aztecNodeUrl: string, apiKey?: string): AztecNode {
+  if (cachedNode && cachedNode.url === aztecNodeUrl && cachedNode.apiKey === apiKey)
+    return cachedNode.client;
+  const client = createNode(aztecNodeUrl, apiKey);
+  cachedNode = { url: aztecNodeUrl, apiKey, client };
   return client;
 }
 
@@ -22,8 +24,9 @@ export function getAztecNode(aztecNodeUrl: string): AztecNode {
 
 export async function fetchL1Addresses(
   aztecNodeUrl: string,
+  apiKey?: string,
 ): Promise<L1Addresses & { l1ChainId: number }> {
-  const node = getAztecNode(aztecNodeUrl);
+  const node = getAztecNode(aztecNodeUrl, apiKey);
   const nodeInfo = await node.getNodeInfo();
   const addrs = nodeInfo.l1ContractAddresses;
 
@@ -56,11 +59,12 @@ export function pollMessageReadiness(
   aztecNodeUrl: string,
   messageHash: string,
   onStatus: (status: MessageStatus) => void,
+  apiKey?: string,
 ): { cancel: () => void } {
   let cancelled = false;
 
   const poll = async () => {
-    const node = getAztecNode(aztecNodeUrl);
+    const node = getAztecNode(aztecNodeUrl, apiKey);
     const msgHash = Fr.fromHexString(messageHash);
     while (!cancelled) {
       try {
@@ -94,8 +98,8 @@ export function pollMessageReadiness(
  * Waits for an already-sent Aztec L2 tx to be mined.
  * Used to resume waiting after a page refresh.
  */
-export async function waitForAztecTx(aztecNodeUrl: string, txHashStr: string) {
-  const node = getAztecNode(aztecNodeUrl);
+export async function waitForAztecTx(aztecNodeUrl: string, txHashStr: string, apiKey?: string) {
+  const node = getAztecNode(aztecNodeUrl, apiKey);
   const txHash = TxHash.fromString(txHashStr);
   return waitForTx(node, txHash, { waitForStatus: TxStatus.PROPOSED });
 }

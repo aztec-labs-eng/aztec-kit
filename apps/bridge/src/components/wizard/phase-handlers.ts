@@ -13,7 +13,7 @@ type Dispatch = (action: BridgeAction) => void;
 
 interface OrchestratorContext {
   dispatch: Dispatch;
-  activeNetwork: { l1ChainId: number; aztecNodeUrl: string };
+  activeNetwork: { l1ChainId: number; aztecNodeUrl: string; apiKey?: string };
   walletReadyRef: { current: boolean };
   feeJuiceBalanceRef: { current: string | null };
   walletReady: boolean;
@@ -64,6 +64,7 @@ export function handleWaitingSync(
           });
         }
       },
+      ctx.activeNetwork.apiKey,
     );
     cancellers.push(cancel);
   });
@@ -147,7 +148,7 @@ export function handleClaimSent(
     });
   }, 0);
 
-  waitForAztecTx(ctx.activeNetwork.aztecNodeUrl, txHash)
+  waitForAztecTx(ctx.activeNetwork.aztecNodeUrl, txHash, ctx.activeNetwork.apiKey)
     .then(() => {
       if (cancelled.current) return;
       ctx.dispatch({ type: "CLAIM_DONE" });

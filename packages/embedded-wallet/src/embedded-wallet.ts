@@ -11,6 +11,7 @@
 
 import { collectOffchainEffects, type ExecutionPayload, TxStatus } from "@aztec/stdlib/tx";
 import { createAztecNodeClient, type AztecNode } from "@aztec/aztec.js/node";
+import { defaultFetch } from "@aztec/foundation/json-rpc/client";
 import {
   type InteractionWaitOptions,
   NO_WAIT,
@@ -100,7 +101,18 @@ export type EmbeddedWalletExtraOptions = {
    * affected OPFS dir and re-onboarding.
    */
   getEncryptionKey?: () => Promise<Uint8Array>;
+
+  /**
+   * API key for nodes behind an auth gateway. Only used when `create` is
+   * given a node URL string — when passed a pre-built `AztecNode` the key
+   * must already be baked into that client's fetch. Injected as the
+   * `X-Aztec-API-Key` header on every JSON-RPC request.
+   */
+  apiKey?: string;
 };
+
+/** Header the API-gateway-fronted nodes require for auth. */
+const AZTEC_API_KEY_HEADER = "X-Aztec-API-Key";
 
 export class EmbeddedWallet extends EmbeddedWalletBase {
   /**
@@ -123,7 +135,7 @@ export class EmbeddedWallet extends EmbeddedWalletBase {
     nodeOrUrl: string | AztecNode,
     options: EmbeddedWalletOptions & EmbeddedWalletExtraOptions = {},
   ): Promise<T> {
-    const { inspect, getEncryptionKey, ...rest } = options;
+    const { inspect, getEncryptionKey, apiKey, ...rest } = options;
 
     if (inspect && rest.ephemeral) {
       throw new Error(
@@ -137,7 +149,14 @@ export class EmbeddedWallet extends EmbeddedWalletBase {
       );
     }
 
-    const node = typeof nodeOrUrl === "string" ? createAztecNodeClient(nodeOrUrl) : nodeOrUrl;
+    const apiKeyFetch: typeof defaultFetch | undefined = apiKey
+      ? (host, body, extraHeaders = {}, noRetry = false) =>
+          defaultFetch(host, body, { ...extraHeaders, [AZTEC_API_KEY_HEADER]: apiKey }, noRetry)
+      : undefined;
+    const node =
+      typeof nodeOrUrl === "string"
+        ? createAztecNodeClient(nodeOrUrl, undefined, apiKeyFetch)
+        : nodeOrUrl;
     const rootLogger = rest.logger ?? createLogger("embedded-wallet");
 
     // Prover on by default; caller can opt out by passing `pxe: { proverEnabled: false }`

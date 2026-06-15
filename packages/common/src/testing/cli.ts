@@ -27,7 +27,7 @@ export function parseNetwork(): NetworkName {
 
 /**
  * Parses `--payment <feejuice|sponsoredfpc>` from argv, falling back to the
- * network default (sponsoredfpc on `local`, feejuice on `testnet`).
+ * per-network default in `DEFAULT_PAYMENT_MODE`.
  */
 export function parsePaymentMode(network: NetworkName): PaymentMode {
   const args = process.argv.slice(2);

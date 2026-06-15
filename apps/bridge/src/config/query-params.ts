@@ -4,7 +4,7 @@
  * Supported params:
  *   ?recipient=0x...                          — single pre-filled recipient (no amount, set in Step 4)
  *   ?recipients=addr1,amount1;addr2,amount2   — multiple recipients with amounts (FJ, human-readable)
- *   ?network=testnet                          — override the initial network selection
+ *   ?network=<id>                             — override the initial network selection
  *   ?embedded=true                            — force embedded wallet (skip external wallet option)
  *
  * Both ?recipient and ?recipients are normalized into the same `recipients` array.
