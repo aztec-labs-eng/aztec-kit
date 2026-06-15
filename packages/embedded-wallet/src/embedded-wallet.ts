@@ -1,18 +1,12 @@
 /**
- * Extended EmbeddedWallet with initializerless Schnorr account support.
+ * EmbeddedWallet — thin wrapper over `@aztec/wallets`' EmbeddedWallet that adds
+ * our store/encryption/tx-progress conveniences.
  *
- * The initializerless account is a proper account type that flows through the
- * standard createAccountInternal → AccountManager → getAccountFromAddress pipeline.
- *
- * Storage layout for initializerless accounts in WalletDB:
- *   type:       'schnorr-initializerless' (cast to AccountType — WalletDB stores as a raw string)
- *   secretKey:  the account secret key (Fr)
- *   salt:       the contract instance salt (Fr) — plain random salt under AZIP-9
- *   signingKey: the signing private key (Fq buffer, derivable from secretKey but stored for consistency)
- *
- * The signing key is committed via `ContractInstance.immutables_hash`, not via
- * the salt. `instance.immutables_hash = poseidon2(serialized_immutables)`; the
- * capsule at IMMUTABLES_SLOT holds `serialized_immutables` directly.
+ * Initializerless Schnorr accounts are supported natively by the upstream base
+ * class (`createSchnorrInitializerlessAccount`, the `schnorr_initializerless`
+ * account type, stub-class registration, and immutables/capsule handling), so
+ * we no longer ship a custom account contract or provider — `createInitializerlessAccount`
+ * below is just an ergonomic alias for the base method.
  */
 
 import { collectOffchainEffects, type ExecutionPayload, TxStatus } from "@aztec/stdlib/tx";
@@ -23,9 +17,8 @@ import {
   NO_WAIT,
   type SendReturn,
   extractOffchainOutput,
-  ContractFunctionInteraction,
-  getGasLimits,
 } from "@aztec/aztec.js/contracts";
+import { getGasLimits } from "@aztec/wallet-sdk/base-wallet";
 import { waitForTx } from "@aztec/aztec.js/node";
 import type { SendOptions } from "@aztec/aztec.js/wallet";
 import { CallAuthorizationRequest } from "@aztec/aztec.js/authorization";
@@ -34,20 +27,10 @@ import { txProgress, type PhaseTiming, type TxProgressEvent } from "./tx-progres
 import {
   EmbeddedWallet as EmbeddedWalletBase,
   type EmbeddedWalletOptions,
-  type AccountType,
 } from "@aztec/wallets/embedded";
 import { AztecSQLiteOPFSStore } from "@aztec/kv-store/sqlite-opfs";
 import { createLogger } from "@aztec/foundation/log";
 import { Fr } from "@aztec/foundation/curves/bn254";
-import {
-  createSchnorrInitializerlessAccount,
-  serializeSigningKey,
-} from "./initializerless-account";
-import { computeImmutablesHash } from "./immutables";
-import { SimulatedSchnorrInitializerlessAccountContractArtifact } from "@aztec-kit/contracts-aztec/artifacts/SimulatedSchnorrInitializerlessAccount";
-import { getContractClassFromArtifact } from "@aztec/stdlib/contract";
-import { ExtendedAccountContractsProvider } from "./account-contracts-provider";
-import { INITIALIZERLESS_TYPE } from "./initializerless-account-type";
 import { registerSqliteInspectors } from "./sqlite-inspector";
 import { EncryptionKeyMismatchError, type StoreName } from "./encryption-key-mismatch-error";
 import { GasSettings } from "@aztec/stdlib/gas";
@@ -90,8 +73,6 @@ async function openEncryptedOrPlain(
     throw err;
   }
 }
-
-export { INITIALIZERLESS_TYPE } from "./initializerless-account-type";
 
 /** Extra options supported by this wallet on top of `EmbeddedWalletOptions`. */
 export type EmbeddedWalletExtraOptions = {
@@ -140,19 +121,6 @@ export class EmbeddedWallet extends EmbeddedWalletBase {
    * our overridden `stop()` can release the SAH Pool's OPFS lock on the way out.
    */
   #walletStore?: { close?: () => Promise<void> };
-
-  /**
-   * Wraps the provider before handing it to the base so simulation's
-   * stub-account dispatch recognizes `schnorr-initializerless`. The base's
-   * `static create` instantiates the wallet via `new this(...)`, so our
-   * constructor runs for every subclass `create` path (browser + node) and
-   * `initStubClasses()` (called by base right after construction) already
-   * sees the extended provider.
-   */
-  constructor(...args: ConstructorParameters<typeof EmbeddedWalletBase>) {
-    const [pxe, aztecNode, walletDB, accountContracts, log] = args;
-    super(pxe, aztecNode, walletDB, new ExtendedAccountContractsProvider(accountContracts), log);
-  }
 
   /**
    * Overrides `EmbeddedWalletBase.create` with our defaults:
@@ -282,92 +250,16 @@ export class EmbeddedWallet extends EmbeddedWalletBase {
   }
 
   /**
-   * Registers ONLY our 'schnorr-initializerless' stub class with PXE — apps
-   * built on this wallet only ever create initializerless accounts, so the
-   * base's schnorr/ecdsaK/ecdsaR stub registrations would just bloat PXE's
-   * class registry. If a consumer needs to simulate txs from a schnorr or
-   * ecdsa account, override this method again and call `super.initStubClasses()`.
-   */
-  override async initStubClasses(): Promise<void> {
-    const artifact = SimulatedSchnorrInitializerlessAccountContractArtifact;
-    await this.pxe.registerContractClass(artifact);
-    const { id } = await getContractClassFromArtifact(artifact);
-    this.stubClassIds.set(INITIALIZERLESS_TYPE, id);
-  }
-
-  /**
-   * Override to add the 'schnorr-initializerless' account type.
-   *
-   * For this type:
-   *   - `salt` is a plain random salt — under AZIP-9 the signing key is committed
-   *     via `instance.immutables_hash`, not the salt.
-   *   - `signingKey` is the Fq signing private key buffer (standard, derivable from secret).
-   *   - The AccountContract returns undefined from getInitializationFunctionAndArgs()
-   *     so `initializationHash = Fr.ZERO`.
-   *   - On *first* registration with PXE, we also store the immutables capsule.
-   *     Subsequent loads skip both — PXE persists the capsule alongside the
-   *     contract instance, so re-storing on every load would be wasted work.
-   *     If PXE state is wiped, the missing-instance check below re-runs both.
-   */
-  protected override async createAccountInternal(
-    type: AccountType,
-    secret: Fr,
-    salt: Fr,
-    signingKey: Buffer,
-  ): Promise<AccountManager> {
-    if (type !== INITIALIZERLESS_TYPE) {
-      return super.createAccountInternal(type, secret, salt, signingKey);
-    }
-
-    const { account: accountContract, signingPublicKey } =
-      await createSchnorrInitializerlessAccount(secret);
-
-    const artifact = await accountContract.getContractArtifact();
-    const serializedImmutables = await serializeSigningKey(signingPublicKey);
-    const immutablesHash = await computeImmutablesHash(serializedImmutables);
-
-    const accountManager = await AccountManager.create(this, secret, accountContract, {
-      salt,
-      immutablesHash,
-    });
-    const instance = accountManager.getInstance();
-
-    const existingInstance = await this.pxe.getContractInstance(instance.address);
-    if (!existingInstance) {
-      await this.registerContract(instance, artifact, secret);
-
-      // First-time setup: store the immutables capsule so the contract can verify
-      // the signing key. PXE keeps the capsule across loads; subsequent calls
-      // through this path skip the store.
-      const storeAbi = artifact.functions.find((f) => f.name === "store_immutables");
-      if (storeAbi) {
-        const storeCall = new ContractFunctionInteraction(this, instance.address, storeAbi, [
-          serializedImmutables,
-        ]);
-        await storeCall.simulate({ from: instance.address });
-      }
-    }
-
-    return accountManager;
-  }
-
-  /**
-   * Creates and stores a new initializerless Schnorr account.
-   * Returns the AccountManager — the account is immediately usable (no deployment needed).
+   * Creates and stores a new initializerless Schnorr account, immediately usable
+   * (no deployment tx needed). Ergonomic alias for the upstream base method with
+   * random secret/salt defaults; the signing key is derived from the secret.
    */
   async createInitializerlessAccount(secretKey?: Fr, salt?: Fr): Promise<AccountManager> {
-    const sk = secretKey ?? Fr.random();
-    const s = salt ?? Fr.random();
-
-    // Derive signing key for WalletDB storage (standard Fq buffer)
-    const { signingPrivateKey } = await createSchnorrInitializerlessAccount(sk);
-
-    return this.createAndStoreAccount(
+    return this.createSchnorrInitializerlessAccount(
+      secretKey ?? Fr.random(),
+      salt ?? Fr.random(),
+      undefined,
       "main",
-      INITIALIZERLESS_TYPE,
-      sk,
-      s,
-      signingPrivateKey.toBuffer(),
     );
   }
 
@@ -540,7 +432,12 @@ export class EmbeddedWallet extends EmbeddedWalletBase {
 
       emit("proving");
       const provingStart = Date.now();
-      const estimated = getGasLimits(simulationResult, this.estimatedGasPadding);
+      const maxTxGasLimits = await this.getMaxTxGasLimits();
+      const estimated = getGasLimits(
+        simulationResult.gasUsed,
+        maxTxGasLimits,
+        this.estimatedGasPadding,
+      );
       this.log.verbose(
         `Estimated gas limits for tx: DA=${estimated.gasLimits.daGas} L2=${estimated.gasLimits.l2Gas} teardownDA=${estimated.teardownGasLimits.daGas} teardownL2=${estimated.teardownGasLimits.l2Gas}`,
       );
