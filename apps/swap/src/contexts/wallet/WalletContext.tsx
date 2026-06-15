@@ -117,7 +117,7 @@ export function WalletProvider({ children }: WalletProviderProps) {
 
         const fullError =
           errorMessage.includes("timeout") || errorMessage.includes("unreachable")
-            ? `${errorMessage}\n\nIf using local network, make sure Aztec sandbox is running:\n  aztec start --sandbox\n\nThen deploy contracts:\n  yarn deploy:local`
+            ? `${errorMessage}\n\nIf using local network, make sure the local Aztec network is running:\n  aztec start --local-network\n\nThen deploy contracts:\n  yarn deploy:local`
             : errorMessage;
 
         actions.setError(fullError);

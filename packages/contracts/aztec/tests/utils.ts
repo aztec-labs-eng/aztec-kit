@@ -120,7 +120,7 @@ async function ensureAuthRegistryPublished(
 }
 
 /**
- * Spins up a fresh in-process sandbox (anvil + L1 contracts + AztecNode),
+ * Spins up a fresh in-process local network (anvil + L1 contracts + AztecNode),
  * derives the admin from the first initial test account, and deploys a
  * SubscriptionFPC whose address was included in the genesis pre-funded
  * set. No bridging step required.

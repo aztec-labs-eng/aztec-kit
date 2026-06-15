@@ -31,7 +31,7 @@ export function apiKeyForNetwork(network: NetworkName): string | undefined {
 }
 
 /**
- * Anvil's first pre-funded dev key — used only for the local sandbox.
+ * Anvil's first pre-funded dev key — used only for the local network.
  * Published and non-secret; lets CI + dev loops work with zero configuration.
  */
 export const LOCAL_L1_FUNDER_KEY =
@@ -43,7 +43,7 @@ export const LOCAL_L1_FUNDER_KEY =
  * this helper just chooses which key signs the tx.
  *
  *   L1_FUNDER_KEY env set     → use it.
- *   local sandbox, env unset  → anvil's first dev key (has ETH for gas).
+ *   local network, env unset  → anvil's first dev key (has ETH for gas).
  *   remote network, env unset → undefined (bridgeFeeJuice generates a random key).
  */
 export function resolveL1Funder(network: NetworkName): `0x${string}` | undefined {

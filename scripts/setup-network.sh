@@ -2,7 +2,7 @@
 # Orchestrates a full swap-app deploy on the target network:
 #
 #   1. Deploy the swap admin (generates SWAP_ADMIN_SECRET if not set).
-#      On the local sandbox: via SponsoredFPC. On remote networks: bridge + claim + deploy.
+#      On the local network: via SponsoredFPC. On remote networks: bridge + claim + deploy.
 #   2. Deploy swap contracts with that admin.
 #   3. Deploy the FPC admin (generates FPC_ADMIN_SECRET if not set). Same
 #      sponsoredfpc-vs-bridge split as step 1.

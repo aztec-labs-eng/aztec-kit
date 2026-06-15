@@ -17,7 +17,7 @@
  *   `functions` maps `contractAddress → { functionSelector → configIndex }`.
  *
  * Calibration behaviour:
- *   - local sandbox  : skipped. Uses the hardcoded `maxFee` fallback.
+ *   - local network  : skipped. Uses the hardcoded `maxFee` fallback.
  *   - remote network : runs the FPC's `calibrate` helper to get gas limits, then
  *                      multiplies by the clustec P75-of-last-2000-blocks maxFeePerGas
  *                      with a 2× safety multiplier (what the dashboard UI does).
@@ -392,7 +392,7 @@ async function resolveSignups(
  * sponsored fn's standalone gas, which we persist into the swap config so
  * runtime callers can add the appropriate FPC overhead. `maxFee` on a remote
  * network is sized from the P75 of per-gas prices against the full
- * subscribe-path cost; on the local sandbox it falls back to a hardcoded
+ * subscribe-path cost; on the local network it falls back to a hardcoded
  * policy value because there's no P75 feed. If clustec doesn't index the
  * network we fall back to the node's current min fees × a wider multiplier —
  * matches the manual UI escape hatch the e2e test uses.

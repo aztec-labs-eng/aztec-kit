@@ -28,7 +28,7 @@ export async function getSponsoredFPCContract() {
 /**
  * Builds the payment method for a given mode.
  *
- * - `sponsoredfpc`: `SponsoredFeePaymentMethod` pointing at the sandbox
+ * - `sponsoredfpc`: `SponsoredFeePaymentMethod` pointing at the local-network
  *   SponsoredFPC. Used when the account has no fee juice.
  * - `feejuice`:     `undefined` — the wallet will pay out of the account's
  *   own FJ balance by default. The account must be funded beforehand.

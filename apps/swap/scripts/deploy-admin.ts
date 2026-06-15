@@ -4,7 +4,7 @@
  *
  * Deploy method is auto-detected:
  *   - admin already holds public FJ on L2 → use it (`FeeJuicePaymentMethod`).
- *   - otherwise on the local sandbox       → SponsoredFPC pays.
+ *   - otherwise on the local network       → SponsoredFPC pays.
  *   - otherwise on a remote network        → bridge + claim via `FeeJuicePaymentMethodWithClaim`.
  *
  * Usage:
