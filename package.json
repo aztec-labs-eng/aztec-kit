@@ -22,7 +22,7 @@
     "bootstrap:local": "node scripts/bootstrap-local-networks.js",
     "setup:local": "yarn bootstrap:local && bash scripts/setup-network.sh local",
     "setup:testnet": "bash scripts/setup-network.sh testnet",
-    "setup:nextnet": "bash scripts/setup-network.sh nextnet",
+    "setup:staging": "bash scripts/setup-network.sh staging",
     "deploy-l1-bridge": "node --experimental-transform-types scripts/deploy-l1-bridge.ts",
     "publish:packages": "./scripts/publish.sh"
   },

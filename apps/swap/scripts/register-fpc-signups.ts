@@ -4,7 +4,7 @@
  * `maxFee` per signup.
  *
  * Inputs:
- *   --network <local|testnet|nextnet>
+ *   --network <network>
  *   FPC_ADDRESS      — hex AztecAddress of the deployed FPC (from fpc-operator/deploy-fpc)
  *   FPC_ADMIN_SECRET — FPC admin secret (signup txs must be sent by the FPC deployer)
  *   FPC_SECRET       — the contract key secret the FPC was deployed with, so the
@@ -17,10 +17,10 @@
  *   `functions` maps `contractAddress → { functionSelector → configIndex }`.
  *
  * Calibration behaviour:
- *   - `local`    : skipped. Uses the hardcoded `maxFee` fallback.
- *   - `testnet` : runs the FPC's `calibrate` helper to get gas limits, then
- *                  multiplies by the clustec P75-of-last-2000-blocks maxFeePerGas
- *                  with a 2× safety multiplier (what the dashboard UI does).
+ *   - local sandbox  : skipped. Uses the hardcoded `maxFee` fallback.
+ *   - remote network : runs the FPC's `calibrate` helper to get gas limits, then
+ *                      multiplies by the clustec P75-of-last-2000-blocks maxFeePerGas
+ *                      with a 2× safety multiplier (what the dashboard UI does).
  */
 import fs from "fs";
 import path from "path";
@@ -65,10 +65,10 @@ const P75_BLOCK_RANGE = 2000;
 const P75_MULTIPLIER = 2;
 /**
  * Range and multiplier for the node-walked historical fallback used when no
- * clustec indexer is available (e.g. nextnet). We take the `max` of
+ * clustec indexer is available. We take the `max` of
  * `header.globalVariables.gasFees` across the last N blocks as a proxy for
  * the worst-case `maxFeesPerGas` the wallet will commit. `× 2` matches the
- * testnet P75 multiplier — start small, bump if the assertion still fires.
+ * P75 multiplier — start small, bump if the assertion still fires.
  */
 const HISTORICAL_BLOCK_RANGE = 1000;
 const HISTORICAL_FEE_MULTIPLIER = 2;
@@ -390,12 +390,12 @@ async function resolveSignups(
 /**
  * Runs calibration and derives the signup params. Calibration measures the
  * sponsored fn's standalone gas, which we persist into the swap config so
- * runtime callers can add the appropriate FPC overhead. `maxFee` on
- * testnet is sized from the P75 of per-gas prices against the full
- * subscribe-path cost; on local it falls back to a hardcoded policy value
- * because there's no P75 feed. If clustec doesn't index the network (e.g.
- * nextnet today) we fall back to the node's current min fees × a wider
- * multiplier — matches the manual UI escape hatch the e2e test uses.
+ * runtime callers can add the appropriate FPC overhead. `maxFee` on a remote
+ * network is sized from the P75 of per-gas prices against the full
+ * subscribe-path cost; on the local sandbox it falls back to a hardcoded
+ * policy value because there's no P75 feed. If clustec doesn't index the
+ * network we fall back to the node's current min fees × a wider multiplier —
+ * matches the manual UI escape hatch the e2e test uses.
  */
 async function pickSignupParams(params: {
   network: NetworkName;

@@ -243,6 +243,9 @@ jobs:
         id: deploy-bridge
         env:
           VERCEL_PROJECT_ID: ${{ env.BRIDGE_PROJECT_ID_RESOLVED }}
+          # Build-time auth key for the gateway-fronted staging node; resolved
+          # into the staging.json `${VITE_STAGING_API_KEY}` placeholder by Vite.
+          VITE_STAGING_API_KEY: ${{ secrets.STAGING_API_KEY }}
         run: |
           if [ "$VERCEL_ENV_SLOT" = "production" ]; then
             vercel build --prod --token=${{ secrets.VERCEL_TOKEN }} --cwd apps/bridge
@@ -264,6 +267,7 @@ jobs:
         env:
           VERCEL_PROJECT_ID: ${{ env.FPC_PROJECT_ID_RESOLVED }}
           VITE_BRIDGE_URL: ${{ vars.VITE_BRIDGE_URL }}
+          VITE_STAGING_API_KEY: ${{ secrets.STAGING_API_KEY }}
         run: |
           if [ "$VERCEL_ENV_SLOT" = "production" ]; then
             vercel build --prod --token=${{ secrets.VERCEL_TOKEN }} --cwd apps/fpc-operator
@@ -285,6 +289,7 @@ jobs:
         env:
           VERCEL_PROJECT_ID: ${{ env.SWAP_PROJECT_ID_RESOLVED }}
           VITE_WEB_WALLET_URL: ${{ vars.VITE_WEB_WALLET_URL }}
+          VITE_STAGING_API_KEY: ${{ secrets.STAGING_API_KEY }}
         run: |
           if [ "$VERCEL_ENV_SLOT" = "production" ]; then
             vercel build --prod --token=${{ secrets.VERCEL_TOKEN }} --cwd apps/swap

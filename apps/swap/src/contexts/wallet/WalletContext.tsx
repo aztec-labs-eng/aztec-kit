@@ -5,7 +5,8 @@
  */
 
 import { createContext, useContext, useEffect, useRef, type ReactNode, useCallback } from "react";
-import { createAztecNodeClient, type AztecNode } from "@aztec/aztec.js/node";
+import { type AztecNode } from "@aztec/aztec.js/node";
+import { createNode } from "@aztec-kit/common/node";
 import type { Wallet } from "@aztec/aztec.js/wallet";
 import type { AztecAddress } from "@aztec/aztec.js/addresses";
 import type {
@@ -95,10 +96,9 @@ export function WalletProvider({ children }: WalletProviderProps) {
         // `VITE_RPC_BATCH_WINDOW_MS` widens the JSON-RPC coalescing window so
         // PXE oracle calls separated by awaits still get batched into one HTTP
         // request. Default 10ms — see PXE_PERF_REPORT.md §1.
-        const node = createAztecNodeClient(
+        const node = createNode(
           nodeUrl,
-          undefined,
-          undefined,
+          activeNetwork?.apiKey,
           Number(import.meta.env.VITE_RPC_BATCH_WINDOW_MS ?? 10),
         );
         const { wallet: embeddedWallet, address: defaultAccountAddress } =

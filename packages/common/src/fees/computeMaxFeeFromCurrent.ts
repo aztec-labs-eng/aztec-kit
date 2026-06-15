@@ -3,9 +3,9 @@ import type { GasLimits } from "./computeMaxFeeFromP75.ts";
 /**
  * Computes a padded `maxFee` (raw FJ wei, as bigint) from calibrated gas
  * limits + the node's current minimum per-gas fees. Used as a fallback when
- * the clustec P75 feed is unavailable (e.g. on `nextnet`, where the indexer
- * isn't deployed). Pair with a generous `multiplier` — current min fees
- * have no headroom built in, unlike the P75.
+ * the clustec P75 feed is unavailable (on networks where the indexer isn't
+ * deployed). Pair with a generous `multiplier` — current min fees have no
+ * headroom built in, unlike the P75.
  *
  *   maxFee = ((daGas + teardownDaGas) * feePerDaGas
  *           + (l2Gas + teardownL2Gas) * feePerL2Gas) * multiplier

@@ -20,7 +20,7 @@ import {
  * via CREATE2, producing a fully-deterministic contract address.
  *
  * This is the single deployment path for GoBridge across every
- * environment (local, testnet, mainnet). Because the address is a pure
+ * environment. Because the address is a pure
  * function of the bytecode + salt, apps never need to plumb an address
  * through config — just call `getBridgeAddress()`.
  */

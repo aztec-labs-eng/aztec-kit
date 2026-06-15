@@ -63,6 +63,63 @@ function isFile(path) {
 }
 
 /**
+ * A branch is on the PRIVATE @aztec release channel when its committed
+ * .yarnrc.yml points the @aztec scope at the private Artifact Registry — the
+ * same signal the CI setup action uses. Private branches (e.g. v5-next) need
+ * the private registry + the locally-assembled toolchain; public branches
+ * (main/next) use public npm + install.aztec.network.
+ */
+function isPrivateChannel() {
+  return privateRegistryUrl() !== null;
+}
+
+/**
+ * The @aztec private registry base URL, read from .yarnrc.yml's `npmScopes.aztec.
+ * npmRegistryServer` — the single source of truth (same file the CI setup action
+ * and yarn itself read). Returns null on public branches (no such scope).
+ */
+function privateRegistryUrl() {
+  let yarnrc;
+  try {
+    yarnrc = readFileSync(resolve(ROOT, ".yarnrc.yml"), "utf-8");
+  } catch {
+    return null;
+  }
+  const m = yarnrc.match(/npmRegistryServer:\s*"?(https:\/\/[^"\s]+)"?/);
+  return m ? m[1].replace(/\/+$/, "") : null;
+}
+
+/** Ensure AZTEC_NPM_TOKEN is set (mint a short-lived one from the SA key). */
+function ensureRegistryToken() {
+  if (process.env.AZTEC_NPM_TOKEN) return;
+  log(COLORS.yellow, "Minting AZTEC_NPM_TOKEN via scripts/registry-token.sh...");
+  process.env.AZTEC_NPM_TOKEN = exec("bash scripts/registry-token.sh", { silent: true }).trim();
+}
+
+/**
+ * Let nargo clone the private aztec-nr monorepo over https during compile.
+ * Scoped to this process's children via GIT_CONFIG_* (no global git change),
+ * using the gh CLI token. Skipped if the env already carries auth (e.g. CI
+ * sets GH_TOKEN + a global insteadOf, or the user has a git credential helper).
+ */
+function ensurePrivateGitAuth() {
+  if (process.env.GH_TOKEN || process.env.GIT_CONFIG_COUNT) return;
+  let tok = "";
+  try {
+    tok = exec("gh auth token", { silent: true }).trim();
+  } catch {
+    /* gh not available */
+  }
+  if (!tok) {
+    log(COLORS.yellow, "  (no gh token found; relying on existing git credentials for aztec-nr)");
+    return;
+  }
+  process.env.GIT_CONFIG_COUNT = "1";
+  process.env.GIT_CONFIG_KEY_0 = `url.https://x-access-token:${tok}@github.com/.insteadOf`;
+  process.env.GIT_CONFIG_VALUE_0 = "https://github.com/";
+}
+
+/**
  * Returns every package.json under the given workspace roots.
  * Handles two layouts:
  *   - `e2e/package.json` (single workspace at the root of its dir)
@@ -133,14 +190,8 @@ function updateNargoToml(version) {
     let content = readFileSync(nargoPath, "utf-8");
     const original = content;
 
-    // aztec-nr
     content = content.replace(
-      /(git\s*=\s*"https:\/\/github\.com\/AztecProtocol\/aztec-nr"[^}]*tag\s*=\s*")v[^"]+"/g,
-      `$1v${version}"`,
-    );
-    // aztec-packages
-    content = content.replace(
-      /(git\s*=\s*"https:\/\/github\.com\/AztecProtocol\/aztec-packages\/?",?\s*tag\s*=\s*")v[^"]+"/g,
+      /(git\s*=\s*"(?:https:\/\/github\.com\/|ssh:\/\/git@github\.com\/)AztecProtocol\/[^"]+"[^}]*?tag\s*=\s*")v[^"]+"/g,
       `$1v${version}"`,
     );
 
@@ -154,13 +205,14 @@ function updateNargoToml(version) {
   log(COLORS.green, `✓ Updated ${changed} Nargo.toml file(s)\n`);
 }
 
-function installDependencies() {
+function installDependencies(isPrivate) {
   log(COLORS.yellow, "[3/5] Running yarn install...");
+  if (isPrivate) ensureRegistryToken(); // yarn needs it to read the private registry
   exec("yarn install");
   log(COLORS.green, "✓ Dependencies installed\n");
 }
 
-function installAztecCLI(version) {
+function installAztecCLI(version, isPrivate) {
   log(COLORS.yellow, `[4/5] Installing Aztec CLI version ${version}...`);
 
   try {
@@ -171,6 +223,19 @@ function installAztecCLI(version) {
     }
   } catch {
     // not installed yet — proceed
+  }
+
+  // Private nightlies aren't on install.aztec.network / public npm — assemble
+  // the toolchain locally (public-noir nargo + private-registry bb/CLI).
+  if (isPrivate) {
+    log(COLORS.yellow, "Assembling private toolchain via scripts/install-private-toolchain.sh...");
+    ensureRegistryToken();
+    ensurePrivateGitAuth(); // so the later contract compile can clone aztec-nr
+    exec("bash scripts/install-private-toolchain.sh");
+    const base = `${process.env.HOME}/.aztec/versions/${version}`;
+    process.env.PATH = `${base}/bin:${base}/internal-bin:${base}/node_modules/.bin:${process.env.PATH}`;
+    log(COLORS.green, "✓ Private toolchain installed\n");
+    return;
   }
 
   const isCI = !!process.env.CI;
@@ -230,12 +295,34 @@ function inferMajorFromPin() {
   return null;
 }
 
-async function fetchLatestNightly(major) {
+async function fetchLatestNightly(major, isPrivate) {
+  const re = new RegExp(`^${major}\\.\\d+\\.\\d+-nightly\\.\\d+$`);
+
+  if (isPrivate) {
+    log(COLORS.yellow, `Fetching latest v${major} nightly from the private registry...`);
+    try {
+      ensureRegistryToken();
+      const url = `${privateRegistryUrl()}/@aztec%2faztec.js`;
+      const json = exec(`curl -fsSL -H "Authorization: Bearer $AZTEC_NPM_TOKEN" "${url}"`, {
+        silent: true,
+      });
+      const latest = Object.keys(JSON.parse(json).versions || {})
+        .filter((v) => re.test(v))
+        .sort()
+        .pop();
+      if (!latest) throw new Error(`no v${major} nightly in the private registry`);
+      return latest;
+    } catch (e) {
+      log(COLORS.red, `Failed to fetch latest v${major} nightly from the private registry: ${e.message}`);
+      log(COLORS.red, "Please specify a version with --version");
+      process.exit(1);
+    }
+  }
+
   log(COLORS.yellow, `Fetching latest v${major} nightly from npm...`);
   try {
     const output = exec("npm view @aztec/aztec.js versions --json", { silent: true });
     const versions = JSON.parse(output);
-    const re = new RegExp(`^${major}\\.\\d+\\.\\d+-nightly\\.\\d+$`);
     const nightlies = versions.filter((v) => re.test(v));
     const latest = nightlies[nightlies.length - 1];
     if (!latest) throw new Error(`No v${major} nightly versions found`);
@@ -286,6 +373,9 @@ async function main() {
 
   let { version, major, skipAztecUp, skipCompile } = parseArgs();
 
+  const isPrivate = isPrivateChannel();
+  log(COLORS.green, `Release channel: ${isPrivate ? "PRIVATE (Artifact Registry)" : "PUBLIC (npm)"}\n`);
+
   if (!version) {
     if (!major) {
       major = inferMajorFromPin();
@@ -295,7 +385,7 @@ async function main() {
       }
       log(COLORS.green, `Inferred major v${major} from current @aztec/aztec.js pin\n`);
     }
-    version = await fetchLatestNightly(major);
+    version = await fetchLatestNightly(major, isPrivate);
     log(COLORS.green, `Latest nightly version: v${version}\n`);
   } else {
     log(COLORS.green, `Updating to version: v${version}\n`);
@@ -303,12 +393,12 @@ async function main() {
 
   updatePackageJsonFiles(version);
   updateNargoToml(version);
-  installDependencies();
+  installDependencies(isPrivate);
 
   if (skipAztecUp) {
     log(COLORS.yellow, "[4/5] Skipping Aztec CLI installation (--skip-aztec-up)\n");
   } else {
-    installAztecCLI(version);
+    installAztecCLI(version, isPrivate);
   }
 
   if (skipCompile) {

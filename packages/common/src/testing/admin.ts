@@ -120,7 +120,7 @@ export interface DeployAdminParams {
    * Override the auto-detected mode. When unset, `deployAdmin`:
    *   1. checks if the admin is already initialised → no-op
    *   2. checks if it already holds public FJ → `prefunded`
-   *   3. falls back to `sponsoredfpc` on local, `bridge` on testnet
+   *   3. falls back to `sponsoredfpc` on the local sandbox, `bridge` on remote networks
    */
   mode?: AdminDeployMode;
   /** Label used in log lines (e.g. "Swap admin", "FPC admin"). */
@@ -134,8 +134,8 @@ export interface DeployAdminParams {
  * its address either way.
  *
  * See `AdminDeployMode` for how the payment method is chosen. Callers should
- * pass `sponsoredPaymentMethod` from `setupWallet` when running on local; on
- * testnet the bridge path needs no extra wiring.
+ * pass `sponsoredPaymentMethod` from `setupWallet` when running on the local
+ * sandbox; on remote networks the bridge path needs no extra wiring.
  */
 export async function deployAdmin(params: DeployAdminParams): Promise<AztecAddress> {
   const { network, node, wallet, secretKey, sponsoredPaymentMethod, bridgeAmount } = params;
