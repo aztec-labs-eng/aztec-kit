@@ -313,7 +313,10 @@ async function fetchLatestNightly(major, isPrivate) {
       if (!latest) throw new Error(`no v${major} nightly in the private registry`);
       return latest;
     } catch (e) {
-      log(COLORS.red, `Failed to fetch latest v${major} nightly from the private registry: ${e.message}`);
+      log(
+        COLORS.red,
+        `Failed to fetch latest v${major} nightly from the private registry: ${e.message}`,
+      );
       log(COLORS.red, "Please specify a version with --version");
       process.exit(1);
     }
@@ -374,7 +377,10 @@ async function main() {
   let { version, major, skipAztecUp, skipCompile } = parseArgs();
 
   const isPrivate = isPrivateChannel();
-  log(COLORS.green, `Release channel: ${isPrivate ? "PRIVATE (Artifact Registry)" : "PUBLIC (npm)"}\n`);
+  log(
+    COLORS.green,
+    `Release channel: ${isPrivate ? "PRIVATE (Artifact Registry)" : "PUBLIC (npm)"}\n`,
+  );
 
   if (!version) {
     if (!major) {
