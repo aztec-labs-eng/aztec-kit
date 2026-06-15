@@ -8,7 +8,7 @@ Operator dashboard for deploying and running a [SubscriptionFPC](../../packages/
 yarn workspace @aztec-kit/fpc-operator dev
 ```
 
-Requires an Aztec node (local sandbox or testnet/nextnet RPC).
+Requires an Aztec node (local network or a remote RPC).
 
 ## UI
 

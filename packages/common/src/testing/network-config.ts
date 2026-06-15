@@ -3,25 +3,36 @@
  * Node-only — scripts pass these to `@aztec/aztec.js/ethereum` clients.
  */
 
-export const VALID_NETWORKS = ["local", "testnet", "nextnet"] as const;
+export const VALID_NETWORKS = ["local", "testnet", "staging"] as const;
 export type NetworkName = (typeof VALID_NETWORKS)[number];
 
 export const NETWORK_URLS: Record<NetworkName, string> = {
   local: "http://localhost:8080",
   testnet: "https://rpc.testnet.aztec-labs.com",
-  nextnet: "http://136.118.97.239:8080",
+  staging: "https://staging-internal.rpc.aztec-labs.com",
 };
+
+/**
+ * API key for the network's node, read from `<NETWORK>_API_KEY`. Any network
+ * may be fronted by an API gateway requiring the `X-Aztec-API-Key` header;
+ * only those with the env var set send a key. Injected at the node-client
+ * layer via `createNode(url, apiKey)`. The browser apps resolve the same key
+ * from their per-network config (`${VITE_<NETWORK>_API_KEY}`) at build time.
+ */
+export function apiKeyForNetwork(network: NetworkName): string | undefined {
+  return process.env[`${network.toUpperCase()}_API_KEY`] || undefined;
+}
 
 /** L1 parameters the bridging scripts need. Keep in sync with the rollup. */
 export const L1_DEFAULTS: Record<NetworkName, { l1RpcUrl: string; l1ChainId: number }> = {
   local: { l1RpcUrl: "http://localhost:8545", l1ChainId: 31337 },
   testnet: { l1RpcUrl: "https://sepolia.drpc.org", l1ChainId: 11155111 },
-  nextnet: { l1RpcUrl: "https://sepolia.drpc.org", l1ChainId: 11155111 },
+  staging: { l1RpcUrl: "https://sepolia.drpc.org", l1ChainId: 11155111 },
 };
 
 /**
- * Anvil's first pre-funded dev key — used only for `local`. Published and
- * non-secret; lets CI + dev loops work with zero configuration.
+ * Anvil's first pre-funded dev key — used only for the local network.
+ * Published and non-secret; lets CI + dev loops work with zero configuration.
  */
 export const LOCAL_L1_FUNDER_KEY =
   "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80";
@@ -31,9 +42,9 @@ export const LOCAL_L1_FUNDER_KEY =
  * decides whether to mint via the faucet based on the signer's FJ balance —
  * this helper just chooses which key signs the tx.
  *
- *   L1_FUNDER_KEY env set → use it.
- *   local, env unset      → anvil's first dev key (has ETH for gas).
- *   testnet, env unset    → undefined (bridgeFeeJuice generates a random key).
+ *   L1_FUNDER_KEY env set     → use it.
+ *   local network, env unset  → anvil's first dev key (has ETH for gas).
+ *   remote network, env unset → undefined (bridgeFeeJuice generates a random key).
  */
 export function resolveL1Funder(network: NetworkName): `0x${string}` | undefined {
   const env = process.env.L1_FUNDER_KEY as `0x${string}` | undefined;
@@ -57,5 +68,5 @@ export type PaymentMode = (typeof VALID_PAYMENT_MODES)[number];
 export const DEFAULT_PAYMENT_MODE: Record<NetworkName, PaymentMode> = {
   local: "sponsoredfpc",
   testnet: "feejuice",
-  nextnet: "feejuice",
+  staging: "feejuice",
 };

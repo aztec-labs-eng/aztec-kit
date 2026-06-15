@@ -40,6 +40,11 @@ export interface SubscriptionFPCConfig {
 export interface NetworkConfig {
   id: string;
   nodeUrl: string;
+  /**
+   * Optional API key for a gateway-fronted node. In the JSON it's a
+   * build-time placeholder `${VITE_<NETWORK>_API_KEY}`, resolved below.
+   */
+  apiKey?: string;
   chainId: string;
   rollupVersion: string;
   contracts: {
@@ -59,15 +64,31 @@ export interface NetworkConfig {
 
 const modules = import.meta.glob<{ default: NetworkConfig }>("./*.json", { eager: true });
 
+/** Resolve `${VITE_*}` placeholders in config strings from build-time env. */
+function resolveEnvPlaceholders<T>(value: T): T {
+  if (typeof value === "string") {
+    return value.replace(
+      /\$\{(\w+)\}/g,
+      (_, k) => (import.meta.env as Record<string, string | undefined>)[k] ?? "",
+    ) as unknown as T;
+  }
+  if (value && typeof value === "object") {
+    return Object.fromEntries(
+      Object.entries(value).map(([k, v]) => [k, resolveEnvPlaceholders(v)]),
+    ) as T;
+  }
+  return value;
+}
+
 /**
- * Order of preference: local first (if present), then nextnet, then testnet,
- * then anything else alphabetically. `getDefaultNetwork` returns `NETWORKS[0]`,
+ * Order of preference follows `PREFERRED_ORDER` below; anything not listed
+ * sorts alphabetically after it. `getDefaultNetwork` returns `NETWORKS[0]`,
  * so this ordering is what picks the default network on first load.
  */
-const PREFERRED_ORDER = ["local", "nextnet", "testnet"];
+const PREFERRED_ORDER = ["local", "staging", "testnet"];
 
 const NETWORKS: NetworkConfig[] = Object.values(modules)
-  .map((m) => m.default)
+  .map((m) => resolveEnvPlaceholders(m.default))
   .filter((n): n is NetworkConfig => !!n && typeof n.id === "string")
   .sort((a, b) => {
     const ai = PREFERRED_ORDER.indexOf(a.id);

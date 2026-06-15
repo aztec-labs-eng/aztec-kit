@@ -14,6 +14,7 @@ export {
   DEFAULT_PAYMENT_MODE,
   resolveL1Funder,
   bridgeMode,
+  apiKeyForNetwork,
   type NetworkName,
   type PaymentMode,
 } from "./network-config.ts";

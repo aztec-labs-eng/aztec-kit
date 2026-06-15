@@ -120,7 +120,7 @@ export interface DeployAdminParams {
    * Override the auto-detected mode. When unset, `deployAdmin`:
    *   1. checks if the admin is already initialised → no-op
    *   2. checks if it already holds public FJ → `prefunded`
-   *   3. falls back to `sponsoredfpc` on local, `bridge` on testnet
+   *   3. falls back to `sponsoredfpc` on the local network, `bridge` on remote networks
    */
   mode?: AdminDeployMode;
   /** Label used in log lines (e.g. "Swap admin", "FPC admin"). */
@@ -134,8 +134,8 @@ export interface DeployAdminParams {
  * its address either way.
  *
  * See `AdminDeployMode` for how the payment method is chosen. Callers should
- * pass `sponsoredPaymentMethod` from `setupWallet` when running on local; on
- * testnet the bridge path needs no extra wiring.
+ * pass `sponsoredPaymentMethod` from `setupWallet` when running on the local
+ * network; on remote networks the bridge path needs no extra wiring.
  */
 export async function deployAdmin(params: DeployAdminParams): Promise<AztecAddress> {
   const { network, node, wallet, secretKey, sponsoredPaymentMethod, bridgeAmount } = params;
@@ -175,7 +175,7 @@ export async function deployAdmin(params: DeployAdminParams): Promise<AztecAddre
     // Admin already holds public FJ (someone bridged + claimed externally —
     // e.g. the bridge UI in e2e). The aztec.js deploy machinery pays for
     // the init tx directly from that balance when no `fee` is provided.
-    // This mirrors `@aztec/wallets/testing::deployFundedSchnorrAccounts`.
+    // This mirrors `@aztec/wallets/testing::createFundedInitializerlessAccounts`.
     console.error(`Deploying ${label} using existing public FJ balance...`);
     await deployMethod.send({
       from: NO_FROM,
