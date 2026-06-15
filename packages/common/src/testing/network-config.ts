@@ -12,13 +12,6 @@ export const NETWORK_URLS: Record<NetworkName, string> = {
   staging: "https://staging-internal.rpc.aztec-labs.com",
 };
 
-/** L1 parameters the bridging scripts need. Keep in sync with the rollup. */
-export const L1_DEFAULTS: Record<NetworkName, { l1RpcUrl: string; l1ChainId: number }> = {
-  local: { l1RpcUrl: "http://localhost:8545", l1ChainId: 31337 },
-  testnet: { l1RpcUrl: "https://sepolia.drpc.org", l1ChainId: 11155111 },
-  staging: { l1RpcUrl: "https://sepolia.drpc.org", l1ChainId: 11155111 },
-};
-
 /**
  * API key for the network's node, read from `<NETWORK>_API_KEY`. Any network
  * may be fronted by an API gateway requiring the `X-Aztec-API-Key` header;
@@ -29,6 +22,13 @@ export const L1_DEFAULTS: Record<NetworkName, { l1RpcUrl: string; l1ChainId: num
 export function apiKeyForNetwork(network: NetworkName): string | undefined {
   return process.env[`${network.toUpperCase()}_API_KEY`] || undefined;
 }
+
+/** L1 parameters the bridging scripts need. Keep in sync with the rollup. */
+export const L1_DEFAULTS: Record<NetworkName, { l1RpcUrl: string; l1ChainId: number }> = {
+  local: { l1RpcUrl: "http://localhost:8545", l1ChainId: 31337 },
+  testnet: { l1RpcUrl: "https://sepolia.drpc.org", l1ChainId: 11155111 },
+  staging: { l1RpcUrl: "https://sepolia.drpc.org", l1ChainId: 11155111 },
+};
 
 /**
  * Anvil's first pre-funded dev key — used only for the local network.
