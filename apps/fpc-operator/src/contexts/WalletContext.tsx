@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect, useRef, type ReactNode } from "react";
 import type { AztecAddress } from "@aztec/aztec.js/addresses";
-import { createAztecNodeClient, type AztecNode } from "@aztec/aztec.js/node";
+import { type AztecNode } from "@aztec/aztec.js/node";
+import { createNode } from "@aztec-kit/common/node";
 import { EmbeddedWallet, txProgress } from "@aztec-kit/embedded-wallet";
 import { useNetwork } from "./NetworkContext";
 
@@ -45,7 +46,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 
     (async () => {
       try {
-        const nodeClient = createAztecNodeClient(activeNetwork.aztecNodeUrl);
+        const nodeClient = createNode(activeNetwork.aztecNodeUrl, activeNetwork.apiKey);
         // `VITE_DISABLE_PROVER=1` turns off bb.js proving — only used in CI e2e
         // where proving starves the Aztec node's event loop on the 4 vCPU runner.
         const proverEnabled = import.meta.env.VITE_DISABLE_PROVER !== "1";

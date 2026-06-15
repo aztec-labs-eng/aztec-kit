@@ -4,17 +4,17 @@
  *
  * Deploy method is auto-detected:
  *   - admin already holds public FJ on L2 → use it (`FeeJuicePaymentMethod`).
- *   - otherwise on `local`                 → SponsoredFPC pays.
- *   - otherwise on `testnet`               → bridge + claim via `FeeJuicePaymentMethodWithClaim`.
+ *   - otherwise on the local network       → SponsoredFPC pays.
+ *   - otherwise on a remote network        → bridge + claim via `FeeJuicePaymentMethodWithClaim`.
  *
  * Usage:
- *   yarn swap deploy-admin --network <local|testnet>
+ *   yarn swap deploy-admin --network <network>
  *
  * Env vars:
  *   SWAP_ADMIN_SECRET — hex Fr for the admin secret. If unset, a new key is
  *                       generated and the script prints an `export SWAP_ADMIN_SECRET=…`
  *                       line on stdout before exiting.
- *   L1_FUNDER_KEY     — testnet only. L1 private key holding FJ. When unset,
+ *   L1_FUNDER_KEY     — remote networks only. L1 private key holding FJ. When unset,
  *                       a random L1 key is generated and the faucet mints FJ.
  */
 import {

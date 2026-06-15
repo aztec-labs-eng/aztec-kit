@@ -262,7 +262,7 @@ export function useBridgeWizard() {
     setBalance(null);
     setMintAmountValue(null);
     setIsLoadingInfo(true);
-    fetchL1Addresses(activeNetwork.aztecNodeUrl)
+    fetchL1Addresses(activeNetwork.aztecNodeUrl, activeNetwork.apiKey)
       .then((addresses) => {
         if (cancelled) return;
         setL1Addresses(addresses);
