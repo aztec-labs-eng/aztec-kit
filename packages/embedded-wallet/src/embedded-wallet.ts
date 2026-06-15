@@ -149,11 +149,10 @@ export class EmbeddedWallet extends EmbeddedWalletBase {
       );
     }
 
-    const apiKeyFetch: typeof defaultFetch | undefined =
-      apiKey
-        ? (host, body, extraHeaders = {}, noRetry = false) =>
-            defaultFetch(host, body, { ...extraHeaders, [AZTEC_API_KEY_HEADER]: apiKey }, noRetry)
-        : undefined;
+    const apiKeyFetch: typeof defaultFetch | undefined = apiKey
+      ? (host, body, extraHeaders = {}, noRetry = false) =>
+          defaultFetch(host, body, { ...extraHeaders, [AZTEC_API_KEY_HEADER]: apiKey }, noRetry)
+      : undefined;
     const node =
       typeof nodeOrUrl === "string"
         ? createAztecNodeClient(nodeOrUrl, undefined, apiKeyFetch)
