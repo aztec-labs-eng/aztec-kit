@@ -1,6 +1,6 @@
 import { CheatCodes } from "@aztec/aztec/testing";
-import { createAztecNodeClient } from "@aztec/aztec.js/node";
-import { createAztecNodeDebugClient } from "@aztec/stdlib/interfaces/client";
+import { type AztecNode, createAztecNodeClient } from "@aztec/aztec.js/node";
+import { type AztecNodeDebug, createAztecNodeDebugClient } from "@aztec/stdlib/interfaces/client";
 import { DateProvider } from "@aztec/foundation/timer";
 
 /**
@@ -35,6 +35,11 @@ export async function pumpL2Blocks(
 
   const node = createAztecNodeClient(nodeUrl);
   const nodeDebug = createAztecNodeDebugClient(nodeUrl);
+  // v5's `warpL2TimeAtLeastBy` wants `AztecNode & AztecNodeDebug` (it reads
+  // current L1 timestamp via the regular API before warping). Both clients
+  // target the same URL and expose methods as own properties on the rpc
+  // proxy, so a shallow merge is safe.
+  const fullNode = Object.assign({}, node, nodeDebug) as AztecNode & AztecNodeDebug;
   const cheatCodes = await CheatCodes.create([l1RpcUrl], node, new DateProvider());
 
   const controller = new AbortController();
@@ -60,7 +65,7 @@ export async function pumpL2Blocks(
   const loop = (async () => {
     while (!signal.aborted) {
       try {
-        await cheatCodes.warpL2TimeAtLeastBy(nodeDebug, WARP_BY_SECONDS);
+        await cheatCodes.warpL2TimeAtLeastBy(fullNode, WARP_BY_SECONDS);
       } catch (err) {
         if (!signal.aborted) {
           console.warn(`[pump-l2-blocks] warp failed: ${(err as Error).message}`);

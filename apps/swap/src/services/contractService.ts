@@ -264,9 +264,9 @@ export async function getExchangeRate(
     goCoinPremium.methods.balance_of_public(amm.address),
   ]);
 
-  const results = await batchCall.simulate({ from: fromAddress });
-  const token0Reserve = results[0].result;
-  const token1Reserve = results[1].result;
+  const { result } = await batchCall.simulate({ from: fromAddress });
+  const token0Reserve = result[0].result;
+  const token1Reserve = result[1].result;
   return parseFloat(new BigDecimal(token1Reserve).divide(new BigDecimal(token0Reserve)).toString());
 }
 
@@ -285,8 +285,8 @@ export async function fetchBalances(
     goCoinPremium.methods.balance_of_private(address),
   ]);
 
-  const results = await batchCall.simulate({ from: address });
-  return [results[0].result, results[1].result];
+  const { result } = await batchCall.simulate({ from: address });
+  return [result[0].result, result[1].result];
 }
 
 /**
@@ -310,8 +310,8 @@ export async function simulateOnboardingQueries(
     goCoinPremium.methods.balance_of_private(address),
   ]);
 
-  const results = await batchCall.simulate({ from: address });
-  const [token0Reserve, token1Reserve, gcBalance, gcpBalance] = results.map((r) => r.result);
+  const { result } = await batchCall.simulate({ from: address });
+  const [token0Reserve, token1Reserve, gcBalance, gcpBalance] = result.map((r) => r.result);
   const exchangeRate = parseFloat(
     new BigDecimal(token1Reserve).divide(new BigDecimal(token0Reserve)).toString(),
   );

@@ -4,7 +4,7 @@
  * `maxFee` per signup.
  *
  * Inputs:
- *   --network <local|testnet>
+ *   --network <network>
  *   FPC_ADDRESS      — hex AztecAddress of the deployed FPC (from fpc-operator/deploy-fpc)
  *   FPC_ADMIN_SECRET — FPC admin secret (signup txs must be sent by the FPC deployer)
  *   FPC_SECRET       — the contract key secret the FPC was deployed with, so the
@@ -17,10 +17,10 @@
  *   `functions` maps `contractAddress → { functionSelector → configIndex }`.
  *
  * Calibration behaviour:
- *   - `local`    : skipped. Uses the hardcoded `maxFee` fallback.
- *   - `testnet`  : runs the FPC's `calibrate` helper to get gas limits, then
- *                  multiplies by the clustec P75-of-last-2000-blocks maxFeePerGas
- *                  with a 2× safety multiplier (what the dashboard UI does).
+ *   - local network  : skipped. Uses the hardcoded `maxFee` fallback.
+ *   - remote network : runs the FPC's `calibrate` helper to get gas limits, then
+ *                      multiplies by the clustec P75-of-last-2000-blocks maxFeePerGas
+ *                      with a 2× safety multiplier (what the dashboard UI does).
  */
 import fs from "fs";
 import path from "path";
@@ -29,6 +29,7 @@ import { Contract } from "@aztec/aztec.js/contracts";
 import { AztecAddress } from "@aztec/stdlib/aztec-address";
 import { FunctionSelector } from "@aztec/stdlib/abi";
 import { Fr } from "@aztec/foundation/curves/bn254";
+import { TxStatus } from "@aztec/stdlib/tx";
 import {
   SubscriptionFPCContract,
   SubscriptionFPCContractArtifact,
@@ -38,7 +39,12 @@ import { AMMContractArtifact } from "@aztec-kit/contracts-aztec/artifacts/AMM";
 import { TokenContractArtifact } from "@aztec-kit/contracts-aztec/artifacts/Token";
 import { SubscriptionFPC, fpcSubscribeOverhead } from "@aztec-kit/contracts-aztec/subscription-fpc";
 import { Gas } from "@aztec/stdlib/gas";
-import { fetchFeeStats, computeMaxFeeFromP75 } from "@aztec-kit/common/fees";
+import {
+  fetchFeeStats,
+  computeMaxFeeFromP75,
+  computeMaxFeeFromCurrent,
+  fetchMaxBlockGasFees,
+} from "@aztec-kit/common/fees";
 
 import {
   parseNetwork,
@@ -57,6 +63,15 @@ import type { EmbeddedWallet } from "@aztec/wallets/embedded";
 
 const P75_BLOCK_RANGE = 2000;
 const P75_MULTIPLIER = 2;
+/**
+ * Range and multiplier for the node-walked historical fallback used when no
+ * clustec indexer is available. We take the `max` of
+ * `header.globalVariables.gasFees` across the last N blocks as a proxy for
+ * the worst-case `maxFeesPerGas` the wallet will commit. `× 2` matches the
+ * P75 multiplier — start small, bump if the assertion still fires.
+ */
+const HISTORICAL_BLOCK_RANGE = 1000;
+const HISTORICAL_FEE_MULTIPLIER = 2;
 
 /** Default sponsorship policy; individual specs can override any field. */
 const SIGNUP_POLICY = {
@@ -213,6 +228,7 @@ async function main() {
 
     const { maxFee, gasLimits, hasPublicCall } = await pickSignupParams({
       network,
+      node,
       fpc,
       wallet,
       admin,
@@ -229,7 +245,14 @@ async function main() {
         maxFee,
         signup.maxUsers,
       )
-      .send({ from: admin, fee: { paymentMethod } });
+      .send({
+        from: admin,
+        fee: { paymentMethod },
+        // Upstream `EmbeddedWallet.sendTx`'s "default to PROPOSED" is a dead
+        // mutation; `waitForTx` falls back to CHECKPOINTED otherwise. Pin
+        // explicitly so scripts don't block on L1 publication.
+        wait: { waitForStatus: TxStatus.PROPOSED, timeout: 120 },
+      });
 
     console.error(
       `  sign_up ok — configIndex=${targetConfigIndex} maxFee=${maxFee} gasLimits=${gasLimits.daGas}/${gasLimits.l2Gas} hasPublicCall=${hasPublicCall}`,
@@ -367,13 +390,16 @@ async function resolveSignups(
 /**
  * Runs calibration and derives the signup params. Calibration measures the
  * sponsored fn's standalone gas, which we persist into the swap config so
- * runtime callers can add the appropriate FPC overhead. `maxFee` on
- * testnet is sized from the P75 of per-gas prices against the full
- * subscribe-path cost; on local it falls back to a hardcoded policy value
- * because there's no P75 feed.
+ * runtime callers can add the appropriate FPC overhead. `maxFee` on a remote
+ * network is sized from the P75 of per-gas prices against the full
+ * subscribe-path cost; on the local network it falls back to a hardcoded
+ * policy value because there's no P75 feed. If clustec doesn't index the
+ * network we fall back to the node's current min fees × a wider multiplier —
+ * matches the manual UI escape hatch the e2e test uses.
  */
 async function pickSignupParams(params: {
   network: NetworkName;
+  node: AztecNode;
   fpc: SubscriptionFPC;
   wallet: EmbeddedWallet;
   admin: AztecAddress;
@@ -384,7 +410,7 @@ async function pickSignupParams(params: {
   gasLimits: { daGas: number; l2Gas: number };
   hasPublicCall: boolean;
 }> {
-  const { network, fpc, wallet, admin, signup, contracts } = params;
+  const { network, node, fpc, wallet, admin, signup, contracts } = params;
 
   const contract = Contract.at(signup.contractAddress, signup.artifact, wallet);
   const args = signup.sampleArgs({
@@ -411,13 +437,32 @@ async function pickSignupParams(params: {
     const subscribeTotal = new Gas(gasLimits.daGas, gasLimits.l2Gas).add(
       fpcSubscribeOverhead(hasPublicCall),
     );
-    const stats = await fetchFeeStats(network, P75_BLOCK_RANGE);
-    maxFee = computeMaxFeeFromP75(
-      { daGas: Number(subscribeTotal.daGas), l2Gas: Number(subscribeTotal.l2Gas) },
-      { daGas: 0, l2Gas: 0 },
-      stats,
-      P75_MULTIPLIER,
-    );
+    const subscribeGas = {
+      daGas: Number(subscribeTotal.daGas),
+      l2Gas: Number(subscribeTotal.l2Gas),
+    };
+    const zeroTeardown = { daGas: 0, l2Gas: 0 };
+
+    try {
+      const stats = await fetchFeeStats(network, P75_BLOCK_RANGE);
+      maxFee = computeMaxFeeFromP75(subscribeGas, zeroTeardown, stats, P75_MULTIPLIER);
+    } catch (err) {
+      const reason = err instanceof Error ? err.message : String(err);
+      console.error(
+        `  clustec fetch failed (${reason}); falling back to node-walked max block gasFees over last ${HISTORICAL_BLOCK_RANGE} blocks × ${HISTORICAL_FEE_MULTIPLIER}`,
+      );
+      const peak = await fetchMaxBlockGasFees(node, HISTORICAL_BLOCK_RANGE);
+      console.error(
+        `  peak gasFees over blocks ${peak.fromBlock}..${peak.toBlock} (n=${peak.sampleSize}): feePerDaGas=${peak.feePerDaGas} feePerL2Gas=${peak.feePerL2Gas}`,
+      );
+      maxFee = computeMaxFeeFromCurrent(
+        subscribeGas,
+        zeroTeardown,
+        peak.feePerDaGas,
+        peak.feePerL2Gas,
+        HISTORICAL_FEE_MULTIPLIER,
+      );
+    }
   }
 
   return { maxFee, gasLimits, hasPublicCall };

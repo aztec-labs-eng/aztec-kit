@@ -29,7 +29,7 @@ import {
 
 Two launch modes share the same spawn/cleanup machinery (`./spawn.ts`):
 
-- **`setupLocalNetwork({ fundedAddresses })`** — in-process. Spawns a fresh anvil on a random port, deploys L1, starts an `AztecNodeService`, pre-funds at genesis. Each caller gets its own sandbox, so vitest suites run in parallel. Used by `packages/contracts/aztec/tests/*` and `packages/embedded-wallet/tests/*`.
+- **`setupLocalNetwork({ fundedAddresses })`** — in-process. Spawns a fresh anvil on a random port, deploys L1, starts an `AztecNodeService`, pre-funds at genesis. Each caller gets its own local network, so vitest suites run in parallel. Used by `packages/contracts/aztec/tests/*` and `packages/embedded-wallet/tests/*`.
 
 - **`setupLocalNetworkCli({ logDir })`** — out-of-process. Shells out to `aztec start --local-network` (anvil + node + sequencer + prover as one subprocess tree on ports 8545/8080) and waits for both JSON-RPCs to answer. Slower but exercises the same CLI real users hit; used by the playwright e2e harness.
 

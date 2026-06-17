@@ -2,8 +2,8 @@
  * Mint tokens to one or more addresses on an existing deployment.
  *
  * Usage:
- *   SWAP_ADMIN_SECRET=0x... node --experimental-transform-types scripts/mint.ts --network testnet --to 0xaddr1 --to 0xaddr2
- *   SWAP_ADMIN_SECRET=0x... MINT_TO=0xaddr1,0xaddr2 node --experimental-transform-types scripts/mint.ts --network testnet
+ *   SWAP_ADMIN_SECRET=0x... node --experimental-transform-types scripts/mint.ts --network <network> --to 0xaddr1 --to 0xaddr2
+ *   SWAP_ADMIN_SECRET=0x... MINT_TO=0xaddr1,0xaddr2 node --experimental-transform-types scripts/mint.ts --network <network>
  *
  * Requires SWAP_ADMIN_SECRET env var to reconstruct the deployer account (must match the original deployer).
  */
@@ -13,6 +13,7 @@ import path from "path";
 import { AztecAddress } from "@aztec/stdlib/aztec-address";
 import { TokenContract, TokenContractArtifact } from "@aztec-kit/contracts-aztec/artifacts/Token";
 import { BatchCall } from "@aztec/aztec.js/contracts";
+import { TxStatus } from "@aztec/stdlib/tx";
 import {
   parseNetwork,
   parseAddressList,
@@ -103,7 +104,10 @@ async function main() {
   await new BatchCall(wallet, mintCalls).send({
     from: deployer,
     fee: { paymentMethod },
-    wait: { timeout: 120 },
+    // Pin PROPOSED — upstream's EmbeddedWallet default-to-PROPOSED is dead
+    // code (mutates a local that's never forwarded), so `waitForTx` falls
+    // back to CHECKPOINTED unless we set it explicitly.
+    wait: { waitForStatus: TxStatus.PROPOSED, timeout: 120 },
   });
 
   console.log("Done! Tokens minted successfully.");

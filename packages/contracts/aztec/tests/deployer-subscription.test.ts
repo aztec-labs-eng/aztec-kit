@@ -31,7 +31,7 @@ describe("Account deployment subscription", () => {
   let hasPublicCall: boolean;
 
   beforeAll(async () => {
-    userWallet = await EmbeddedWallet.create(ctx.node, { ephemeral: true });
+    userWallet = ctx.userWallet;
 
     const deployerInstance = await getContractInstanceFromInstantiationParams(
       EcdsaAccountDeployerContract.artifact,

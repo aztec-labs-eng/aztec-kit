@@ -1,5 +1,5 @@
 import { createRequire } from "module";
-import type { Plugin } from "vite";
+import type { Plugin, UserConfig } from "vite";
 import { nodePolyfillsFix } from "./nodePolyfillsFix.ts";
 import { wasmContentTypePlugin } from "./wasmContentTypePlugin.ts";
 
@@ -60,7 +60,7 @@ export function aztecVitePlugin(options: AztecVitePluginOptions = {}): Plugin[] 
 
   const configPlugin: Plugin = {
     name: "aztec-vite-config",
-    config() {
+    config(): UserConfig {
       // Cross-cutting defaults that apply on all Vite versions.
       const base = {
         server: {
@@ -80,6 +80,10 @@ export function aztecVitePlugin(options: AztecVitePluginOptions = {}): Plugin[] 
         // verbatim in bundled output, and doesn't copy adjacent .wasm assets.
         // Exclude packages what use wasm, workers or both from pre-bundle and
         // force the CJS transitives back in so their named imports still interop.
+        // The `esbuild.target` shape here matches Vite 7's `UserConfig`; on
+        // Vite 8 the field was narrowed and the legacy `target` is gone, so
+        // we cast through `UserConfig` to satisfy whichever vite type the
+        // workspace happens to resolve at compile time.
         return {
           ...base,
           esbuild: { target },
@@ -100,7 +104,7 @@ export function aztecVitePlugin(options: AztecVitePluginOptions = {}): Plugin[] 
               "lodash.clonedeepwith",
             ],
           },
-        };
+        } as UserConfig;
       }
 
       // Vite 8+: Rolldown pre-bundler handles worker/wasm assets correctly —
@@ -120,7 +124,10 @@ export function aztecVitePlugin(options: AztecVitePluginOptions = {}): Plugin[] 
     },
   };
 
-  const plugins: Plugin[] = [configPlugin, nodePolyfillsFix({ include: ["buffer", "path"] })];
+  const plugins: Plugin[] = [
+    configPlugin,
+    nodePolyfillsFix({ include: ["buffer", "path", "tty"] }),
+  ];
 
   if (isLegacyVite) {
     plugins.push(wasmContentTypePlugin());

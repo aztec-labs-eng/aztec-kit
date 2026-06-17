@@ -2,8 +2,8 @@
  * Mirrors apps/swap/scripts/deploy-admin.ts but for the FPC admin.
  *
  * Deploy method is auto-detected: pre-funded FJ → use it; otherwise
- * SponsoredFPC on local, bridge + claim on testnet. See `deployAdmin` in
- * `@aztec-kit/common/testing` for the full decision tree.
+ * SponsoredFPC on the local network, bridge + claim on remote networks. See
+ * `deployAdmin` in `@aztec-kit/common/testing` for the full decision tree.
  */
 import {
   parseNetwork,
