@@ -7,7 +7,6 @@ import type { AztecAddress } from "@aztec/aztec.js/addresses";
 import type { EmbeddedWallet } from "@aztec/wallets/embedded";
 import { FeeJuiceContract } from "@aztec/aztec.js/protocol";
 import { Fr } from "@aztec/foundation/curves/bn254";
-import { TxStatus } from "@aztec/stdlib/tx";
 import type { Hex } from "viem";
 
 import { bridgeFeeJuice, waitForL1ToL2Message } from "./utils.ts";
@@ -107,10 +106,7 @@ export async function bridgeAndClaim(params: BridgeAndClaimParams): Promise<Brid
     .send({
       from: params.claimFrom,
       ...(params.claimFeeOpts ? { fee: params.claimFeeOpts } : {}),
-      // Pin PROPOSED — upstream's EmbeddedWallet default-to-PROPOSED is dead
-      // code (mutates a local that's never forwarded), so `waitForTx` falls
-      // back to CHECKPOINTED unless we set it explicitly.
-      wait: { waitForStatus: TxStatus.PROPOSED, timeout: 120 },
+      wait: { timeout: 120 },
     } as Parameters<ReturnType<typeof feeJuice.methods.claim>["send"]>[0]);
 
   return { amount: BigInt(claim.claimAmount), l1Address, minted };

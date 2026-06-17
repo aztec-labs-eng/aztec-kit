@@ -36,7 +36,6 @@ import {
   resolveFpcAdminBackupPath,
 } from "@aztec-kit/common/testing";
 import { deriveKeys } from "@aztec/stdlib/keys";
-import { TxStatus } from "@aztec/stdlib/tx";
 
 const FUND_AMOUNT: bigint = BigInt("1000000000000000000000"); // 1000 FJ
 
@@ -86,10 +85,7 @@ async function main() {
     await deployMethod.send({
       from: admin,
       fee: { paymentMethod },
-      // Pin PROPOSED — upstream's EmbeddedWallet default-to-PROPOSED is dead
-      // code (mutates a local that's never forwarded), so `waitForTx` falls
-      // back to CHECKPOINTED unless we set it explicitly.
-      wait: { waitForStatus: TxStatus.PROPOSED, timeout: 120 },
+      wait: { timeout: 120 },
     });
     console.error(`FPC deployed at ${fpcAddress.toString()}`);
 
