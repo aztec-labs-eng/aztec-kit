@@ -1,26 +1,24 @@
 /**
- * Extended EmbeddedWallet with initializerless Schnorr account support.
+ * EmbeddedWallet — thin wrapper over `@aztec/wallets`' EmbeddedWallet that adds
+ * our store/encryption/tx-progress conveniences.
  *
- * The initializerless account is a proper account type that flows through the
- * standard createAccountInternal → AccountManager → getAccountFromAddress pipeline.
- *
- * Storage layout for initializerless accounts in WalletDB:
- *   type:       'schnorr-initializerless' (cast to AccountType — WalletDB stores as a raw string)
- *   secretKey:  the account secret key (Fr)
- *   salt:       the actualSalt (Fr) — the derived salt is recomputed on the fly
- *   signingKey: the signing private key (Fq buffer, derivable from secretKey but stored for consistency)
+ * Initializerless Schnorr accounts are supported natively by the upstream base
+ * class (`createSchnorrInitializerlessAccount`, the `schnorr_initializerless`
+ * account type, stub-class registration, and immutables/capsule handling), so
+ * we no longer ship a custom account contract or provider — `createInitializerlessAccount`
+ * below is just an ergonomic alias for the base method.
  */
 
 import { collectOffchainEffects, type ExecutionPayload, TxStatus } from "@aztec/stdlib/tx";
 import { createAztecNodeClient, type AztecNode } from "@aztec/aztec.js/node";
+import { defaultFetch } from "@aztec/foundation/json-rpc/client";
 import {
   type InteractionWaitOptions,
   NO_WAIT,
   type SendReturn,
   extractOffchainOutput,
-  ContractFunctionInteraction,
-  getGasLimits,
 } from "@aztec/aztec.js/contracts";
+import { getGasLimits } from "@aztec/wallet-sdk/base-wallet";
 import { waitForTx } from "@aztec/aztec.js/node";
 import type { SendOptions } from "@aztec/aztec.js/wallet";
 import { CallAuthorizationRequest } from "@aztec/aztec.js/authorization";
@@ -29,16 +27,10 @@ import { txProgress, type PhaseTiming, type TxProgressEvent } from "./tx-progres
 import {
   EmbeddedWallet as EmbeddedWalletBase,
   type EmbeddedWalletOptions,
-  type AccountType,
 } from "@aztec/wallets/embedded";
 import { AztecSQLiteOPFSStore } from "@aztec/kv-store/sqlite-opfs";
 import { createLogger } from "@aztec/foundation/log";
 import { Fr } from "@aztec/foundation/curves/bn254";
-import {
-  createSchnorrInitializerlessAccount,
-  computeContractSalt,
-  serializeSigningKey,
-} from "./initializerless-account";
 import { registerSqliteInspectors } from "./sqlite-inspector";
 import { EncryptionKeyMismatchError, type StoreName } from "./encryption-key-mismatch-error";
 import { GasSettings } from "@aztec/stdlib/gas";
@@ -82,9 +74,6 @@ async function openEncryptedOrPlain(
   }
 }
 
-/** The initializerless type string — cast to AccountType for WalletDB storage. */
-export const INITIALIZERLESS_TYPE = "schnorr-initializerless" as AccountType;
-
 /** Extra options supported by this wallet on top of `EmbeddedWalletOptions`. */
 export type EmbeddedWalletExtraOptions = {
   /**
@@ -112,7 +101,18 @@ export type EmbeddedWalletExtraOptions = {
    * affected OPFS dir and re-onboarding.
    */
   getEncryptionKey?: () => Promise<Uint8Array>;
+
+  /**
+   * API key for nodes behind an auth gateway. Only used when `create` is
+   * given a node URL string — when passed a pre-built `AztecNode` the key
+   * must already be baked into that client's fetch. Injected as the
+   * `X-Aztec-API-Key` header on every JSON-RPC request.
+   */
+  apiKey?: string;
 };
+
+/** Header the API-gateway-fronted nodes require for auth. */
+const AZTEC_API_KEY_HEADER = "X-Aztec-API-Key";
 
 export class EmbeddedWallet extends EmbeddedWalletBase {
   /**
@@ -135,7 +135,7 @@ export class EmbeddedWallet extends EmbeddedWalletBase {
     nodeOrUrl: string | AztecNode,
     options: EmbeddedWalletOptions & EmbeddedWalletExtraOptions = {},
   ): Promise<T> {
-    const { inspect, getEncryptionKey, ...rest } = options;
+    const { inspect, getEncryptionKey, apiKey, ...rest } = options;
 
     if (inspect && rest.ephemeral) {
       throw new Error(
@@ -149,7 +149,14 @@ export class EmbeddedWallet extends EmbeddedWalletBase {
       );
     }
 
-    const node = typeof nodeOrUrl === "string" ? createAztecNodeClient(nodeOrUrl) : nodeOrUrl;
+    const apiKeyFetch: typeof defaultFetch | undefined = apiKey
+      ? (host, body, extraHeaders = {}, noRetry = false) =>
+          defaultFetch(host, body, { ...extraHeaders, [AZTEC_API_KEY_HEADER]: apiKey }, noRetry)
+      : undefined;
+    const node =
+      typeof nodeOrUrl === "string"
+        ? createAztecNodeClient(nodeOrUrl, undefined, apiKeyFetch)
+        : nodeOrUrl;
     const rootLogger = rest.logger ?? createLogger("embedded-wallet");
 
     // Prover on by default; caller can opt out by passing `pxe: { proverEnabled: false }`
@@ -242,75 +249,16 @@ export class EmbeddedWallet extends EmbeddedWalletBase {
   }
 
   /**
-   * Override to add the 'schnorr-initializerless' account type.
-   *
-   * For this type:
-   *   - `salt` is the actualSalt (not derived) — we compute the derived salt on the fly
-   *   - `signingKey` is the Fq signing private key buffer (standard, derivable from secret)
-   *   - The AccountContract returns undefined from getInitializationFunctionAndArgs()
-   *     so AccountManager computes the instance with initializationHash = Fr.ZERO
-   *   - After registration, we store the immutables capsule in PXE
+   * Creates and stores a new initializerless Schnorr account, immediately usable
+   * (no deployment tx needed). Ergonomic alias for the upstream base method with
+   * random secret/salt defaults; the signing key is derived from the secret.
    */
-  protected override async createAccountInternal(
-    type: AccountType,
-    secret: Fr,
-    salt: Fr,
-    signingKey: Buffer,
-  ): Promise<AccountManager> {
-    if (type !== INITIALIZERLESS_TYPE) {
-      return super.createAccountInternal(type, secret, salt, signingKey);
-    }
-
-    // `salt` here is the actualSalt. Derive the contract salt from it + signing public key.
-    const actualSalt = salt;
-    const { account: accountContract, signingPublicKey } =
-      await createSchnorrInitializerlessAccount(secret);
-    const derivedSalt = await computeContractSalt(actualSalt, signingPublicKey);
-
-    // AccountManager.create() uses the derived salt for address computation.
-    // getInitializationFunctionAndArgs() returns undefined → initializationHash = Fr.ZERO.
-    const accountManager = await AccountManager.create(this, secret, accountContract, derivedSalt);
-
-    const instance = accountManager.getInstance();
-    const existingInstance = await this.pxe.getContractInstance(instance.address);
-    if (!existingInstance) {
-      const artifact = await accountContract.getContractArtifact();
-      await this.registerContract(instance, artifact, accountManager.getSecretKey());
-    }
-
-    // Always store/refresh the immutables capsule so the contract can verify the signing key.
-    // This is idempotent — store_immutables validates against the salt before persisting.
-    const artifact = await accountContract.getContractArtifact();
-    const capsuleData = [actualSalt, ...(await serializeSigningKey(signingPublicKey))];
-    const storeAbi = artifact.functions.find((f) => f.name === "store_immutables");
-    if (storeAbi) {
-      const storeCall = new ContractFunctionInteraction(this, instance.address, storeAbi, [
-        capsuleData,
-      ]);
-      await storeCall.simulate({ from: instance.address });
-    }
-
-    return accountManager;
-  }
-
-  /**
-   * Creates and stores a new initializerless Schnorr account.
-   * Returns the AccountManager — the account is immediately usable (no deployment needed).
-   */
-  async createInitializerlessAccount(secretKey?: Fr, actualSalt?: Fr): Promise<AccountManager> {
-    const sk = secretKey ?? Fr.random();
-    const as = actualSalt ?? Fr.random();
-
-    // Derive signing key for WalletDB storage (standard Fq buffer)
-    const { signingPrivateKey } = await createSchnorrInitializerlessAccount(sk);
-
-    // Store actualSalt in the `salt` field. The derived salt is computed in createAccountInternal.
-    return this.createAndStoreAccount(
+  async createInitializerlessAccount(secretKey?: Fr, salt?: Fr): Promise<AccountManager> {
+    return this.createSchnorrInitializerlessAccount(
+      secretKey ?? Fr.random(),
+      salt ?? Fr.random(),
+      undefined,
       "main",
-      INITIALIZERLESS_TYPE,
-      sk,
-      as, // actualSalt — NOT the derived salt
-      signingPrivateKey.toBuffer(),
     );
   }
 
@@ -369,6 +317,10 @@ export class EmbeddedWallet extends EmbeddedWalletBase {
     const fnName = executionPayload.calls?.[0]?.name ?? "Transaction";
     const label = fnName.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 
+    // Captured as soon as the proven tx hash is known (just before the node
+    // submit) and carried onto every later emit, so the mining/complete/error
+    // toasts can all surface it — including when `sendTx` itself fails.
+    let aztecTxHash: string | undefined;
     const emit = (phase: TxProgressEvent["phase"], extra?: Partial<TxProgressEvent>) => {
       txProgress.emit({
         txId,
@@ -377,11 +329,27 @@ export class EmbeddedWallet extends EmbeddedWalletBase {
         startTime,
         phaseStartTime: Date.now(),
         phases: [...phases],
+        ...(aztecTxHash ? { aztecTxHash } : {}),
         ...extra,
       });
     };
 
     try {
+      // The PXE created by the embedded-wallet entrypoints runs with
+      // `autoSync: false`, so no other call inside this method will pull a
+      // fresh anchor block on its own. Doing it once here means simulate +
+      // prove + send all share the same view of the chain — and we get to
+      // report the sync as its own progress phase instead of having it
+      // disappear inside the simulation timing breakdown.
+      emit("syncing");
+      const syncStart = Date.now();
+      await this.pxe.sync();
+      phases.push({
+        name: "Sync",
+        duration: Date.now() - syncStart,
+        color: "#90caf9",
+      });
+
       const feeOptions = await this.completeFeeOptions({
         from: opts.from,
         feePayer: executionPayload.feePayer,
@@ -427,7 +395,9 @@ export class EmbeddedWallet extends EmbeddedWalletBase {
         const t = simStats.timings;
         const prepareDuration = simElapsed - t.total;
         if (prepareDuration > 10) breakdown.push({ label: "Prepare", duration: prepareDuration });
-        if (t.sync > 0) breakdown.push({ label: "Sync", duration: t.sync });
+        // `t.sync` is intentionally not surfaced here — with `autoSync: false`
+        // the up-front `this.pxe.sync()` is the only sync that runs and we
+        // report it as its own top-level phase.
         if (t.perFunction.length > 0) {
           const witgenTotal = t.perFunction.reduce((sum, fn) => sum + fn.time, 0);
           breakdown.push({
@@ -466,7 +436,12 @@ export class EmbeddedWallet extends EmbeddedWalletBase {
 
       emit("proving");
       const provingStart = Date.now();
-      const estimated = getGasLimits(simulationResult, this.estimatedGasPadding);
+      const maxTxGasLimits = await this.getMaxTxGasLimits();
+      const estimated = getGasLimits(
+        simulationResult.gasUsed,
+        maxTxGasLimits,
+        this.estimatedGasPadding,
+      );
       this.log.verbose(
         `Estimated gas limits for tx: DA=${estimated.gasLimits.daGas} L2=${estimated.gasLimits.l2Gas} teardownDA=${estimated.teardownGasLimits.daGas} teardownL2=${estimated.teardownGasLimits.l2Gas}`,
       );
@@ -490,7 +465,9 @@ export class EmbeddedWallet extends EmbeddedWalletBase {
       const stats = provenTx.stats;
       if (stats?.timings) {
         const t = stats.timings;
-        if (t.sync && t.sync > 0) phases.push({ name: "Sync", duration: t.sync, color: "#90caf9" });
+        // `t.sync` here would only be non-zero if the base layer re-synced;
+        // we've turned `autoSync` off and done one explicit sync at the top
+        // of this method, so any reading here would be 0 and just noise.
         if (t.perFunction?.length > 0) {
           const witgenTotal = t.perFunction.reduce(
             (sum: number, fn: { time: number }) => sum + fn.time,
@@ -533,7 +510,10 @@ export class EmbeddedWallet extends EmbeddedWalletBase {
 
       const tx = await provenTx.toTx();
       const txHash = tx.getTxHash();
-      emit("sending", { aztecTxHash: txHash.toString() });
+      // Known before the node submit below — capture it now so a failed
+      // `sendTx` (or the duplicate-tx guard) still reports the hash for diagnosis.
+      aztecTxHash = txHash.toString();
+      emit("sending");
       const sendingStart = Date.now();
       if (await this.aztecNode.getTxEffect(txHash)) {
         throw new Error(`A settled tx with equal hash ${txHash.toString()} exists.`);

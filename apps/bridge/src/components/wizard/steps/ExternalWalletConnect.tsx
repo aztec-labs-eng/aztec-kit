@@ -66,7 +66,7 @@ export function ExternalWalletConnect() {
     setIsDiscovering(true);
     (async () => {
       try {
-        const node = getAztecNode(activeNetwork.aztecNodeUrl);
+        const node = getAztecNode(activeNetwork.aztecNodeUrl, activeNetwork.apiKey);
         const nodeInfo = await node.getNodeInfo();
         const chainInfo = {
           chainId: Fr.fromString(nodeInfo.l1ChainId.toString()),

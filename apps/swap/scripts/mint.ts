@@ -2,8 +2,8 @@
  * Mint tokens to one or more addresses on an existing deployment.
  *
  * Usage:
- *   SWAP_ADMIN_SECRET=0x... node --experimental-transform-types scripts/mint.ts --network testnet --to 0xaddr1 --to 0xaddr2
- *   SWAP_ADMIN_SECRET=0x... MINT_TO=0xaddr1,0xaddr2 node --experimental-transform-types scripts/mint.ts --network testnet
+ *   SWAP_ADMIN_SECRET=0x... node --experimental-transform-types scripts/mint.ts --network <network> --to 0xaddr1 --to 0xaddr2
+ *   SWAP_ADMIN_SECRET=0x... MINT_TO=0xaddr1,0xaddr2 node --experimental-transform-types scripts/mint.ts --network <network>
  *
  * Requires SWAP_ADMIN_SECRET env var to reconstruct the deployer account (must match the original deployer).
  */

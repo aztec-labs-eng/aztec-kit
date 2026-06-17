@@ -8,7 +8,12 @@
  *   - every Nargo.toml under packages/contracts/aztec/noir/
  *
  * Usage:
- *   node scripts/update.js [--version VERSION] [--skip-aztec-up] [--skip-compile]
+ *   node scripts/update.js [--version VERSION] [--major N] [--skip-aztec-up] [--skip-compile]
+ *
+ * When `--version` is omitted, the script auto-fetches the latest nightly. The
+ * major series tracked is taken from `--major` if passed, otherwise inferred
+ * from the current `@aztec/aztec.js` pin in any workspace package.json — so
+ * `main` (v4) and `next` (v5) each track their own stream automatically.
  */
 
 import { readFileSync, writeFileSync, readdirSync, statSync } from "fs";
@@ -205,17 +210,38 @@ function compileContracts() {
   log(COLORS.green, "✓ Contracts compiled\n");
 }
 
-async function fetchLatestNightly() {
-  log(COLORS.yellow, "Fetching latest nightly from npm...");
+/**
+ * Reads `@aztec/aztec.js`'s current pin from any workspace package.json and
+ * returns its leading major (e.g. `"v4.3.0-rc.1"` → `4`). Used to pick which
+ * nightly series to track when the caller doesn't pass `--major`.
+ */
+function inferMajorFromPin() {
+  for (const path of findWorkspacePackageJsons()) {
+    let pkg;
+    try {
+      pkg = JSON.parse(readFileSync(path, "utf-8"));
+    } catch {
+      continue;
+    }
+    const pin = pkg.dependencies?.["@aztec/aztec.js"] || pkg.devDependencies?.["@aztec/aztec.js"];
+    const m = pin?.match(/^v?(\d+)\./);
+    if (m) return Number(m[1]);
+  }
+  return null;
+}
+
+async function fetchLatestNightly(major) {
+  log(COLORS.yellow, `Fetching latest v${major} nightly from npm...`);
   try {
     const output = exec("npm view @aztec/aztec.js versions --json", { silent: true });
     const versions = JSON.parse(output);
-    const nightlies = versions.filter((v) => v.match(/^4\.\d+\.\d+-nightly\.\d+$/));
+    const re = new RegExp(`^${major}\\.\\d+\\.\\d+-nightly\\.\\d+$`);
+    const nightlies = versions.filter((v) => re.test(v));
     const latest = nightlies[nightlies.length - 1];
-    if (!latest) throw new Error("No nightly versions found");
+    if (!latest) throw new Error(`No v${major} nightly versions found`);
     return latest;
   } catch {
-    log(COLORS.red, "Failed to fetch latest nightly version from npm");
+    log(COLORS.red, `Failed to fetch latest v${major} nightly from npm`);
     log(COLORS.red, "Please specify a version with --version");
     process.exit(1);
   }
@@ -224,6 +250,7 @@ async function fetchLatestNightly() {
 function parseArgs() {
   const args = process.argv.slice(2);
   let version = null;
+  let major = null;
   let skipAztecUp = false;
   let skipCompile = false;
 
@@ -231,6 +258,8 @@ function parseArgs() {
     const a = args[i];
     if (a === "--version" && args[i + 1]) {
       version = args[++i].replace(/^v/, "");
+    } else if (a === "--major" && args[i + 1]) {
+      major = Number(args[++i]);
     } else if (a === "--skip-aztec-up") {
       skipAztecUp = true;
     } else if (a === "--skip-compile") {
@@ -238,7 +267,10 @@ function parseArgs() {
     } else if (a === "--help" || a === "-h") {
       console.log("Usage: node scripts/update.js [OPTIONS]");
       console.log("\nOptions:");
-      console.log("  --version VERSION    Specify nightly version (e.g., 4.2.0-nightly.20260412)");
+      console.log("  --version VERSION    Specify nightly version (e.g., 5.0.0-nightly.20260512)");
+      console.log(
+        "  --major N            Track v<N> nightlies (default: inferred from current pin)",
+      );
       console.log("  --skip-aztec-up      Skip Aztec CLI installation");
       console.log("  --skip-compile       Skip the compile/codegen step at the end");
       console.log("  --help, -h           Show this help message");
@@ -246,16 +278,24 @@ function parseArgs() {
     }
   }
 
-  return { version, skipAztecUp, skipCompile };
+  return { version, major, skipAztecUp, skipCompile };
 }
 
 async function main() {
   log(COLORS.green, "=== Aztec-Kit Nightly Update Script ===\n");
 
-  let { version, skipAztecUp, skipCompile } = parseArgs();
+  let { version, major, skipAztecUp, skipCompile } = parseArgs();
 
   if (!version) {
-    version = await fetchLatestNightly();
+    if (!major) {
+      major = inferMajorFromPin();
+      if (!major) {
+        log(COLORS.red, "Could not infer major from workspace pins. Pass --major or --version.");
+        process.exit(1);
+      }
+      log(COLORS.green, `Inferred major v${major} from current @aztec/aztec.js pin\n`);
+    }
+    version = await fetchLatestNightly(major);
     log(COLORS.green, `Latest nightly version: v${version}\n`);
   } else {
     log(COLORS.green, `Updating to version: v${version}\n`);

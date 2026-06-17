@@ -9,6 +9,7 @@ import { TokenContract, TokenContractArtifact } from "@aztec/noir-contracts.js/T
 import { SubscriptionFPC, fpcSubscribeOverhead } from "../lib/subscription-fpc.js";
 import { GrieferWallet } from "./utils.js";
 import { setupTestContext, type FPCTestContext } from "./utils.js";
+import { TEST_FEE_PADDING } from "@aztec-kit/common/testing";
 
 const FAILURE_INDEX = 200000 + Math.floor(Math.random() * 100000);
 const SALT = Fr.random();
@@ -29,15 +30,18 @@ describe("Failure cases", () => {
   let hasPublicCall: boolean;
 
   beforeAll(async () => {
-    const {
-      receipt: { contract: rawToken, instance: tokenInstance },
-    } = await TokenContract.deploy(ctx.wallet, ctx.admin, "FailToken", "FT", 18).send({
+    const { contract: rawToken, instance: tokenInstance } = await TokenContract.deploy(
+      ctx.wallet,
+      ctx.admin,
+      "FailToken",
+      "FT",
+      18,
+    ).send({
       from: ctx.admin,
-      wait: { returnReceipt: true },
     });
     token = rawToken;
 
-    userWallet = await EmbeddedWallet.create(ctx.node, { ephemeral: true });
+    userWallet = ctx.userWallet;
     await userWallet.registerContract(ctx.fpcInstance, SubscriptionFPC.artifact, ctx.fpcSecretKey);
     await userWallet.registerContract(tokenInstance, TokenContractArtifact);
 
@@ -144,13 +148,14 @@ describe("Failure cases", () => {
     const grieferWallet = await GrieferWallet.create(ctx.node, {
       ephemeral: true,
     });
+    grieferWallet.setMinFeePadding(TEST_FEE_PADDING);
     await grieferWallet.registerContract(
       ctx.fpcInstance,
       SubscriptionFPC.artifact,
       ctx.fpcSecretKey,
     );
     await grieferWallet.registerContract(
-      await ctx.node.getContract(token.address),
+      (await ctx.node.getContract(token.address))!,
       TokenContractArtifact,
     );
 
@@ -194,14 +199,14 @@ describe("Failure cases", () => {
     // before the FPC commits as fee payer.
     const TIGHT_INDEX = FAILURE_INDEX + 1;
 
-    const tightUserWallet = await EmbeddedWallet.create(ctx.node, { ephemeral: true });
+    const tightUserWallet = ctx.userWallet;
     await tightUserWallet.registerContract(
       ctx.fpcInstance,
       SubscriptionFPC.artifact,
       ctx.fpcSecretKey,
     );
     await tightUserWallet.registerContract(
-      await ctx.node.getContract(token.address),
+      (await ctx.node.getContract(token.address))!,
       TokenContractArtifact,
     );
 

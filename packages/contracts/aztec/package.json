@@ -22,7 +22,7 @@
     "dist"
   ],
   "scripts": {
-    "clean": "rm -rf ./dist ./noir/codegenCache.json ./noir/target",
+    "clean": "rm -rf ./dist ./noir/artifacts ./noir/target ./noir/codegenCache.json",
     "compile": "cd noir && aztec compile",
     "codegen": "cd noir && aztec codegen ./target -o artifacts",
     "build": "yarn compile && yarn codegen && tsc -p tsconfig.build.json && mkdir -p dist/noir/target && cp noir/target/*.json dist/noir/target/",
@@ -34,17 +34,18 @@
     "prepublishOnly": "yarn build:ts"
   },
   "dependencies": {
-    "@aztec/aztec.js": "v4.3.0",
-    "@aztec/foundation": "v4.3.0",
-    "@aztec/stdlib": "v4.3.0",
-    "@aztec/wallets": "v4.3.0"
+    "@aztec/aztec.js": "v5.0.0-rc.1",
+    "@aztec/foundation": "v5.0.0-rc.1",
+    "@aztec/stdlib": "v5.0.0-rc.1",
+    "@aztec/wallets": "v5.0.0-rc.1"
   },
   "devDependencies": {
     "@aztec-kit/common": "workspace:*",
-    "@aztec/accounts": "v4.3.0",
-    "@aztec/constants": "v4.3.0",
-    "@aztec/noir-contracts.js": "v4.3.0",
+    "@aztec/accounts": "v5.0.0-rc.1",
+    "@aztec/constants": "v5.0.0-rc.1",
+    "@aztec/noir-contracts.js": "v5.0.0-rc.1",
+    "@aztec/standard-contracts": "v5.0.0-rc.1",
     "typescript": "~5.7.3",
-    "vitest": "^3"
+    "vitest": "^4"
   }
 }

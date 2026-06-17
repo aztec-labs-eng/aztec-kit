@@ -14,6 +14,7 @@ export {
   DEFAULT_PAYMENT_MODE,
   resolveL1Funder,
   bridgeMode,
+  apiKeyForNetwork,
   type NetworkName,
   type PaymentMode,
 } from "./network-config.ts";
@@ -41,6 +42,7 @@ export {
 export {
   setupLocalNetwork,
   setupLocalNetworkCli,
+  TEST_FEE_PADDING,
   type LocalNetwork,
   type LocalNetworkOptions,
   type LocalNetworkCli,

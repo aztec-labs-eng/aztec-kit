@@ -3,7 +3,7 @@
  * it on L2 via the bridge.
  *
  * Expects:
- *   --network <local|testnet>
+ *   --network <network>
  *   FPC_ADMIN_SECRET — FPC admin secret (from `deploy-admin`).
  *   FPC_SECRET       — FPC contract key secret. When provided AND the derived
  *                      contract is already on-chain, deploy is skipped.

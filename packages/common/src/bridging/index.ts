@@ -106,6 +106,7 @@ export async function bridgeAndClaim(params: BridgeAndClaimParams): Promise<Brid
     .send({
       from: params.claimFrom,
       ...(params.claimFeeOpts ? { fee: params.claimFeeOpts } : {}),
+      wait: { timeout: 120 },
     } as Parameters<ReturnType<typeof feeJuice.methods.claim>["send"]>[0]);
 
   return { amount: BigInt(claim.claimAmount), l1Address, minted };
