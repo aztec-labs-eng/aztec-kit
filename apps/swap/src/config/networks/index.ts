@@ -81,11 +81,11 @@ function resolveEnvPlaceholders<T>(value: T): T {
 }
 
 /**
- * Order of preference: local first (if present), then nextnet, then testnet,
- * then anything else alphabetically. `getDefaultNetwork` returns `NETWORKS[0]`,
- * so this ordering is what picks the default network on first load.
+ * Order of preference: local first (if present), then testnet, then anything
+ * else alphabetically. `getDefaultNetwork` returns `NETWORKS[0]`, so this
+ * ordering is what picks the default network on first load.
  */
-const PREFERRED_ORDER = ["local", "nextnet", "testnet"];
+const PREFERRED_ORDER = ["local", "testnet"];
 
 const NETWORKS: NetworkConfig[] = Object.values(modules)
   .map((m) => resolveEnvPlaceholders(m.default))
