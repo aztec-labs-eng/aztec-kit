@@ -165,7 +165,7 @@ async function deployContracts(
   const baseOpts: DeployOptions<WaitOpts> = {
     from: deployer,
     fee: { paymentMethod, gasSettings: { maxFeesPerGas: currentMinFees.mul(10) } },
-    wait: { timeout: 120, waitForStatus: TxStatus.PROPOSED },
+    wait: { timeout: 120 },
   };
 
   // In a fresh chain (local network) we deploy the first token so class registration
