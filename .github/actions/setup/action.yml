@@ -61,9 +61,11 @@ runs:
       run: |
         if grep -qF 'us-west1-npm.pkg.dev' .yarnrc.yml 2>/dev/null; then
           echo "private=true" >> "$GITHUB_OUTPUT"
+          echo "slug=priv" >> "$GITHUB_OUTPUT"
           echo "Release channel: PRIVATE (Artifact Registry)"
         else
           echo "private=false" >> "$GITHUB_OUTPUT"
+          echo "slug=pub" >> "$GITHUB_OUTPUT"
           echo "Release channel: PUBLIC (npm + install.aztec.network)"
         fi
 
@@ -108,9 +110,9 @@ runs:
           packages/*/node_modules
           packages/contracts/*/node_modules
           e2e/node_modules
-        key: yarn-v2-${{ runner.os }}${{ inputs.cache-suffix && format('-{0}', inputs.cache-suffix) }}-${{ hashFiles('yarn.lock') }}
+        key: yarn-v2-${{ runner.os }}-${{ steps.channel.outputs.slug }}${{ inputs.cache-suffix && format('-{0}', inputs.cache-suffix) }}-${{ hashFiles('yarn.lock') }}
         restore-keys: |
-          yarn-v2-${{ runner.os }}${{ inputs.cache-suffix && format('-{0}', inputs.cache-suffix) }}-
+          yarn-v2-${{ runner.os }}-${{ steps.channel.outputs.slug }}${{ inputs.cache-suffix && format('-{0}', inputs.cache-suffix) }}-
 
     - name: Install dependencies
       shell: bash
@@ -131,7 +133,7 @@ runs:
         path: |
           ~/.aztec
           ~/.foundry
-        key: aztec-${{ runner.os }}-${{ steps.aztec-version.outputs.version }}
+        key: aztec-${{ runner.os }}-${{ steps.channel.outputs.slug }}-${{ steps.aztec-version.outputs.version }}
 
     # Private nightlies aren't on install.aztec.network / public npm — assemble
     # the toolchain locally (public-noir nargo + private-registry bb/CLI).
@@ -178,6 +180,6 @@ runs:
           packages/contracts/aztec/noir/artifacts
           packages/contracts/ethereum/generated
           packages/contracts/ethereum/solidity/out
-        key: turbo-${{ runner.os }}-${{ steps.aztec-version.outputs.version }}-${{ github.sha }}
+        key: turbo-${{ runner.os }}-${{ steps.channel.outputs.slug }}-${{ steps.aztec-version.outputs.version }}-${{ github.sha }}
         restore-keys: |
-          turbo-${{ runner.os }}-${{ steps.aztec-version.outputs.version }}-
+          turbo-${{ runner.os }}-${{ steps.channel.outputs.slug }}-${{ steps.aztec-version.outputs.version }}-
