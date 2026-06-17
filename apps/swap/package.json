@@ -12,16 +12,12 @@
     "preview": "NODE_OPTIONS=--max_http_header_size=128000 vite preview",
     "deploy-admin:local": "node --experimental-transform-types scripts/deploy-admin.ts --network local",
     "deploy-admin:testnet": "node --experimental-transform-types scripts/deploy-admin.ts --network testnet",
-    "deploy-admin:nextnet": "node --experimental-transform-types scripts/deploy-admin.ts --network nextnet",
     "deploy:local": "node --experimental-transform-types scripts/deploy.ts --network local",
     "deploy:testnet": "node --experimental-transform-types scripts/deploy.ts --network testnet",
-    "deploy:nextnet": "node --experimental-transform-types scripts/deploy.ts --network nextnet",
     "register-fpc-signups:local": "node --experimental-transform-types scripts/register-fpc-signups.ts --network local",
     "register-fpc-signups:testnet": "node --experimental-transform-types scripts/register-fpc-signups.ts --network testnet",
-    "register-fpc-signups:nextnet": "node --experimental-transform-types scripts/register-fpc-signups.ts --network nextnet",
     "mint:local": "node --experimental-transform-types scripts/mint.ts --network local",
-    "mint:testnet": "node --experimental-transform-types scripts/mint.ts --network testnet",
-    "mint:nextnet": "node --experimental-transform-types scripts/mint.ts --network nextnet"
+    "mint:testnet": "node --experimental-transform-types scripts/mint.ts --network testnet"
   },
   "dependencies": {
     "@aztec-kit/common": "workspace:*",

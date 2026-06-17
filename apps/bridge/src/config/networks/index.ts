@@ -40,7 +40,7 @@ function resolveEnvPlaceholders<T>(value: T): T {
 }
 
 /** Preference order; unknown ids sort alphabetically at the end. */
-const PREFERRED_ORDER = ["local", "nextnet", "testnet"];
+const PREFERRED_ORDER = ["local", "testnet"];
 
 const NETWORKS: NetworkConfig[] = Object.values(modules)
   .map((m) => resolveEnvPlaceholders(m.default))
