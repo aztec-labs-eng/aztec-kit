@@ -29,6 +29,8 @@ import {
   type EmbeddedWalletOptions,
 } from "@aztec/wallets/embedded";
 import { AztecSQLiteOPFSStore } from "@aztec/kv-store/sqlite-opfs";
+import { AztecIndexedDBStore } from "@aztec/kv-store/indexeddb";
+import type { AztecAsyncKVStore } from "@aztec/kv-store";
 import { createLogger } from "@aztec/foundation/log";
 import { Fr } from "@aztec/foundation/curves/bn254";
 import { registerSqliteInspectors } from "./sqlite-inspector";
@@ -74,6 +76,35 @@ async function openEncryptedOrPlain(
   }
 }
 
+/** Which `@aztec/kv-store` backend backs the PXE + walletDB stores. */
+export type StoreBackend = "sqlite-opfs" | "indexeddb";
+
+/**
+ * Opens a single PXE/wallet store for the chosen backend.
+ *
+ *   - `sqlite-opfs`: OPFS-backed sqlite, optionally encrypted at rest (see
+ *     `openEncryptedOrPlain`).
+ *   - `indexeddb`: IndexedDB-backed. Has no at-rest encryption — `create()`
+ *     rejects `getEncryptionKey` for this backend up-front, so the key is
+ *     never threaded here.
+ *
+ * `poolDirectory` is the sqlite-opfs SAH-pool dir and is ignored by IndexedDB.
+ * Exists so CI can exercise the IndexedDB backend until it's fully deprecated.
+ */
+async function openStore(
+  storeBackend: StoreBackend,
+  storeName: StoreName,
+  log: ReturnType<typeof createLogger>,
+  dbName: string,
+  poolDirectory: string,
+  getEncryptionKey: (() => Promise<Uint8Array>) | undefined,
+): Promise<AztecAsyncKVStore> {
+  if (storeBackend === "indexeddb") {
+    return AztecIndexedDBStore.open(log, dbName, false);
+  }
+  return openEncryptedOrPlain(storeName, log, dbName, poolDirectory, getEncryptionKey);
+}
+
 /** Extra options supported by this wallet on top of `EmbeddedWalletOptions`. */
 export type EmbeddedWalletExtraOptions = {
   /**
@@ -82,8 +113,18 @@ export type EmbeddedWalletExtraOptions = {
    *   - `window.__txProfiler` — live tx-progress history + subscribe + phase roll-up
    *
    * Not compatible with `ephemeral: true` — no sqlite-opfs store exists to inspect.
+   * SQLite-only: the inspector relies on sqlite-specific `allAsync`/`exportDb`,
+   * so it's a no-op under `storeBackend: "indexeddb"`.
    */
   inspect?: boolean;
+
+  /**
+   * Which `@aztec/kv-store` backend backs the (non-ephemeral) PXE + walletDB
+   * stores. Defaults to `"sqlite-opfs"`. `"indexeddb"` exists so CI can keep
+   * getting signal on the IndexedDB path until it's fully deprecated; it has no
+   * at-rest encryption, so it's incompatible with `getEncryptionKey`.
+   */
+  storeBackend?: StoreBackend;
 
   /**
    * If provided, both the PXE store and the walletDB store are opened with
@@ -135,7 +176,7 @@ export class EmbeddedWallet extends EmbeddedWalletBase {
     nodeOrUrl: string | AztecNode,
     options: EmbeddedWalletOptions & EmbeddedWalletExtraOptions = {},
   ): Promise<T> {
-    const { inspect, getEncryptionKey, apiKey, ...rest } = options;
+    const { inspect, getEncryptionKey, apiKey, storeBackend = "sqlite-opfs", ...rest } = options;
 
     if (inspect && rest.ephemeral) {
       throw new Error(
@@ -146,6 +187,12 @@ export class EmbeddedWallet extends EmbeddedWalletBase {
     if (getEncryptionKey && rest.ephemeral) {
       throw new Error(
         "`getEncryptionKey` is incompatible with `ephemeral: true` (sqlite3mc does not encrypt :memory: databases)",
+      );
+    }
+
+    if (getEncryptionKey && storeBackend === "indexeddb") {
+      throw new Error(
+        '`getEncryptionKey` is incompatible with `storeBackend: "indexeddb"` (the IndexedDB backend has no at-rest encryption)',
       );
     }
 
@@ -165,8 +212,8 @@ export class EmbeddedWallet extends EmbeddedWalletBase {
     const pxeOptions = { proverEnabled: true, ...rest.pxe };
 
     let finalOptions: EmbeddedWalletOptions;
-    let pxeStore: AztecSQLiteOPFSStore | undefined;
-    let walletStore: AztecSQLiteOPFSStore | undefined;
+    let pxeStore: AztecAsyncKVStore | undefined;
+    let walletStore: AztecAsyncKVStore | undefined;
 
     if (rest.ephemeral) {
       finalOptions = { ...rest, pxe: pxeOptions };
@@ -175,22 +222,24 @@ export class EmbeddedWallet extends EmbeddedWalletBase {
       const rollup = rollupAddress.toString();
 
       // Only open defaults the caller didn't already fill in.
-      const pxeStoreOverride = pxeOptions.store as AztecSQLiteOPFSStore | undefined;
+      const pxeStoreOverride = pxeOptions.store as AztecAsyncKVStore | undefined;
       pxeStore =
         pxeStoreOverride ??
-        (await openEncryptedOrPlain(
+        (await openStore(
+          storeBackend,
           "pxe",
-          rootLogger.createChild("pxe:data:sqlite-opfs"),
+          rootLogger.createChild(`pxe:data:${storeBackend}`),
           `pxe_data_${rollup}`,
           `.aztec-kv-pxe-${rollup}`,
           getEncryptionKey,
         ));
       try {
         walletStore =
-          (rest.walletDb?.store as AztecSQLiteOPFSStore | undefined) ??
-          (await openEncryptedOrPlain(
+          (rest.walletDb?.store as AztecAsyncKVStore | undefined) ??
+          (await openStore(
+            storeBackend,
             "wallet",
-            rootLogger.createChild("wallet:data:sqlite-opfs"),
+            rootLogger.createChild(`wallet:data:${storeBackend}`),
             `wallet_data_${rollup}`,
             `.aztec-kv-wallet-${rollup}`,
             getEncryptionKey,
@@ -230,8 +279,13 @@ export class EmbeddedWallet extends EmbeddedWalletBase {
       (wallet as unknown as EmbeddedWallet).#walletStore = walletStore;
     }
 
-    if (inspect && pxeStore && walletStore) {
-      registerSqliteInspectors({ pxe: pxeStore, wallet: walletStore });
+    // SQLite-only: the inspector relies on sqlite-specific allAsync/exportDb,
+    // which the IndexedDB store doesn't implement.
+    if (inspect && storeBackend === "sqlite-opfs" && pxeStore && walletStore) {
+      registerSqliteInspectors({
+        pxe: pxeStore as AztecSQLiteOPFSStore,
+        wallet: walletStore as AztecSQLiteOPFSStore,
+      });
     }
 
     return wallet;

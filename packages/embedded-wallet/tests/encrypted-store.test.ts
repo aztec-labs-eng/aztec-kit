@@ -67,6 +67,19 @@ describe("EmbeddedWallet.create — getEncryptionKey", () => {
     expect(AztecSQLiteOPFSStore.open).not.toHaveBeenCalled();
   });
 
+  it("throws synchronously when storeBackend='indexeddb' and getEncryptionKey is set", async () => {
+    // The IndexedDB backend has no at-rest encryption (AztecIndexedDBStore.open
+    // takes no key), so combining it with getEncryptionKey is a caller error.
+    // It must fail before opening any sqlite-opfs store.
+    await expect(
+      EmbeddedWallet.create(fakeNode(), {
+        storeBackend: "indexeddb",
+        getEncryptionKey: async () => new Uint8Array(32),
+      }),
+    ).rejects.toThrow(/indexeddb/i);
+    expect(AztecSQLiteOPFSStore.open).not.toHaveBeenCalled();
+  });
+
   it("passes a fresh 32-byte key to the first store.open() call when getEncryptionKey is set", async () => {
     const key1 = new Uint8Array(32).fill(0xaa);
 

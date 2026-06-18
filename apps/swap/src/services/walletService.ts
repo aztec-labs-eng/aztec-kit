@@ -46,9 +46,20 @@ export async function createEmbeddedWallet(
 ): Promise<{ wallet: EmbeddedWallet; address: AztecAddress }> {
   const { rollupAddress } = await node.getL1ContractAddresses();
   const rollupHex = rollupAddress.toString();
-  await ensurePlaintextMigrationDone(rollupHex);
 
-  const cryptoKey = await getOrCreateWalletEncryptionKey();
+  // `VITE_WALLET_STORE=indexeddb` runs the wallet on the (soon-to-be-deprecated)
+  // IndexedDB kv-store backend so CI keeps getting signal on it. That backend
+  // has no at-rest encryption, so the encryption-key + plaintext-OPFS migration
+  // dance below is sqlite-opfs-only.
+  const storeBackend =
+    import.meta.env.VITE_WALLET_STORE === "indexeddb" ? "indexeddb" : "sqlite-opfs";
+
+  let getEncryptionKey: (() => Promise<Uint8Array>) | undefined;
+  if (storeBackend === "sqlite-opfs") {
+    await ensurePlaintextMigrationDone(rollupHex);
+    const cryptoKey = await getOrCreateWalletEncryptionKey();
+    getEncryptionKey = () => exportRawKey(cryptoKey);
+  }
 
   // `VITE_DISABLE_PROVER=1` turns off bb.js proving — only used in CI e2e
   // where proving starves the Aztec node's event loop on the 4 vCPU runner.
@@ -59,7 +70,8 @@ export async function createEmbeddedWallet(
     wallet = await EmbeddedWallet.create(node, {
       inspect: import.meta.env.DEV,
       pxe: { proverEnabled },
-      getEncryptionKey: () => exportRawKey(cryptoKey),
+      storeBackend,
+      getEncryptionKey,
     });
   } catch (err) {
     if (err instanceof EncryptionKeyMismatchError) {
