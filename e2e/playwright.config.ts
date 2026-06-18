@@ -24,10 +24,6 @@ import { defineConfig, devices } from "@playwright/test";
 const headed = process.env.E2E_HEADED === "1" || !!process.env.E2E_SLOW_MO;
 const slowMo = process.env.E2E_SLOW_MO ? Number(process.env.E2E_SLOW_MO) : undefined;
 
-// Which kv-store backend the apps' embedded wallet runs on. `VITE_WALLET_STORE`
-// is forwarded into every dev server below so CI can run this whole suite a
-// second time against IndexedDB (the soon-to-be-deprecated backend) and keep
-// getting signal on it. Defaults to sqlite-opfs.
 const storeBackend = process.env.VITE_WALLET_STORE === "indexeddb" ? "indexeddb" : "sqlite-opfs";
 
 const desktopChrome = { ...devices["Desktop Chrome"] };
@@ -51,8 +47,6 @@ function appServer(
     timeout: 120_000,
     stdout: "pipe",
     stderr: "pipe",
-    // Vite exposes VITE_-prefixed vars from process.env on import.meta.env;
-    // Playwright merges this over process.env for the spawned dev server.
     env: { VITE_WALLET_STORE: storeBackend },
   };
 }
@@ -115,10 +109,6 @@ export default defineConfig({
       dependencies: ["fpc-signup"],
       use: { ...desktopChrome, baseURL: "http://localhost:5175" },
     },
-    // Spec 06 asserts the wallet's on-disk bytes are NOT the plaintext SQLite
-    // magic and reads them via the sqlite inspector (window.__aztecStores). The
-    // IndexedDB backend has neither at-rest encryption nor that inspector, so
-    // this project only makes sense on sqlite-opfs.
     ...(storeBackend === "sqlite-opfs"
       ? [
           {

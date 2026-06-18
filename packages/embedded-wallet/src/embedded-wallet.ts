@@ -82,11 +82,8 @@ export type StoreBackend = "sqlite-opfs" | "indexeddb";
 /**
  * Opens a single PXE/wallet store for the chosen backend.
  *
- *   - `sqlite-opfs`: OPFS-backed sqlite, optionally encrypted at rest (see
- *     `openEncryptedOrPlain`).
- *   - `indexeddb`: IndexedDB-backed. Has no at-rest encryption — `create()`
- *     rejects `getEncryptionKey` for this backend up-front, so the key is
- *     never threaded here.
+ *   - `sqlite-opfs`: OPFS-backed sqlite, optionally encrypted at rest (see `openEncryptedOrPlain`).
+ *   - `indexeddb`: IndexedDB-backed. `create()` rejects `getEncryptionKey` for this backend up-front.
  *
  * `poolDirectory` is the sqlite-opfs SAH-pool dir and is ignored by IndexedDB.
  * Exists so CI can exercise the IndexedDB backend until it's fully deprecated.

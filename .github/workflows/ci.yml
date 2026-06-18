@@ -79,9 +79,7 @@ jobs:
     strategy:
       # Run the full suite against both kv-store backends. IndexedDB is on its
       # way out, but until it's fully deprecated we still want CI signal that it
-      # stays functional. `fail-fast: false` so a failure on one backend doesn't
-      # cancel the other's run. GitHub names the jobs `e2e (sqlite-opfs)` and
-      # `e2e (indexeddb)` automatically.
+      # stays functional.
       fail-fast: false
       matrix:
         store: [sqlite-opfs, indexeddb]
@@ -165,15 +163,12 @@ jobs:
         run: yarn workspace @aztec-kit/e2e test --fail-on-flaky-tests
         env:
           CI: "1"
-          # Selects the embedded wallet's kv-store backend (see playwright.config.ts).
           VITE_WALLET_STORE: ${{ matrix.store }}
 
       - name: Upload Playwright report
         if: failure()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          # Suffix per backend so both matrix legs' reports survive (artifact
-          # names must be unique within a run).
           name: playwright-report-${{ matrix.store }}
           # html-report/   — Playwright's HTML report (traces, videos)
           # playwright-report/aztec.log — our sidecar log (aztec node stdout/err)

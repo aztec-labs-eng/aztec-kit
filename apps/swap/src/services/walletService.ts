@@ -47,10 +47,6 @@ export async function createEmbeddedWallet(
   const { rollupAddress } = await node.getL1ContractAddresses();
   const rollupHex = rollupAddress.toString();
 
-  // `VITE_WALLET_STORE=indexeddb` runs the wallet on the (soon-to-be-deprecated)
-  // IndexedDB kv-store backend so CI keeps getting signal on it. That backend
-  // has no at-rest encryption, so the encryption-key + plaintext-OPFS migration
-  // dance below is sqlite-opfs-only.
   const storeBackend =
     import.meta.env.VITE_WALLET_STORE === "indexeddb" ? "indexeddb" : "sqlite-opfs";
 
