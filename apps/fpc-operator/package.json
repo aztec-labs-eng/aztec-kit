@@ -10,8 +10,6 @@
     "lint": "eslint .",
     "typecheck": "tsc -b --noEmit",
     "preview": "vite preview",
-    "deploy-admin:local": "node --experimental-transform-types scripts/deploy-admin.ts --network local",
-    "deploy-admin:testnet": "node --experimental-transform-types scripts/deploy-admin.ts --network testnet",
     "deploy-fpc:local": "node --experimental-transform-types scripts/deploy-fpc.ts --network local",
     "deploy-fpc:testnet": "node --experimental-transform-types scripts/deploy-fpc.ts --network testnet"
   },
