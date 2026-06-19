@@ -24,7 +24,12 @@ import { getContractInstanceFromInstantiationParams } from "@aztec/stdlib/contra
 import type { Wallet } from "@aztec/aztec.js/wallet";
 
 import { bridge } from "../bridging/index.ts";
-import { L1_DEFAULTS, bridgeMode, resolveL1Funder, type NetworkName } from "../testing/network-config.ts";
+import {
+  L1_DEFAULTS,
+  bridgeMode,
+  resolveL1Funder,
+  type NetworkName,
+} from "../testing/network-config.ts";
 import type { DeployReporter, AccountFunding } from "./reporter.ts";
 import type { DeployState } from "./state.ts";
 import type { FeePolicy } from "./types.ts";
@@ -101,9 +106,12 @@ export async function prepareFeeSession(opts: PrepareFeeSessionOpts): Promise<Fe
   // Shared sponsored payment method: register the SponsoredFPC + read gas once, if anyone uses it.
   let sponsoredFee: SendFee | undefined;
   if (accounts.some((a) => a.policy.kind === "sponsored")) {
-    const sponsoredFPC = await getContractInstanceFromInstantiationParams(SponsoredFPCContractArtifact, {
-      salt: new Fr(SPONSORED_FPC_SALT),
-    });
+    const sponsoredFPC = await getContractInstanceFromInstantiationParams(
+      SponsoredFPCContractArtifact,
+      {
+        salt: new Fr(SPONSORED_FPC_SALT),
+      },
+    );
     await wallet.registerContract(sponsoredFPC, SponsoredFPCContractArtifact);
     sponsoredFee = {
       paymentMethod: new SponsoredFeePaymentMethod(sponsoredFPC.address),
@@ -124,7 +132,11 @@ export async function prepareFeeSession(opts: PrepareFeeSessionOpts): Promise<Fe
     if (funding.kind !== "funded") {
       const stored = state.pendingClaims[key];
       if (stored) {
-        reporter.onBridge?.({ recipient: address, amount: BigInt(stored.claimAmount), reused: true });
+        reporter.onBridge?.({
+          recipient: address,
+          amount: BigInt(stored.claimAmount),
+          reused: true,
+        });
         claim = new FeeJuicePaymentMethodWithClaim(address, {
           claimAmount: BigInt(stored.claimAmount),
           claimSecret: Fr.fromString(stored.claimSecret),

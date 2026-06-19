@@ -24,7 +24,6 @@ import {
 const HERE = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = resolve(HERE, "../..");
 
-
 /**
  * Runs before any spec. Produces the baseline stack used by every spec:
  *   1. `aztec start --local-network` (unless E2E_SKIP_NETWORK=1)

@@ -35,7 +35,12 @@ const EXPORT_LINE = /^export ([A-Za-z_][A-Za-z0-9_]*)=(.*)$/;
  * Runs one workspace script, streaming stderr live and capturing stdout. Parsed `export KEY=VAL`
  * lines are merged into `env` for later steps. Exits the process if the step fails.
  */
-async function step(label: string, workspace: string, script: string, extraArgs: string[] = []): Promise<void> {
+async function step(
+  label: string,
+  workspace: string,
+  script: string,
+  extraArgs: string[] = [],
+): Promise<void> {
   console.error(`\n=== ${label} (${network}) ===`);
   let stdout = "";
   const exitCode = await new Promise<number>((res, rej) => {
@@ -64,7 +69,10 @@ async function step(label: string, workspace: string, script: string, extraArgs:
 
 await step("Deploy swap contracts", "@aztec-kit/swap", "deploy");
 await step("Deploy + fund FPC", "@aztec-kit/fpc-operator", "deploy-fpc");
-await step("Mint swap tokens to FPC admin", "@aztec-kit/swap", "mint", ["--to", env.FPC_ADMIN_ADDRESS ?? ""]);
+await step("Mint swap tokens to FPC admin", "@aztec-kit/swap", "mint", [
+  "--to",
+  env.FPC_ADMIN_ADDRESS ?? "",
+]);
 await step("Register swap FPC signups", "@aztec-kit/swap", "register-fpc-signups");
 
 console.error("\n=== Done ===");

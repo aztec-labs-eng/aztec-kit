@@ -65,7 +65,8 @@ export function scheduleLayers(
   for (const node of asap.flat().reverse()) {
     if (!floatLate(node)) continue;
     const deps = dependents.get(node) ?? [];
-    const latest = deps.length === 0 ? lastLayer : Math.min(...deps.map((d) => layerOf.get(d)!)) - 1;
+    const latest =
+      deps.length === 0 ? lastLayer : Math.min(...deps.map((d) => layerOf.get(d)!)) - 1;
     layerOf.set(node, Math.max(layerOf.get(node)!, latest));
   }
 
