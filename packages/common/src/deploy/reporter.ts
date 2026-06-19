@@ -132,10 +132,19 @@ export function consoleReporter(): DeployReporter {
       log(
         formatList(
           "steps",
-          plan.steps.map((s) => ({ name: s.id, tag: `${s.kind} · ${s.status}`, dependencies: s.dependsOn })),
+          plan.steps.map((s) => ({
+            name: s.id,
+            tag: `${s.kind} · ${s.status}`,
+            dependencies: s.dependsOn,
+          })),
         ),
       );
-      log(formatWaves("execution waves", plan.waves.map((wave) => wave.map((name) => ({ name })))));
+      log(
+        formatWaves(
+          "execution waves",
+          plan.waves.map((wave) => wave.map((name) => ({ name }))),
+        ),
+      );
     },
     onNothingToDo(network) {
       log(`\nNothing to do on ${network} — everything is already on-chain.`);

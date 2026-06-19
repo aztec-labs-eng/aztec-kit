@@ -17,11 +17,11 @@ Requires:
 
 All run with `yarn workspace @aztec-kit/swap <name>` (or `cd apps/swap && yarn <name>`). Each accepts `--network local|testnet|nextnet`.
 
-| Script                           | Purpose                                                                                                         |
-| -------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| Script                           | Purpose                                                                                                                                                                                                                                                                                         |
+| -------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `deploy:<network>`               | Deploy GoCoin, GoCoinPremium, GoLiquidity, AMM, ProofOfPassword via the declarative deploy framework. The deployer is an initializerless admin (no account-deploy step). Local: SponsoredFPC pays; `--payment feejuice` forces the fee-juice path. Writes `src/config/networks/<network>.json`. |
-| `mint:<network>`                 | Mint GO/GOP to `--to <addr>` (repeatable) or `MINT_TO=<addr,addr>` env.                                         |
-| `register-fpc-signups:<network>` | Signs up the swap app's sponsored functions on the FPC. On testnet, calibrates `maxFee` from the clustec P75.   |
+| `mint:<network>`                 | Mint GO/GOP to `--to <addr>` (repeatable) or `MINT_TO=<addr,addr>` env.                                                                                                                                                                                                                         |
+| `register-fpc-signups:<network>` | Signs up the swap app's sponsored functions on the FPC. On testnet, calibrates `maxFee` from the clustec P75.                                                                                                                                                                                   |
 
 `yarn setup:local` / `yarn setup:testnet` / `yarn setup:nextnet` at the repo root runs this full chain + the fpc-operator side in order.
 
