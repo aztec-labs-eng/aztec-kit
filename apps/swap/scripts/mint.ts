@@ -14,7 +14,6 @@ import { Fr } from "@aztec/foundation/curves/bn254";
 import { AztecAddress } from "@aztec/stdlib/aztec-address";
 import { TokenContract, TokenContractArtifact } from "@aztec-kit/contracts-aztec/artifacts/Token";
 import { BatchCall } from "@aztec/aztec.js/contracts";
-import { TxStatus } from "@aztec/stdlib/tx";
 import {
   parseNetwork,
   parseAddressList,
@@ -92,10 +91,7 @@ async function main() {
   await new BatchCall(wallet, mintCalls).send({
     from: deployer,
     fee: { paymentMethod },
-    // Pin PROPOSED — upstream's EmbeddedWallet default-to-PROPOSED is dead
-    // code (mutates a local that's never forwarded), so `waitForTx` falls
-    // back to CHECKPOINTED unless we set it explicitly.
-    wait: { waitForStatus: TxStatus.PROPOSED, timeout: 120 },
+    wait: { timeout: 120 },
   });
 
   console.log("Done! Tokens minted successfully.");
