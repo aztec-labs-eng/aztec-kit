@@ -21,10 +21,9 @@ Requires an Aztec node (local network or a remote RPC).
 
 All run with `yarn workspace @aztec-kit/fpc-operator <name>`. Each accepts `--network local|testnet|nextnet`.
 
-| Script                   | Purpose                                                                                                                                                 |
-| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `deploy-admin:<network>` | Deploy the FPC-admin schnorr account. Local: SponsoredFPC pays. Testnet: bridges FJ + claims in the deploy tx.                                          |
-| `deploy-fpc:<network>`   | Deploy the SubscriptionFPC contract, then bridge FJ to it so it can sponsor gas. Writes a gitignored backup JSON to `backups/<network>.fpc-admin.json`. |
+| Script                 | Purpose                                                                                                                                                                                                                                                         |
+| ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `deploy-fpc:<network>` | Deploy the SubscriptionFPC and bridge FJ to it so it can sponsor gas, via the declarative deploy framework. The FPC admin is an initializerless account (no separate admin-deploy step). Writes a gitignored backup JSON to `backups/<network>.fpc-admin.json`. |
 
 Run via `yarn setup:local` / `yarn setup:testnet` / `yarn setup:nextnet` at the repo root (orchestrates admins + contracts + FPC + sign_ups).
 

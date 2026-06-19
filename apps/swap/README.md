@@ -17,12 +17,11 @@ Requires:
 
 All run with `yarn workspace @aztec-kit/swap <name>` (or `cd apps/swap && yarn <name>`). Each accepts `--network local|testnet|nextnet`.
 
-| Script                           | Purpose                                                                                                         |
-| -------------------------------- | --------------------------------------------------------------------------------------------------------------- |
-| `deploy-admin:<network>`         | Deploy the swap-admin schnorr account. Local: SponsoredFPC pays. Testnet: bridges FJ + claims in the deploy tx. |
-| `deploy:<network>`               | Deploy GoCoin, GoCoinPremium, GoLiquidity, AMM, ProofOfPassword. Writes `src/config/networks/<network>.json`.   |
-| `mint:<network>`                 | Mint GO/GOP to `--to <addr>` (repeatable) or `MINT_TO=<addr,addr>` env.                                         |
-| `register-fpc-signups:<network>` | Signs up the swap app's sponsored functions on the FPC. On testnet, calibrates `maxFee` from the clustec P75.   |
+| Script                           | Purpose                                                                                                                                                                                                                                                                                         |
+| -------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `deploy:<network>`               | Deploy GoCoin, GoCoinPremium, GoLiquidity, AMM, ProofOfPassword via the declarative deploy framework. The deployer is an initializerless admin (no account-deploy step). Local: SponsoredFPC pays; `--payment feejuice` forces the fee-juice path. Writes `src/config/networks/<network>.json`. |
+| `mint:<network>`                 | Mint GO/GOP to `--to <addr>` (repeatable) or `MINT_TO=<addr,addr>` env.                                                                                                                                                                                                                         |
+| `register-fpc-signups:<network>` | Signs up the swap app's sponsored functions on the FPC. On testnet, calibrates `maxFee` from the clustec P75.                                                                                                                                                                                   |
 
 `yarn setup:local` / `yarn setup:testnet` / `yarn setup:nextnet` at the repo root runs this full chain + the fpc-operator side in order.
 
@@ -34,7 +33,7 @@ All run with `yarn workspace @aztec-kit/swap <name>` (or `cd apps/swap && yarn <
 | `SALT`                                          | all scripts                      | Contract address salt. Default `Fr(0)`. Change to deploy to a different address. |
 | `PASSWORD`                                      | `deploy`, `register-fpc-signups` | Seeds the ProofOfPassword contract. Default `"potato"`.                          |
 | `MINT_TO`                                       | `deploy`, `mint`                 | Comma-separated addresses to mint initial balances to.                           |
-| `FPC_ADDRESS`, `FPC_ADMIN_SECRET`, `FPC_SECRET` | `register-fpc-signups`           | FPC identity; set by `fpc-operator`'s `deploy-admin` + `deploy-fpc`.             |
+| `FPC_ADDRESS`, `FPC_ADMIN_SECRET`, `FPC_SECRET` | `register-fpc-signups`           | FPC identity; set by `fpc-operator`'s `deploy-fpc`.                              |
 
 ## Config
 

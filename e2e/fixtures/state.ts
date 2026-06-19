@@ -43,8 +43,12 @@ export interface GlobalState {
   chainId: number;
   /** Deployed GoBridge contract address on L1. */
   l1BridgeAddress: string;
-  /** Deterministic swap-admin secret + derived L2 address. */
-  swapAdmin: { secret: string; address: string };
+  /**
+   * Swap-admin identity: secret + the salt it was derived with + the resulting L2 address. The
+   * salt is forwarded to `deploy.ts` (spec 03) so the deployed-from address matches the one spec 02
+   * bridge-funds — by construction, not by both happening to read an unset `SALT` env.
+   */
+  swapAdmin: { secret: string; salt: string; address: string };
 }
 
 /** Shape written after spec 01 finishes (fpc-dashboard setup). */

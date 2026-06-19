@@ -1,140 +1,170 @@
 /**
- * Deploys (or re-registers, if already deployed) a SubscriptionFPC and funds
- * it on L2 via the bridge.
+ * Deploy a SubscriptionFPC and fund it on L2 — on the declarative deploy framework
+ * (`@aztec-kit/common/deploy`).
  *
  * Expects:
  *   --network <network>
- *   FPC_ADMIN_SECRET — FPC admin secret (from `deploy-admin`).
- *   FPC_SECRET       — FPC contract key secret. When provided AND the derived
- *                      contract is already on-chain, deploy is skipped.
- *                      Random if unset; printed back on stdout.
+ *   FPC_ADMIN_SECRET — FPC admin secret. The admin is an initializerless account (no
+ *                      account-deploy tx); it deploys + owns the FPC. Random if unset; the
+ *                      generated secret + admin address are printed back on stdout.
+ *   FPC_SECRET       — the FPC's own key secret (it owns private notes for slot tracking).
+ *                      The framework derives the deploy public keys from it. Random if unset;
+ *                      printed back on stdout.
  *   SALT             — universal contract/account salt (default 0).
  *
- * Stdout (structured so callers can `eval $(... | grep ^export)`):
+ * Stdout (so callers can `eval $(... | grep ^export)`):
  *   export FPC_ADDRESS=0x…
  *   export FPC_SECRET=0x…
+ *   export FPC_SALT=0x…
  *
- * Side output:
- *   apps/fpc-operator/backups/<network>.fpc-admin.json — contains the admin
- *   secret key, salt, FPC secret key, salt, and address. Git-ignored.
+ * Side output: apps/fpc-operator/backups/<network>.fpc-admin.json (git-ignored), in the
+ * fpc-operator UI's import format — merged so `register-fpc-signups` can layer on the `apps`.
  */
 import { AztecAddress } from "@aztec/stdlib/aztec-address";
-import { bridgeAndClaim } from "@aztec-kit/common/bridging";
-import { SubscriptionFPC } from "@aztec-kit/contracts-aztec/subscription-fpc";
-import { SubscriptionFPCContractArtifact } from "@aztec-kit/contracts-aztec/artifacts/SubscriptionFPC";
+import { FeeJuiceContract } from "@aztec/aztec.js/protocol";
+import type { EmbeddedWallet } from "@aztec/wallets/embedded";
+
+import { bridge } from "@aztec-kit/common/bridging";
+import { SubscriptionFPCContract } from "@aztec-kit/contracts-aztec/artifacts/SubscriptionFPC";
+import { runDeployment } from "@aztec-kit/common/deploy";
+import type { FeePolicy } from "@aztec-kit/common/deploy";
 import {
   parseNetwork,
+  parsePaymentMode,
   NETWORK_URLS,
   L1_DEFAULTS,
   resolveL1Funder,
   bridgeMode,
-  setupWallet,
   loadOrCreateSecret,
-  getAdmin,
   getSalt,
   writeFpcAdminBackup,
   resolveFpcAdminBackupPath,
+  type PaymentMode,
 } from "@aztec-kit/common/testing";
-import { deriveKeys } from "@aztec/stdlib/keys";
-import { TxStatus } from "@aztec/stdlib/tx";
 
-const FUND_AMOUNT: bigint = BigInt("1000000000000000000000"); // 1000 FJ
+const FUND_AMOUNT: bigint = 1000n * 10n ** 18n; // 1000 FJ
+
+/**
+ * Builds the {@link FeePolicy} for a resolved payment mode. `sponsoredfpc` → a SponsoredFPC pays;
+ * `feejuice` → the admin pays from its own Fee Juice, bridging from L1 if low. The L1 funder key /
+ * RPC come from the env here (the framework never reads it itself); both are optional in the policy.
+ */
+function forcePaymentMode(paymentMode: PaymentMode): FeePolicy {
+  if (paymentMode === "sponsoredfpc") return { kind: "sponsored" };
+  return {
+    kind: "fee-juice",
+    threshold: 100n * 10n ** 18n,
+    fundAmount: FUND_AMOUNT,
+    l1FunderKey: process.env.L1_FUNDER_KEY as `0x${string}` | undefined,
+    l1RpcUrl: process.env.L1_RPC_URL,
+  };
+}
+
+/** The FPC's public Fee Juice balance (0 — and a thrown simulate — before it's deployed). */
+async function fpcPublicFeeJuice(
+  wallet: EmbeddedWallet,
+  fpc: AztecAddress,
+  from: AztecAddress,
+): Promise<bigint> {
+  const feeJuice = FeeJuiceContract.at(wallet);
+  const { result } = await feeJuice.methods.balance_of_public(fpc).simulate({ from });
+  return BigInt(result.toString());
+}
 
 async function main() {
   const network = parseNetwork();
+  const paymentMode = parsePaymentMode(network);
+  // The FPC admin is an initializerless account (no account-deploy step); deploying the FPC from
+  // it establishes it. Generate the secret if unset and echo it back for the orchestrator.
   const fpcAdminSecret = loadOrCreateSecret("FPC_ADMIN_SECRET");
-  if (fpcAdminSecret.generated) {
-    console.error(
-      "FPC_ADMIN_SECRET not set — refusing to generate one here. Run `deploy-admin` first.",
-    );
-    process.exit(1);
-  }
-
-  // FPC contract key secret (the "not actually secret" FPC key used so the FPC
-  // can own private notes for its slot tracking). Deterministic if caller provides.
+  // The FPC's own key secret (used so the FPC can own the private notes that track its slots).
   const fpcSecret = loadOrCreateSecret("FPC_SECRET");
   const fpcSalt = getSalt();
 
-  const { node, wallet, paymentMethod } = await setupWallet(NETWORK_URLS[network], network);
-  const admin = await getAdmin(
-    wallet,
-    fpcAdminSecret.secretKey,
-    `Run \`yarn fpc-operator deploy-admin:${network}\` first.`,
-  );
-  console.error(`FPC admin: ${admin.toString()}`);
-
-  // Compute the FPC's deterministic address up front so we can detect the
-  // already-deployed case and skip re-deploying.
-  const { publicKeys } = await deriveKeys(fpcSecret.secretKey);
-  const deployMethod = await SubscriptionFPC.deploy(wallet, admin, {
-    salt: fpcSalt,
-    deployer: admin,
-    publicKeys,
-  });
-  const instance = await deployMethod.getInstance();
-  const fpcAddress: AztecAddress = instance.address;
-
-  const existing = await node.getContract(fpcAddress);
-  if (existing) {
-    // Already on-chain — just register it in the PXE so downstream steps can
-    // interact. Skip both the deploy tx and the L1 bridge + claim.
-    await wallet.registerContract(instance, SubscriptionFPCContractArtifact, fpcSecret.secretKey);
-    console.error(`FPC already deployed at ${fpcAddress.toString()} — reusing.`);
-  } else {
-    console.error("Deploying SubscriptionFPC...");
-    await wallet.registerContract(instance, SubscriptionFPCContractArtifact, fpcSecret.secretKey);
-    await deployMethod.send({
-      from: admin,
-      fee: { paymentMethod },
-      // Pin PROPOSED — upstream's EmbeddedWallet default-to-PROPOSED is dead
-      // code (mutates a local that's never forwarded), so `waitForTx` falls
-      // back to CHECKPOINTED unless we set it explicitly.
-      wait: { waitForStatus: TxStatus.PROPOSED, timeout: 120 },
-    });
-    console.error(`FPC deployed at ${fpcAddress.toString()}`);
-
-    // Bridge FJ to the freshly-deployed FPC so it can pay for sponsored calls.
-    console.error(`Bridging FJ to FPC...`);
-    const { amount, minted } = await bridgeAndClaim({
-      node,
-      wallet,
-      recipient: fpcAddress,
-      claimFrom: admin,
-      claimFeeOpts: { paymentMethod },
-      l1RpcUrl: L1_DEFAULTS[network].l1RpcUrl,
-      l1ChainId: L1_DEFAULTS[network].l1ChainId,
-      amount: FUND_AMOUNT,
-      l1PrivateKey: resolveL1Funder(network),
-      mode: bridgeMode(network),
-    });
-    console.error(`Bridged ${amount} FJ to FPC (minted=${minted}).`);
-  }
-
-  // Write the local backup file in the fpc-operator UI's import format.
-  // Merges with any existing file so re-runs preserve the `apps` section
-  // that `register-fpc-signups` lays down afterwards.
-  const backupPath = resolveFpcAdminBackupPath(network, import.meta.dirname);
-  writeFpcAdminBackup({
-    backupPath,
+  await runDeployment({
     network,
-    admin: {
-      secretKey: fpcAdminSecret.secretKey.toString(),
-      salt: getSalt().toString(),
-      address: admin.toString(),
+    nodeUrl: NETWORK_URLS[network],
+    salt: getSalt(),
+    accounts: { admin: { secret: fpcAdminSecret.secretKey } },
+    fees: forcePaymentMode(paymentMode),
+
+    steps: {
+      // SubscriptionFPC(admin). It owns notes, so it carries its own `secret` — the framework
+      // derives its deploy public keys from it (the address depends on it) and registers it.
+      fpc: {
+        kind: "contract",
+        contract: SubscriptionFPCContract,
+        deployer: (resolve) => resolve.account("admin"),
+        initializerArgs: (resolve) => [resolve.account("admin")],
+        salt: fpcSalt,
+        secret: fpcSecret.secretKey,
+        mode: "publish",
+      },
+
+      // Fund the FPC so it can sponsor calls: bridge FJ from L1 to the FPC (the async prelude),
+      // then return the L2 `claim` for the framework to send from the admin (paid by the run's
+      // fee session). Idempotent — skipped once the FPC holds Fee Juice.
+      fundFpc: {
+        kind: "action",
+        from: (resolve) => resolve.account("admin"),
+        dependsOn: ["fpc"],
+        done: async (ctx) =>
+          (await fpcPublicFeeJuice(ctx.wallet, ctx.contract("fpc"), ctx.account("admin"))) > 0n,
+        call: async (ctx) => {
+          const fpcAddress = ctx.contract("fpc");
+          console.error(`Bridging ${FUND_AMOUNT} FJ to FPC ${fpcAddress.toString()}...`);
+          const { claim } = await bridge({
+            node: ctx.node,
+            recipient: fpcAddress,
+            l1RpcUrl: L1_DEFAULTS[network].l1RpcUrl,
+            l1ChainId: L1_DEFAULTS[network].l1ChainId,
+            amount: FUND_AMOUNT,
+            l1PrivateKey: resolveL1Funder(network),
+            mode: bridgeMode(network),
+          });
+          return FeeJuiceContract.at(ctx.wallet).methods.claim(
+            fpcAddress,
+            claim.claimAmount,
+            claim.claimSecret,
+            claim.messageLeafIndex,
+          );
+        },
+      },
     },
-    fpc: {
-      address: fpcAddress.toString(),
-      secretKey: fpcSecret.secretKey.toString(),
-      salt: fpcSalt.toString(),
-      deployed: true,
+
+    output: (ctx) => {
+      const fpcAddress = ctx.contract("fpc");
+      const admin = ctx.account("admin");
+
+      // Write the local backup in the fpc-operator UI's import format. Merges with any existing
+      // file so re-runs preserve the `apps` section `register-fpc-signups` lays down afterwards.
+      const backupPath = resolveFpcAdminBackupPath(network, import.meta.dirname);
+      writeFpcAdminBackup({
+        backupPath,
+        network,
+        admin: {
+          secretKey: fpcAdminSecret.secretKey.toString(),
+          salt: getSalt().toString(),
+          address: admin.toString(),
+        },
+        fpc: {
+          address: fpcAddress.toString(),
+          secretKey: fpcSecret.secretKey.toString(),
+          salt: fpcSalt.toString(),
+          deployed: true,
+        },
+      });
+      console.error(`Wrote backup to ${backupPath}`);
+
+      if (fpcAdminSecret.generated) {
+        console.log(`export FPC_ADMIN_SECRET=${fpcAdminSecret.secretKey.toString()}`);
+      }
+      console.log(`export FPC_ADMIN_ADDRESS=${admin.toString()}`);
+      console.log(`export FPC_ADDRESS=${fpcAddress.toString()}`);
+      console.log(`export FPC_SECRET=${fpcSecret.secretKey.toString()}`);
+      console.log(`export FPC_SALT=${fpcSalt.toString()}`);
     },
   });
-  console.error(`Wrote backup to ${backupPath}`);
-
-  // Stdout contract: exportable env lines for the orchestrator.
-  console.log(`export FPC_ADDRESS=${fpcAddress.toString()}`);
-  console.log(`export FPC_SECRET=${fpcSecret.secretKey.toString()}`);
-  console.log(`export FPC_SALT=${fpcSalt.toString()}`);
 }
 
 main().catch((err) => {

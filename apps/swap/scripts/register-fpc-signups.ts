@@ -29,7 +29,6 @@ import { Contract } from "@aztec/aztec.js/contracts";
 import { AztecAddress } from "@aztec/stdlib/aztec-address";
 import { FunctionSelector } from "@aztec/stdlib/abi";
 import { Fr } from "@aztec/foundation/curves/bn254";
-import { TxStatus } from "@aztec/stdlib/tx";
 import {
   SubscriptionFPCContract,
   SubscriptionFPCContractArtifact,
@@ -52,7 +51,6 @@ import {
   setupWallet,
   loadOrCreateSecret,
   getAdmin,
-  getSalt,
   writeFpcAdminBackup,
   resolveFpcAdminBackupPath,
   type NetworkName,
@@ -139,17 +137,12 @@ async function main() {
   const config = JSON.parse(fs.readFileSync(configPath, "utf-8"));
 
   const fpcAddress = AztecAddress.fromString(requireEnv("FPC_ADDRESS"));
+  const fpcSalt = Fr.fromString(requireEnv("FPC_SALT"));
   console.error(`Registering swap signups on FPC ${fpcAddress.toString()}...`);
 
   const { node, wallet, paymentMethod } = await setupWallet(NETWORK_URLS[network], network);
-  // Signups must be sent by the FPC admin (who deployed the FPC), not the swap admin.
-  // The FPC admin is deployed by `fpc-operator/scripts/deploy-admin.ts`.
   const { secretKey } = loadOrCreateSecret("FPC_ADMIN_SECRET");
-  const admin = await getAdmin(
-    wallet,
-    secretKey,
-    `Run \`yarn swap deploy-admin:${network}\` first.`,
-  );
+  const admin = await getAdmin(wallet, secretKey, fpcSalt);
 
   // Hydrate the PXE with all swap contracts.
   const contracts = await registerSwapContracts(wallet, node, config.contracts);
@@ -248,10 +241,7 @@ async function main() {
       .send({
         from: admin,
         fee: { paymentMethod },
-        // Upstream `EmbeddedWallet.sendTx`'s "default to PROPOSED" is a dead
-        // mutation; `waitForTx` falls back to CHECKPOINTED otherwise. Pin
-        // explicitly so scripts don't block on L1 publication.
-        wait: { waitForStatus: TxStatus.PROPOSED, timeout: 120 },
+        wait: { timeout: 120 },
       });
 
     console.error(
@@ -296,13 +286,13 @@ async function main() {
     network,
     admin: {
       secretKey: secretKey.toString(),
-      salt: getSalt().toString(),
+      salt: fpcSalt.toString(),
       address: admin.toString(),
     },
     fpc: {
       address: fpcAddress.toString(),
       secretKey: fpcSecret.toString(),
-      salt: getSalt().toString(),
+      salt: fpcSalt.toString(),
       deployed: true,
     },
     apps: backupApps,
