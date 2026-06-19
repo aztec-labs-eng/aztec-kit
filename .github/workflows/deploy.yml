@@ -16,26 +16,28 @@ name: Deploy to Vercel
 # Vercel projects, so prod-slot deploys auto-alias — no manual `vercel alias
 # set` step.
 #
-# SOURCE OF TRUTH = the DEFAULT branch (main). `pull_request_target` executes
-# the workflow file from the default branch regardless of the PR's base, so this
-# file (and the setup action it calls) must be replicated to the long-lived
-# branches but the version that actually runs for previews is main's. The setup
-# action is branch-aware: a PR head on the private channel (v5-next) triggers the
-# private toolchain flow; public heads use install.aztec.network. v5-next routes
-# to the *-next project's PREVIEW slot only (never the next.* production domain).
+# SOURCE OF TRUTH = the DEFAULT branch (main). A `workflow_run` workflow always
+# executes the default branch's copy regardless of which branch CI ran on, so
+# main's version is the one that actually deploys; the copies on the long-lived
+# branches are kept in sync (used there only for manual `workflow_dispatch`).
+# The setup action is branch-aware: a PR head on the private channel (v5-next)
+# triggers the private toolchain flow; public heads use install.aztec.network.
+# v5-next routes to the *-next project's PREVIEW slot only (never the next.*
+# production domain).
 # ─────────────────────────────────────────────────────────────────────────────
 
 on:
-  push:
-    branches:
-      - main
-      - next
-  # On PRs, deploy preview after CI passes. pull_request_target runs in the
-  # context of the base repo so it has access to secrets (needed for Vercel
-  # deploys + PR comments) — we wait for the CI workflow on the PR head to
-  # finish successfully before building.
-  pull_request_target:
-    types: [opened, synchronize, reopened, labeled]
+  # Triggered when the CI workflow finishes. We read `workflow_run.conclusion`
+  # directly rather than polling the PR's checks: a CI run that was cancelled
+  # (e.g. superseded by `cancel-in-progress` when the base branch churns) simply
+  # doesn't deploy, instead of tripping a poll-gate that treated `cancelled` as a
+  # hard failure. Like pull_request_target, a workflow_run workflow ALWAYS runs
+  # the DEFAULT branch's copy of this file with secrets — so it still gates
+  # building untrusted PR code (see the `gate` job), and the file is still kept
+  # replicated on the long-lived branches (used there for manual dispatch).
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
   workflow_dispatch:
     inputs:
       production:
@@ -50,115 +52,119 @@ env:
 permissions:
   contents: read
   pull-requests: write
-  checks: read
 
 concurrency:
-  group: deploy-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request_target' }}
+  group: deploy-${{ github.workflow }}-${{ github.event.workflow_run.head_branch || github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  authorize:
-    # Guard against running untrusted PR code under pull_request_target (which
-    # has access to secrets). Trusted authors (repo collaborators with write+)
-    # are auto-allowed; external contributors need the `deploy-preview` label.
-    if: github.event_name == 'pull_request_target'
+  gate:
+    # Decide whether (and what) to deploy from the CI run that just finished, or
+    # a manual dispatch. Skips fast when CI didn't pass, so a failed/cancelled
+    # CI run never produces a red deploy check — it just doesn't deploy.
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
+    outputs:
+      deploy: ${{ steps.decide.outputs.deploy }}
+      slot: ${{ steps.decide.outputs.slot }}
+      branch_key: ${{ steps.decide.outputs.branch_key }}
+      head_sha: ${{ steps.decide.outputs.head_sha }}
+      pr_number: ${{ steps.decide.outputs.pr_number }}
     steps:
-      - name: Check author association or label
+      - name: Decide target + authorize
+        id: decide
         uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7
         with:
           script: |
-            const trusted = ['OWNER', 'MEMBER', 'COLLABORATOR'];
-            const assoc = context.payload.pull_request.author_association;
-            if (trusted.includes(assoc)) {
-              core.info(`Author association ${assoc} is trusted — proceeding.`);
+            const out = (k, v) => core.setOutput(k, v);
+            out('deploy', 'false');
+            const skip = (msg) => core.info(`Not deploying: ${msg}`);
+
+            // A long-lived branch → its Vercel project set. v5-next reuses the
+            // *-next projects (pinned to the preview slot below).
+            const branchKey = (b) =>
+              b === 'main' ? 'main' : (b === 'next' || b === 'v5-next') ? 'next' : null;
+
+            if (context.eventName === 'workflow_dispatch') {
+              const branch = context.ref.replace('refs/heads/', '');
+              const key = branchKey(branch);
+              if (!key) return skip(`unsupported dispatch branch ${branch}`);
+              out('head_sha', context.sha);
+              out('branch_key', key);
+              // v5-next is preview-only; otherwise honor the production input.
+              const prod = branch !== 'v5-next' && context.payload.inputs.production !== 'false';
+              out('slot', prod ? 'production' : 'preview');
+              out('deploy', 'true');
               return;
             }
-            const labels = context.payload.pull_request.labels.map(l => l.name);
-            if (labels.includes('deploy-preview')) {
-              core.info('deploy-preview label present — proceeding.');
+
+            const run = context.payload.workflow_run;
+            out('head_sha', run.head_sha);
+
+            if (run.event === 'push') {
+              // main/next pushes deploy production. v5-next is preview-only
+              // (deployed only from PRs), so a push to it does not deploy.
+              if (run.head_branch === 'main' || run.head_branch === 'next') {
+                out('branch_key', run.head_branch);
+                out('slot', 'production');
+                out('deploy', 'true');
+              } else {
+                skip(`push to ${run.head_branch} does not deploy`);
+              }
               return;
             }
-            core.setFailed(
-              `PR from ${assoc} without deploy-preview label. ` +
-              `Add the label manually after reviewing the PR to deploy.`,
-            );
 
-  wait-for-ci:
-    # Only gate on CI for PRs — push to main/next and manual dispatch skip this.
-    needs: [authorize]
-    if: github.event_name == 'pull_request_target'
-    runs-on: ubuntu-latest
-    timeout-minutes: 60
-    steps:
-      # `fountainhead/action-wait-for-check` only waits for a check to reach a
-      # terminal state; it does NOT fail the step when that terminal state is
-      # "failure" or "cancelled". We read `outputs.conclusion` and fail
-      # explicitly whenever it's not "success" so deploy doesn't run on a red
-      # CI.
-      - name: Wait for CI build
-        id: build
-        uses: fountainhead/action-wait-for-check@5a908a24814494009c4bb27c242ea38c93c593be # v1.2.0
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          checkName: build
-          ref: ${{ github.event.pull_request.head.sha }}
-          timeoutSeconds: 3000
-          intervalSeconds: 15
+            if (run.event === 'pull_request') {
+              // workflow_run carries associated PRs for same-repo heads; fall
+              // back to a lookup by commit for fork heads.
+              let pr = (run.pull_requests || [])[0];
+              if (!pr) {
+                const { data } = await github.rest.repos.listPullRequestsAssociatedWithCommit({
+                  owner: context.repo.owner, repo: context.repo.repo, commit_sha: run.head_sha,
+                });
+                pr = data.find((p) => p.state === 'open');
+              }
+              if (!pr) return skip('no open PR for this CI run');
+              out('pr_number', String(pr.number));
 
-      - name: Assert CI build succeeded
-        if: steps.build.outputs.conclusion != 'success'
-        run: |
-          echo "CI build concluded with '${{ steps.build.outputs.conclusion }}' — aborting deploy."
-          exit 1
+              const { data: full } = await github.rest.pulls.get({
+                owner: context.repo.owner, repo: context.repo.repo, pull_number: pr.number,
+              });
+              const key = branchKey(full.base.ref);
+              if (!key) return skip(`PR base ${full.base.ref} not deployable`);
 
-      - name: Wait for CI integration
-        id: integration
-        uses: fountainhead/action-wait-for-check@5a908a24814494009c4bb27c242ea38c93c593be # v1.2.0
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          checkName: integration
-          ref: ${{ github.event.pull_request.head.sha }}
-          timeoutSeconds: 3000
-          intervalSeconds: 15
+              // Guard building untrusted PR code with secrets: trusted author or
+              // an explicit deploy-preview label.
+              const trusted = ['OWNER', 'MEMBER', 'COLLABORATOR'];
+              const labels = (full.labels || []).map((l) => l.name);
+              if (!trusted.includes(full.author_association) && !labels.includes('deploy-preview')) {
+                return skip(
+                  `PR #${pr.number} from ${full.author_association} without deploy-preview label`,
+                );
+              }
 
-      - name: Assert CI integration succeeded
-        if: steps.integration.outputs.conclusion != 'success'
-        run: |
-          echo "CI integration concluded with '${{ steps.integration.outputs.conclusion }}' — aborting deploy."
-          exit 1
+              out('branch_key', key);
+              out('slot', 'preview'); // PRs (including v5-next) always preview
+              out('deploy', 'true');
+              return;
+            }
 
-      - name: Wait for CI e2e
-        id: e2e
-        uses: fountainhead/action-wait-for-check@5a908a24814494009c4bb27c242ea38c93c593be # v1.2.0
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          checkName: e2e
-          ref: ${{ github.event.pull_request.head.sha }}
-          timeoutSeconds: 3600
-          intervalSeconds: 15
-
-      - name: Assert CI e2e succeeded
-        if: steps.e2e.outputs.conclusion != 'success'
-        run: |
-          echo "CI e2e concluded with '${{ steps.e2e.outputs.conclusion }}' — aborting deploy."
-          exit 1
+            skip(`CI event ${run.event} does not deploy`);
 
   deploy:
     runs-on: ubuntu-latest
-    needs: [authorize, wait-for-ci]
-    # On push and workflow_dispatch, authorize + wait-for-ci are both skipped
-    # — allow deploy through. On PRs, require wait-for-ci to have succeeded
-    # (which in turn requires authorize to have succeeded).
-    if: ${{ always() && (needs.wait-for-ci.result == 'success' || (needs.wait-for-ci.result == 'skipped' && github.event_name != 'pull_request_target')) }}
+    needs: [gate]
+    if: needs.gate.outputs.deploy == 'true'
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
         with:
-          # pull_request_target defaults to the base ref — check out the PR head
-          # so we deploy the actual proposed changes.
-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          # Deploy the exact commit CI ran against (PR head / pushed commit /
+          # dispatch ref) as resolved by the gate job.
+          ref: ${{ needs.gate.outputs.head_sha }}
 
       - uses: ./.github/actions/setup
         with:
@@ -181,57 +187,32 @@ jobs:
       - name: Install Vercel CLI
         run: npm install --global vercel@latest
 
-      # Pick the project-ID set and env slot based on which branch this run
-      # targets. PRs pin to their `base.ref`; push/dispatch pin to `github.ref`.
+      # The gate job already resolved the target branch set (`branch_key`:
+      # main | next) and the slot (production | preview). Map branch_key to its
+      # Vercel project-ID secrets.
       #
-      # branch → project IDs:
-      #   main         → BRIDGE_PROJECT_ID / FPC_PROJECT_ID / SWAP_PROJECT_ID
-      #   next, v5-next → BRIDGE_PROJECT_ID_NEXT / FPC_PROJECT_ID_NEXT / SWAP_PROJECT_ID_NEXT
-      #
-      # event → slot:
-      #   any event on v5-next          → preview (never production)
-      #   pull_request_target           → preview
-      #   push                          → production (of the branch's project)
-      #   workflow_dispatch (prod=true) → production
-      #   workflow_dispatch (prod=false)→ preview
+      #   main → BRIDGE_PROJECT_ID / FPC_PROJECT_ID / SWAP_PROJECT_ID
+      #   next → BRIDGE_PROJECT_ID_NEXT / FPC_PROJECT_ID_NEXT / SWAP_PROJECT_ID_NEXT
+      #          (backs both next [production slot] and v5-next [preview slot])
       - name: Resolve project IDs and Vercel env slot
         run: |
-          if [ "${{ github.event_name }}" = "pull_request_target" ]; then
-            BRANCH="${{ github.event.pull_request.base.ref }}"
-          else
-            BRANCH="${GITHUB_REF#refs/heads/}"
-          fi
-
-          case "$BRANCH" in
+          case "${{ needs.gate.outputs.branch_key }}" in
             main)
               echo "BRIDGE_PROJECT_ID_RESOLVED=${{ secrets.BRIDGE_PROJECT_ID }}" >> "$GITHUB_ENV"
               echo "FPC_PROJECT_ID_RESOLVED=${{ secrets.FPC_PROJECT_ID }}" >> "$GITHUB_ENV"
               echo "SWAP_PROJECT_ID_RESOLVED=${{ secrets.SWAP_PROJECT_ID }}" >> "$GITHUB_ENV"
               ;;
-            next|v5-next)
-              # v5-next reuses the *-next Vercel project but is pinned to the
-              # PREVIEW slot below, so it never touches the next.* production domain.
+            next)
               echo "BRIDGE_PROJECT_ID_RESOLVED=${{ secrets.BRIDGE_PROJECT_ID_NEXT }}" >> "$GITHUB_ENV"
               echo "FPC_PROJECT_ID_RESOLVED=${{ secrets.FPC_PROJECT_ID_NEXT }}" >> "$GITHUB_ENV"
               echo "SWAP_PROJECT_ID_RESOLVED=${{ secrets.SWAP_PROJECT_ID_NEXT }}" >> "$GITHUB_ENV"
               ;;
             *)
-              echo "Unsupported branch for deploy: $BRANCH"
+              echo "Unexpected branch_key '${{ needs.gate.outputs.branch_key }}'"
               exit 1
               ;;
           esac
-
-          if [ "$BRANCH" = "v5-next" ]; then
-            # v5-next is preview-only — never a production (public) deploy,
-            # regardless of event (only PRs targeting v5-next reach here).
-            echo "VERCEL_ENV_SLOT=preview" >> "$GITHUB_ENV"
-          elif [ "${{ github.event_name }}" = "pull_request_target" ]; then
-            echo "VERCEL_ENV_SLOT=preview" >> "$GITHUB_ENV"
-          elif [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.production }}" != "true" ]; then
-            echo "VERCEL_ENV_SLOT=preview" >> "$GITHUB_ENV"
-          else
-            echo "VERCEL_ENV_SLOT=production" >> "$GITHUB_ENV"
-          fi
+          echo "VERCEL_ENV_SLOT=${{ needs.gate.outputs.slot }}" >> "$GITHUB_ENV"
 
       # ── Bridge deployment ──────────────────────────────────────────────
       - name: Pull Vercel Environment (Bridge)
@@ -297,11 +278,11 @@ jobs:
 
       # ── PR Comment ─────────────────────────────────────────────────────
       - name: Comment deployment URLs on PR
-        if: github.event_name == 'pull_request_target'
+        if: needs.gate.outputs.pr_number != ''
         uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7
         with:
           script: |
-            const prNumber = context.payload.pull_request.number;
+            const prNumber = ${{ needs.gate.outputs.pr_number }};
             const body = [
               '🚀 Deployed to Vercel!',
               '',
