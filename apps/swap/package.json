@@ -10,8 +10,6 @@
     "lint": "eslint .",
     "typecheck": "tsc -b --noEmit",
     "preview": "NODE_OPTIONS=--max_http_header_size=128000 vite preview",
-    "deploy-admin:local": "node --experimental-transform-types scripts/deploy-admin.ts --network local",
-    "deploy-admin:testnet": "node --experimental-transform-types scripts/deploy-admin.ts --network testnet",
     "deploy:local": "node --experimental-transform-types scripts/deploy.ts --network local",
     "deploy:testnet": "node --experimental-transform-types scripts/deploy.ts --network testnet",
     "register-fpc-signups:local": "node --experimental-transform-types scripts/register-fpc-signups.ts --network local",
