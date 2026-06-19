@@ -22,13 +22,21 @@ import { Fr } from "@aztec/aztec.js/fields";
 import { AztecAddress } from "@aztec/aztec.js/addresses";
 import { BatchCall, DeployMethod, type ContractBase } from "@aztec/aztec.js/contracts";
 import { deriveKeys, deriveSigningKey } from "@aztec/stdlib/keys";
-import { getContractClassFromArtifact, getContractInstanceFromInstantiationParams } from "@aztec/stdlib/contract";
+import {
+  getContractClassFromArtifact,
+  getContractInstanceFromInstantiationParams,
+} from "@aztec/stdlib/contract";
 import type { TxReceipt } from "@aztec/stdlib/tx";
 
 import { accountFunding, networkFeeDefaults, prepareFeeSession, type SendFee } from "./fees.ts";
 import { loadState, saveState } from "./state.ts";
 import { scheduleLayers, topologicalLayers } from "./graph.ts";
-import { consoleReporter, type DeployPlan, type DeploySummary, type DeployUnitKind } from "./reporter.ts";
+import {
+  consoleReporter,
+  type DeployPlan,
+  type DeploySummary,
+  type DeployUnitKind,
+} from "./reporter.ts";
 import type {
   ActionStep,
   ContractStep,
@@ -102,12 +110,20 @@ export async function runDeployment<C extends Steps>(spec: DeploymentSpec<C>): P
 
   // ── Partition steps. ─────────────────────────────────────────────────────────────────
   const stepEntries = Object.entries(spec.steps) as [string, StepSpec<C>][];
-  const contractEntries = stepEntries.filter(([, s]) => s.kind === "contract") as [string, ContractStep<C>][];
-  const actionEntries = stepEntries.filter(([, s]) => s.kind === "action") as [string, ActionStep<C>][];
+  const contractEntries = stepEntries.filter(([, s]) => s.kind === "contract") as [
+    string,
+    ContractStep<C>,
+  ][];
+  const actionEntries = stepEntries.filter(([, s]) => s.kind === "action") as [
+    string,
+    ActionStep<C>,
+  ][];
   const isDeferred = (step: ContractStep<C>): boolean => step.deferredInitializerArgs != null;
   for (const [alias, step] of contractEntries) {
     if (isDeferred(step) && step.mode === "register") {
-      throw new Error(`Contract "${alias}" is register-mode with deferred args — registration has no tx to defer.`);
+      throw new Error(
+        `Contract "${alias}" is register-mode with deferred args — registration has no tx to defer.`,
+      );
     }
   }
 
@@ -115,12 +131,17 @@ export async function runDeployment<C extends Steps>(spec: DeploymentSpec<C>): P
   // contract — deferred ones included. This lets class-publish ordering cover all same-class
   // contracts, so exactly one publishes the class and the rest are ordered after it (no race).
   for (const [alias, step] of contractEntries) {
-    if (step.mode === "publish") classIds.set(alias, (await getContractClassFromArtifact(step.contract.artifact)).id);
+    if (step.mode === "publish")
+      classIds.set(alias, (await getContractClassFromArtifact(step.contract.artifact)).id);
   }
 
   // Publishes/registers a contract from already-computed initializer args (used upfront for
   // deterministic contracts, and at execution time for deferred ones).
-  async function resolveContract(alias: string, step: ContractStep<C>, args: unknown[]): Promise<void> {
+  async function resolveContract(
+    alias: string,
+    step: ContractStep<C>,
+    args: unknown[],
+  ): Promise<void> {
     const salt = step.salt ?? defaultSalt;
     if (step.mode === "publish") {
       const deployer = step.deployer(resolver);
@@ -129,7 +150,8 @@ export async function runDeployment<C extends Steps>(spec: DeploymentSpec<C>): P
         wallet,
         {
           artifact: step.contract.artifact,
-          postDeployCtor: (instance, boundWallet) => step.contract.at(instance.address, boundWallet),
+          postDeployCtor: (instance, boundWallet) =>
+            step.contract.at(instance.address, boundWallet),
           args,
           ...(step.initializer ? { constructorNameOrArtifact: step.initializer } : {}),
         },
@@ -271,7 +293,12 @@ export async function runDeployment<C extends Steps>(spec: DeploymentSpec<C>): P
         return {
           alias,
           address,
-          funding: await accountFunding(policy, wallet, address, accountUsedBy.has(address.toString())),
+          funding: await accountFunding(
+            policy,
+            wallet,
+            address,
+            accountUsedBy.has(address.toString()),
+          ),
         };
       }),
     ),
@@ -413,7 +440,12 @@ export async function runDeployment<C extends Steps>(spec: DeploymentSpec<C>): P
             (await wallet.getContractClassMetadata(classId)).isContractClassPubliclyRegistered;
           classesPublishedThisRun.add(classKey);
           publishedThisRun.add(alias);
-          return deployMethod.send({ from: account, fee, wait: { timeout: 120 }, skipClassPublication: alreadyRegistered });
+          return deployMethod.send({
+            from: account,
+            fee,
+            wait: { timeout: 120 },
+            skipClassPublication: alreadyRegistered,
+          });
         },
       });
     }
@@ -459,7 +491,8 @@ export async function runDeployment<C extends Steps>(spec: DeploymentSpec<C>): P
     contracts: [...contractAddresses].map(([alias, address]) => ({
       alias,
       address,
-      status: (spec.steps[alias] as ContractStep<C>).mode === "register" ? "registered" : "published",
+      status:
+        (spec.steps[alias] as ContractStep<C>).mode === "register" ? "registered" : "published",
     })),
     accounts: [...accountAddresses].map(([alias, address]) => ({ alias, address })),
   };
