@@ -21,8 +21,8 @@ import { spawn } from "node:child_process";
 import { resolve } from "node:path";
 
 const network = process.argv[2];
-if (network !== "local" && network !== "testnet") {
-  console.error(`usage: setup-network.ts <local|testnet> (got ${network ?? "nothing"})`);
+if (network !== "local" && network !== "testnet" && network !== "staging") {
+  console.error(`usage: setup-network.ts <local|testnet|staging> (got ${network ?? "nothing"})`);
   process.exit(1);
 }
 
