@@ -19,7 +19,7 @@ import {
   parseNetwork, // reads --network from argv
   setupWallet, // EmbeddedWallet + SponsoredFPC registered
   loadOrCreateSecret, // env-var-backed Fr secret
-  getAdmin, // strict — throws if admin not on-chain
+  getAdmin, // derive the admin's initializerless account address (no deploy tx)
   setupLocalNetwork, // in-process: anvil + AztecNodeService in this process
   setupLocalNetworkCli, // out-of-process: `aztec start --local-network`
   spawnTracked, // detached spawn + cleanup-on-exit registry

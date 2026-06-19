@@ -51,7 +51,6 @@ import {
   setupWallet,
   loadOrCreateSecret,
   getAdmin,
-  getSalt,
   writeFpcAdminBackup,
   resolveFpcAdminBackupPath,
   type NetworkName,
@@ -138,17 +137,12 @@ async function main() {
   const config = JSON.parse(fs.readFileSync(configPath, "utf-8"));
 
   const fpcAddress = AztecAddress.fromString(requireEnv("FPC_ADDRESS"));
+  const fpcSalt = Fr.fromString(requireEnv("FPC_SALT"));
   console.error(`Registering swap signups on FPC ${fpcAddress.toString()}...`);
 
   const { node, wallet, paymentMethod } = await setupWallet(NETWORK_URLS[network], network);
-  // Signups must be sent by the FPC admin (who deployed the FPC), not the swap admin.
-  // The FPC admin is deployed by `fpc-operator/scripts/deploy-admin.ts`.
   const { secretKey } = loadOrCreateSecret("FPC_ADMIN_SECRET");
-  const admin = await getAdmin(
-    wallet,
-    secretKey,
-    `Run \`yarn swap deploy-admin:${network}\` first.`,
-  );
+  const admin = await getAdmin(wallet, secretKey, fpcSalt);
 
   // Hydrate the PXE with all swap contracts.
   const contracts = await registerSwapContracts(wallet, node, config.contracts);
@@ -295,13 +289,13 @@ async function main() {
     network,
     admin: {
       secretKey: secretKey.toString(),
-      salt: getSalt().toString(),
+      salt: fpcSalt.toString(),
       address: admin.toString(),
     },
     fpc: {
       address: fpcAddress.toString(),
       secretKey: fpcSecret.toString(),
-      salt: getSalt().toString(),
+      salt: fpcSalt.toString(),
       deployed: true,
     },
     apps: backupApps,
