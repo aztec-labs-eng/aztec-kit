@@ -24,6 +24,8 @@ import { defineConfig, devices } from "@playwright/test";
 const headed = process.env.E2E_HEADED === "1" || !!process.env.E2E_SLOW_MO;
 const slowMo = process.env.E2E_SLOW_MO ? Number(process.env.E2E_SLOW_MO) : undefined;
 
+const storeBackend = process.env.VITE_WALLET_STORE === "indexeddb" ? "indexeddb" : "sqlite-opfs";
+
 const desktopChrome = { ...devices["Desktop Chrome"] };
 
 function appServer(
@@ -36,6 +38,7 @@ function appServer(
   timeout: number;
   stdout: "pipe";
   stderr: "pipe";
+  env: Record<string, string>;
 } {
   return {
     command: `yarn workspace ${workspace} dev --port ${port} --strictPort`,
@@ -44,6 +47,7 @@ function appServer(
     timeout: 120_000,
     stdout: "pipe",
     stderr: "pipe",
+    env: { VITE_WALLET_STORE: storeBackend },
   };
 }
 
@@ -105,12 +109,16 @@ export default defineConfig({
       dependencies: ["fpc-signup"],
       use: { ...desktopChrome, baseURL: "http://localhost:5175" },
     },
-    {
-      name: "wallet-encryption",
-      testMatch: /06-wallet-encryption\.spec\.ts$/,
-      dependencies: ["swap-deploy"],
-      use: { ...desktopChrome, baseURL: "http://localhost:5175" },
-    },
+    ...(storeBackend === "sqlite-opfs"
+      ? [
+          {
+            name: "wallet-encryption",
+            testMatch: /06-wallet-encryption\.spec\.ts$/,
+            dependencies: ["swap-deploy"],
+            use: { ...desktopChrome, baseURL: "http://localhost:5175" },
+          },
+        ]
+      : []),
   ],
   webServer: [
     appServer("@aztec-kit/swap", 5175),
