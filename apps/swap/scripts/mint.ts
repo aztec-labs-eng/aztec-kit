@@ -10,6 +10,7 @@
 
 import fs from "fs";
 import path from "path";
+import { Fr } from "@aztec/foundation/curves/bn254";
 import { AztecAddress } from "@aztec/stdlib/aztec-address";
 import { TokenContract, TokenContractArtifact } from "@aztec-kit/contracts-aztec/artifacts/Token";
 import { BatchCall } from "@aztec/aztec.js/contracts";
@@ -52,21 +53,8 @@ async function main() {
 
   console.log("Reconstructing deployer account...");
   const { secretKey } = loadOrCreateSecret("SWAP_ADMIN_SECRET");
-  const deployer = await getAdmin(
-    wallet,
-    secretKey,
-    `Run \`yarn swap deploy-admin:${NETWORK}\` first.`,
-  );
+  const deployer = await getAdmin(wallet, secretKey, Fr.fromString(config.contracts.salt));
   console.log(`Deployer: ${deployer.toString()}`);
-
-  // Verify deployer matches config
-  if (deployer.toString() !== config.deployer.address) {
-    console.error(
-      `Deployer mismatch! Expected ${config.deployer.address}, got ${deployer.toString()}`,
-    );
-    console.error("Make sure SECRET matches the original deployment.");
-    process.exit(1);
-  }
 
   // Register token contracts
   const goCoinAddress = AztecAddress.fromString(config.contracts.goCoin);

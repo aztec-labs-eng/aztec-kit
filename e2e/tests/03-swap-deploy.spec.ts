@@ -16,15 +16,13 @@ import { getPublicFeeJuiceBalance } from "../fixtures/fee-juice-balance.ts";
 /**
  * Spec 03 — deploy the swap contracts as swap-admin, paying with native FJ.
  *
- * Two subprocess steps:
- *   1. `deploy-admin.ts` — deploys swap-admin's schnorr account. Spec 02
- *      bridged + claimed FJ to swap-admin's deterministic address, so
- *      deploy-admin auto-detects the `prefunded` mode and uses a plain
- *      `FeeJuicePaymentMethod` (no extra bridge).
- *   2. `deploy.ts` — deploys the swap contracts with `--payment feejuice`,
- *      paying from swap-admin's remaining FJ balance.
+ * One subprocess step: `deploy.ts --payment feejuice`. The swap admin is an
+ * initializerless account (no separate account-deploy step), so it's usable
+ * straight away. Spec 02 bridged + claimed FJ to its deterministic address;
+ * the deploy framework's fee-juice policy pays for the contract deploys from
+ * that balance (this is the testnet path, exercised here on the local network).
  *
- * Running the scripts as subprocesses keeps Playwright's bundled Babel
+ * Running the script as a subprocess keeps Playwright's bundled Babel
  * transformer away from contract artifacts that use `public declare` class
  * fields (which require a specific plugin order); plain Node with
  * `--experimental-transform-types` handles them fine.
@@ -77,13 +75,15 @@ test.describe.serial("swap deploy", () => {
     const scriptEnv: NodeJS.ProcessEnv = {
       ...process.env,
       SWAP_ADMIN_SECRET: global.swapAdmin.secret,
+      // Forward the salt global-setup derived the admin with, so deploy reconstructs the same
+      // address spec 02 funded (instead of both relying on an unset ambient SALT).
+      SALT: global.swapAdmin.salt,
       PASSWORD: password,
     };
 
-    // Spec 02 bridged + claimed FJ to swap-admin, but didn't deploy the
-    // account contract. deploy-admin.ts detects the pre-funded FJ and
-    // deploys using it; deploy.ts then runs with the admin on-chain.
-    await runSwapScript("deploy-admin.ts", [], scriptEnv);
+    // The swap admin is an initializerless account — no separate account-deploy step. Spec 02
+    // bridged + claimed FJ to it; deploy.ts pays for the contract deploys from that FJ balance
+    // via the framework's fee-juice policy (this is the testnet path, exercised here on local).
     await runSwapScript("deploy.ts", ["--payment", "feejuice"], scriptEnv);
 
     const raw = await readFile(SWAP_LOCAL_JSON, "utf-8");
