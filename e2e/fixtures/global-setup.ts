@@ -2,9 +2,15 @@ import { spawnSync } from "node:child_process";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import type { FullConfig } from "@playwright/test";
-import { setupLocalNetworkCli, type LocalNetworkCli } from "@aztec-kit/common/testing";
+import { Fr } from "@aztec/foundation/curves/bn254";
+import {
+  setupLocalNetworkCli,
+  setupWallet,
+  getAdmin,
+  getSalt,
+  type LocalNetworkCli,
+} from "@aztec-kit/common/testing";
 import { deployL1Bridge } from "@aztec-kit/contracts-ethereum";
-import { deriveSwapAdmin } from "./derive-swap-admin.ts";
 import {
   resetStateDir,
   ensureStateDir,
@@ -17,6 +23,7 @@ import {
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = resolve(HERE, "../..");
+
 
 /**
  * Runs before any spec. Produces the baseline stack used by every spec:
@@ -91,8 +98,20 @@ export default async function globalSetup(_config: FullConfig): Promise<void> {
   const l1BridgeAddress = await deployL1Bridge({ chainName: "anvil", rpcUrl: l1RpcUrl });
   console.log(`[e2e] L1 bridge at ${l1BridgeAddress}`);
 
+  // Establish the swap-admin identity here (the first step that needs it) and write it all down:
+  // a fresh per-run secret + the salt (operator-overridable via SALT, else Fr(0)) + the derived
+  // address. All three go to global.json and are forwarded — spec 02 funds the address, spec 03
+  // deploys with the secret AND this salt — so the deployed-from address matches by construction.
   console.log("[e2e] deriving swap-admin identity...");
-  const swapAdmin = await deriveSwapAdmin(nodeUrl);
+  const swapAdminSecret = Fr.random();
+  const swapAdminSalt = getSalt();
+  const { wallet } = await setupWallet(nodeUrl, "local");
+  const swapAdminAddress = await getAdmin(wallet, swapAdminSecret, swapAdminSalt);
+  const swapAdmin = {
+    secret: swapAdminSecret.toString(),
+    salt: swapAdminSalt.toString(),
+    address: swapAdminAddress.toString(),
+  };
   console.log(`[e2e] swap-admin address: ${swapAdmin.address}`);
 
   const state: GlobalState = {
