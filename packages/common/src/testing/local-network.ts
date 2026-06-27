@@ -22,7 +22,7 @@
  * the published npm tarball.
  */
 
-import { AztecNodeService } from "@aztec/aztec-node";
+import { AztecNodeService, createAztecNodeService } from "@aztec/aztec-node";
 import { getConfigEnvVars as getAztecNodeConfigEnvVars } from "@aztec/aztec-node/config";
 import type { AztecNodeConfig } from "@aztec/aztec-node/config";
 import { Fr } from "@aztec/aztec.js/fields";
@@ -208,11 +208,7 @@ export async function setupLocalNetwork(opts: LocalNetworkOptions = {}): Promise
   //    so a watcher warping time alongside it would race. `dateProvider` is
   //    still threaded through — the node hands it to the AutomineSequencer.
   const telemetry = await initTelemetryClient(getTelemetryConfig());
-  const node = await AztecNodeService.createAndSync(
-    config,
-    { telemetry, dateProvider },
-    { genesis },
-  );
+  const node = await createAztecNodeService(config, { telemetry, dateProvider }, { genesis });
 
   const stop = async () => {
     await node.stop();
