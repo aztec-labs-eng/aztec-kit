@@ -82,7 +82,7 @@ describe("FPC getters", () => {
 
     await ctx.fpc.methods
       .sign_up(sampleCall.to, sampleCall.selector, CONFIG_INDEX, MAX_USES, maxFee, MAX_USERS)
-      .send({ from: ctx.admin });
+      .send({ from: ctx.admin, additionalScopes: [ctx.fpc.address] });
   });
 
   it("returns full slot count after sign_up", async () => {

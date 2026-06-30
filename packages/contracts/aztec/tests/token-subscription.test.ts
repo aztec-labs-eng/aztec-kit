@@ -105,7 +105,7 @@ describe("Token transfer subscription (multi-use)", () => {
 
     await ctx.fpc.methods
       .sign_up(sampleCall.to, sampleCall.selector, PRIVATE_INDEX, MAX_USES, maxFee, MAX_USERS)
-      .send({ from: ctx.admin });
+      .send({ from: ctx.admin, additionalScopes: [ctx.fpc.address] });
   });
 
   it("subscribes and makes a sponsored transfer_in_private", async () => {
@@ -223,7 +223,7 @@ describe("Public token transfer subscription", () => {
 
     await ctx.fpc.methods
       .sign_up(sampleCall.to, sampleCall.selector, PUBLIC_INDEX, 2, maxFee, 1)
-      .send({ from: ctx.admin });
+      .send({ from: ctx.admin, additionalScopes: [ctx.fpc.address] });
   });
 
   it("subscribes and makes a sponsored transfer_in_public", async () => {
