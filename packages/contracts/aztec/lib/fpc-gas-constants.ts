@@ -28,10 +28,10 @@
  */
 
 /** Subscribe overhead on L2 gas when the sponsored fn is private-only */
-export const FPC_SUBSCRIBE_OVERHEAD_L2_GAS_PRIVATE = 23400;
+export const FPC_SUBSCRIBE_OVERHEAD_L2_GAS_PRIVATE = 83800;
 
 /** Subscribe overhead on DA gas when the sponsored fn is private-only */
-export const FPC_SUBSCRIBE_OVERHEAD_DA_GAS_PRIVATE = 1152;
+export const FPC_SUBSCRIBE_OVERHEAD_DA_GAS_PRIVATE = 3456;
 
 /** Subscribe overhead on L2 gas when the sponsored fn has a public call */
 export const FPC_SUBSCRIBE_OVERHEAD_L2_GAS_PUBLIC = 43550;

@@ -29,7 +29,7 @@ export async function getPublicFeeJuiceBalance(nodeUrl: string, address: string)
   );
 
   const fj = FeeJuiceContract.at(wallet);
-  const target = AztecAddress.fromString(address);
+  const target = AztecAddress.fromStringUnsafe(address);
   const { result } = await fj.methods.balance_of_public(target).simulate({ from: manager.address });
   return BigInt(result.toString());
 }
