@@ -26,6 +26,7 @@ export type ContractRegistrationStage = "base" | "drip";
 export interface ContractsState {
   contracts: Contracts;
   isLoading: boolean;
+  error: string | null;
 }
 
 export const initialContractsState: ContractsState = {
@@ -37,6 +38,7 @@ export const initialContractsState: ContractsState = {
     fpc: null,
   },
   isLoading: true,
+  error: null,
 };
 
 // =============================================================================
@@ -62,17 +64,18 @@ export type ContractsAction = ActionsFrom<typeof contractsActions>;
 export function contractsReducer(state: ContractsState, action: ContractsAction): ContractsState {
   switch (action.type) {
     case "contracts/REGISTER_START":
-      return { ...state, isLoading: true };
+      return { ...state, isLoading: true, error: null };
 
     case "contracts/REGISTER_SUCCESS":
       return {
         ...state,
         contracts: { ...state.contracts, ...action.contracts },
         isLoading: false,
+        error: null,
       };
 
     case "contracts/REGISTER_FAIL":
-      return { ...state, isLoading: false };
+      return { ...state, isLoading: false, error: action.error };
 
     default:
       return state;

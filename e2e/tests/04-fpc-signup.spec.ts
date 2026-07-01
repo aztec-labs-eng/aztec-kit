@@ -1,7 +1,7 @@
 import { type Page } from "@playwright/test";
 import { test, expect } from "../fixtures/test-base.ts";
 import { spawn } from "node:child_process";
-import { readFile, writeFile } from "node:fs/promises";
+import { readFile, rename, writeFile } from "node:fs/promises";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { FunctionSelector } from "@aztec/stdlib/abi";
@@ -410,7 +410,9 @@ test.describe.serial("fpc signs up sponsored apps", () => {
         },
       },
     };
-    await writeFile(SWAP_LOCAL_JSON, JSON.stringify(swapConfig, null, 2), "utf-8");
+    const swapConfigTmp = `${SWAP_LOCAL_JSON}.tmp`;
+    await writeFile(swapConfigTmp, JSON.stringify(swapConfig, null, 2), "utf-8");
+    await rename(swapConfigTmp, SWAP_LOCAL_JSON);
     console.log(`[e2e] patched ${SWAP_LOCAL_JSON} with subscriptionFPC`);
 
     // ── 5. Persist spec-04 output into fpc.json ──────────────────────

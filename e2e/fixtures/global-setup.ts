@@ -32,10 +32,10 @@ const REPO_ROOT = resolve(HERE, "../..");
  *   3. Deterministic swap-admin identity derived
  *   4. `e2e/.state/global.json` written
  *
- * Runs are incremental by default: if `.state/` already contains checkpoints
- * from a previous run, they are preserved so per-spec re-runs don't redo
- * the 5-minute bridge + deploy chain. Pass `E2E_RESET=1` (or run
- * `yarn e2e:reset`) to wipe `.state/` and start fresh.
+ * Runs are incremental only when `E2E_SKIP_NETWORK=1` points the suite at an
+ * already-running local network. When this setup starts `aztec start
+ * --local-network` itself, the chain is fresh, so existing checkpoints would
+ * point at contracts that are no longer on-chain and must be discarded.
  *
  * `global.json` itself is re-derived on every run: it's cheap (L1 CREATE2
  * check + an ephemeral PXE to compute an address) and the chain id might
@@ -44,6 +44,9 @@ const REPO_ROOT = resolve(HERE, "../..");
 export default async function globalSetup(_config: FullConfig): Promise<void> {
   if (process.env.E2E_RESET === "1") {
     console.log("[e2e] E2E_RESET=1 — wiping .state/");
+    await resetStateDir();
+  } else if (process.env.E2E_SKIP_NETWORK !== "1") {
+    console.log("[e2e] starting a fresh local-network — wiping stale .state/");
     await resetStateDir();
   } else {
     await ensureStateDir();
@@ -70,15 +73,19 @@ export default async function globalSetup(_config: FullConfig): Promise<void> {
     console.log(`[e2e] local-network ready (node=${network.nodeUrl} l1=${network.l1RpcUrl})`);
   }
 
+  const nodeUrl = process.env.AZTEC_NODE_URL ?? "http://localhost:8080";
+  const l1RpcUrl = process.env.ETHEREUM_HOST ?? "http://localhost:8545";
+
   // Reuse global.json from a previous run if it's still valid (same node
   // URL + chain id). Swap-admin + L1 bridge addresses are deterministic so
-  // they'll match — but if anything drifts we fall back to re-deriving.
+  // they'll match — but a fresh Anvil instance still needs the deterministic
+  // bridge bytecode deployed before browser tests can send bridge txs.
   if (hasState(STATE_FILES.global)) {
     try {
       const existing = await readState<GlobalState>(STATE_FILES.global);
-      const expectedNodeUrl = process.env.AZTEC_NODE_URL ?? "http://localhost:8080";
-      const expectedL1RpcUrl = process.env.ETHEREUM_HOST ?? "http://localhost:8545";
-      if (existing.nodeUrl === expectedNodeUrl && existing.l1RpcUrl === expectedL1RpcUrl) {
+      if (existing.nodeUrl === nodeUrl && existing.l1RpcUrl === l1RpcUrl) {
+        console.log("[e2e] ensuring L1 bridge contract exists (CREATE2)...");
+        await deployL1Bridge({ chainName: "anvil", rpcUrl: l1RpcUrl });
         console.log(
           `[e2e] reusing ${STATE_FILES.global} (swap-admin=${existing.swapAdmin.address})`,
         );
@@ -89,9 +96,6 @@ export default async function globalSetup(_config: FullConfig): Promise<void> {
       console.log(`[e2e] global.json unreadable, re-deriving: ${(err as Error).message}`);
     }
   }
-
-  const nodeUrl = process.env.AZTEC_NODE_URL ?? "http://localhost:8080";
-  const l1RpcUrl = process.env.ETHEREUM_HOST ?? "http://localhost:8545";
 
   console.log("[e2e] deploying L1 bridge contract (CREATE2)...");
   const l1BridgeAddress = await deployL1Bridge({ chainName: "anvil", rpcUrl: l1RpcUrl });

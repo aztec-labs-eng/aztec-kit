@@ -102,6 +102,8 @@ export function OnboardingProvider({ children }: OnboardingProviderProps) {
   const {
     simulateOnboardingQueries,
     isLoadingContracts,
+    isBaseContractsReady,
+    contractsError,
     registerBaseContracts,
     registerDripContracts,
     drip,
@@ -157,15 +159,23 @@ export function OnboardingProvider({ children }: OnboardingProviderProps) {
           await registerBaseContracts();
         }
 
+        if (state.status === "registering" && contractsError) {
+          throw new Error(contractsError);
+        }
+
         // Step 2: After contracts are registered, simulate to check balances
         if (
           state.status === "registering" &&
           !isLoadingContracts &&
+          isBaseContractsReady &&
           currentAddress &&
           !state.hasSimulated &&
           !simulateTriggeredRef.current
         ) {
           simulateTriggeredRef.current = true;
+          if (!state.hasRegisteredBase) {
+            actions.markRegistered();
+          }
           actions.markSimulated();
           actions.advanceStatus("simulating");
 
@@ -213,6 +223,8 @@ export function OnboardingProvider({ children }: OnboardingProviderProps) {
     wallet,
     node,
     isLoadingContracts,
+    isBaseContractsReady,
+    contractsError,
     simulateOnboardingQueries,
     registerBaseContracts,
     registerDripContracts,

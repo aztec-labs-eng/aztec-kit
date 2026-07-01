@@ -31,7 +31,7 @@ export async function claimWithBootstrap(
   }
 
   const calls = otherClaims.map((c) => {
-    const target = AztecAddress.fromString(c.recipient);
+    const target = AztecAddress.fromStringUnsafe(c.recipient);
     return fj.methods.claim(
       target,
       BigInt(c.claimAmount),
@@ -60,7 +60,7 @@ export async function claimBatch(
   const fj = FeeJuiceContract.at(wallet);
 
   const calls = claims.map((c) => {
-    const target = AztecAddress.fromString(c.recipient);
+    const target = AztecAddress.fromStringUnsafe(c.recipient);
     return fj.methods.claim(
       target,
       BigInt(c.claimAmount),

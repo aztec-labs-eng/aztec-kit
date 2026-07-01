@@ -7,9 +7,10 @@
  * rather than inspecting Playwright's worker state.
  *
  * ── Checkpointing ──────────────────────────────────────────────────────────
- * Runs are incremental by default: if a setup phase's output file already
- * exists, that phase is skipped. This lets you iterate on a single spec
- * (e.g. spec 04) without redoing the 5-minute bridge + deploy chain.
+ * Runs are incremental only when `E2E_SKIP_NETWORK=1` is set and the caller is
+ * reusing an already-running local network. If global setup starts a fresh
+ * local-network, it wipes these files because old L2 contract addresses will
+ * not exist on the new chain.
  *
  * To start from scratch, run with `E2E_RESET=1` (or delete `e2e/.state/`
  * manually — the `yarn e2e:reset` script does this).

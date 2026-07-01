@@ -8,7 +8,7 @@ Playwright suite driving all three apps through a realistic user flow against a 
 fpc-setup → bridge-fund → swap-deploy → fpc-signup → swap-flow
 ```
 
-Each project depends on the previous via Playwright's `dependencies` mechanism. State is checkpointed to `.state/<name>.json` so re-running one spec picks up where the last left off.
+Each project depends on the previous via Playwright's `dependencies` mechanism. State is checkpointed to `.state/<name>.json`. Checkpoints are reused only with `E2E_SKIP_NETWORK=1`, when you are intentionally pointing at the same already-running local network.
 
 | Spec                        | App          | What it does                                                                                                                 |
 | --------------------------- | ------------ | ---------------------------------------------------------------------------------------------------------------------------- |
@@ -28,12 +28,12 @@ yarn workspace @aztec-kit/e2e test       # full suite — spins up local-network
 
 Environment toggles:
 
-| Env                  | Effect                                                                      |
-| -------------------- | --------------------------------------------------------------------------- |
-| `E2E_HEADED=1`       | Run headed browsers.                                                        |
-| `E2E_SLOW_MO=500`    | Slow each action by N ms (implies headed).                                  |
-| `E2E_SKIP_NETWORK=1` | Don't spawn `aztec start --local-network` — assumes one is already running. |
-| `E2E_RESET=1`        | Wipe `.state/` before the run; equivalent to `yarn e2e:reset`.              |
+| Env                  | Effect                                                                                                       |
+| -------------------- | ------------------------------------------------------------------------------------------------------------ |
+| `E2E_HEADED=1`       | Run headed browsers.                                                                                         |
+| `E2E_SLOW_MO=500`    | Slow each action by N ms (implies headed).                                                                   |
+| `E2E_SKIP_NETWORK=1` | Don't spawn `aztec start --local-network` — assumes one is already running; preserves `.state/` checkpoints. |
+| `E2E_RESET=1`        | Wipe `.state/` before the run; equivalent to `yarn e2e:reset`.                                               |
 
 ## Global setup/teardown
 

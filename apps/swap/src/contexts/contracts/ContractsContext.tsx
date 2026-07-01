@@ -3,7 +3,7 @@
  * Manages contract instances and registration state
  */
 
-import { createContext, useContext, useEffect, type ReactNode, useCallback } from "react";
+import { createContext, useContext, useEffect, useRef, type ReactNode, useCallback } from "react";
 import type { AztecAddress } from "@aztec/aztec.js/addresses";
 import type { Fr } from "@aztec/foundation/curves/bn254";
 import type { TxReceipt } from "@aztec/stdlib/tx";
@@ -17,6 +17,8 @@ import { useContractsReducer } from "./reducer";
 
 interface ContractsContextType {
   isLoadingContracts: boolean;
+  isBaseContractsReady: boolean;
+  contractsError: string | null;
 
   // Registration methods
   registerBaseContracts: () => Promise<void>;
@@ -72,6 +74,9 @@ export function ContractsProvider({ children }: ContractsProviderProps) {
   const { activeNetwork } = useNetwork();
 
   const [state, actions] = useContractsReducer();
+  const embeddedRegistrationKeyRef = useRef<string | null>(null);
+  const isBaseContractsReady =
+    !!state.contracts.goCoin && !!state.contracts.goCoinPremium && !!state.contracts.amm;
 
   // Register base contracts (AMM, tokens)
   const registerBaseContracts = useCallback(async () => {
@@ -330,9 +335,23 @@ export function ContractsProvider({ children }: ContractsProviderProps) {
         return;
       }
 
+      const registrationKey = [
+        activeNetwork.id,
+        activeNetwork.contracts.amm,
+        activeNetwork.contracts.goCoin,
+        activeNetwork.contracts.goCoinPremium,
+        activeNetwork.subscriptionFPC?.address ?? "no-fpc",
+      ].join(":");
+      if (embeddedRegistrationKeyRef.current === registrationKey) {
+        return;
+      }
+
+      embeddedRegistrationKeyRef.current = registrationKey;
+
       try {
         await registerBaseContracts();
       } catch (err) {
+        embeddedRegistrationKeyRef.current = null;
         actions.registerFail(err instanceof Error ? err.message : "Failed to initialize");
       }
     }
@@ -342,6 +361,8 @@ export function ContractsProvider({ children }: ContractsProviderProps) {
 
   const value: ContractsContextType = {
     isLoadingContracts: state.isLoading,
+    isBaseContractsReady,
+    contractsError: state.error,
     registerBaseContracts,
     registerDripContracts,
     getAmm,
