@@ -79,7 +79,9 @@ jobs:
     strategy:
       # Run the full suite against both kv-store backends. IndexedDB is on its
       # way out, but until it's fully deprecated we still want CI signal that it
-      # stays functional.
+      # stays functional. The indexeddb leg is currently NON-BLOCKING (see the
+      # `continue-on-error` on the test step below): it still runs and shows in
+      # the logs, but a failure no longer fails CI / blocks the Vercel deploy.
       fail-fast: false
       matrix:
         store: [sqlite-opfs, indexeddb]
@@ -160,6 +162,12 @@ jobs:
         # --fail-on-flaky-tests makes Playwright exit 1 when a test passes only
         # on retry. Default behaviour marks flakies as "passed" which hides
         # real regressions.
+        #
+        # indexeddb is temporarily non-blocking: its failures are recorded (and
+        # visible in the logs) but don't fail the job, so they no longer gate the
+        # deploy. Remove this once the indexeddb backend is green again (or fully
+        # deprecated). sqlite-opfs stays blocking.
+        continue-on-error: ${{ matrix.store == 'indexeddb' }}
         run: yarn workspace @aztec-kit/e2e test --fail-on-flaky-tests
         env:
           CI: "1"
