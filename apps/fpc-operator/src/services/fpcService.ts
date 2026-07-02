@@ -139,7 +139,7 @@ export async function prepareFPC(
   const stored = getStoredFPC();
   if (stored) {
     // Re-register on reload (PXE state doesn't persist across browser sessions)
-    const fpcAddress = AztecAddress.fromString(stored.address);
+    const fpcAddress = AztecAddress.fromStringUnsafe(stored.address);
     const secretKey = Fr.fromString(stored.secretKey);
     const salt = Fr.fromString(stored.salt);
     const meta = await wallet.getContractMetadata(fpcAddress);
@@ -200,7 +200,7 @@ export async function deployFPC(
   await deployment.send({ from: adminAddress });
   markFPCDeployed();
 
-  return { fpcAddress: AztecAddress.fromString(stored.address) };
+  return { fpcAddress: AztecAddress.fromStringUnsafe(stored.address) };
 }
 
 // ── Load existing FPC ────────────────────────────────────────────────
@@ -210,7 +210,7 @@ export async function loadExistingFPC(
   node: AztecNode,
   stored: StoredFPC,
 ): Promise<SubscriptionFPCContract> {
-  const address = AztecAddress.fromString(stored.address);
+  const address = AztecAddress.fromStringUnsafe(stored.address);
   const secretKey = Fr.fromString(stored.secretKey);
 
   // Check if already registered locally in PXE

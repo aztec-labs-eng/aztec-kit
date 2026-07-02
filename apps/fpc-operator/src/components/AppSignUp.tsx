@@ -199,7 +199,7 @@ export function AppSignUp({ fpc, adminAddress, onSignedUp }: AppSignUpProps) {
     setRegistering(true);
     setRegisterError(null);
     try {
-      const address = AztecAddress.fromString(contractAddress);
+      const address = AztecAddress.fromStringUnsafe(contractAddress);
       const instance = await node.getContract(address);
       if (!instance) throw new Error("Contract not found on-chain at this address");
       await wallet.registerContract(instance, artifact);
@@ -219,7 +219,7 @@ export function AppSignUp({ fpc, adminAddress, onSignedUp }: AppSignUpProps) {
     try {
       const instance = await getContractInstanceFromInstantiationParams(artifact, {
         salt: new Fr(BigInt(computeSalt || "0")),
-        deployer: computeDeployer ? AztecAddress.fromString(computeDeployer) : AztecAddress.ZERO,
+        deployer: computeDeployer ? AztecAddress.fromStringUnsafe(computeDeployer) : AztecAddress.ZERO,
         constructorArtifact: computeInitializer ?? undefined,
         constructorArgs: computeConstructorArgs,
       });
@@ -239,7 +239,7 @@ export function AppSignUp({ fpc, adminAddress, onSignedUp }: AppSignUpProps) {
     setExtraRegistering(true);
     setExtraError(null);
     try {
-      const address = AztecAddress.fromString(extraAddress);
+      const address = AztecAddress.fromStringUnsafe(extraAddress);
       const instance = await node.getContract(address);
       if (!instance) throw new Error("Contract not found on-chain at this address");
       await wallet.registerContract(instance, extraArtifact);
@@ -262,7 +262,7 @@ export function AppSignUp({ fpc, adminAddress, onSignedUp }: AppSignUpProps) {
     setSenderRegistering(true);
     setSenderError(null);
     try {
-      const address = AztecAddress.fromString(senderAddress);
+      const address = AztecAddress.fromStringUnsafe(senderAddress);
       await wallet.registerSender(address, senderAlias || undefined);
       addStoredSenderAlias({
         address: senderAddress,
