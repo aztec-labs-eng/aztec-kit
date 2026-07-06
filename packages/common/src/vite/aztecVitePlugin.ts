@@ -1,6 +1,7 @@
 import { createRequire } from "module";
 import type { Plugin, UserConfig } from "vite";
 import { nodePolyfillsFix } from "./nodePolyfillsFix.ts";
+import { sqliteRuntimeAssetsPlugin } from "./sqliteRuntimeAssetsPlugin.ts";
 import { wasmContentTypePlugin } from "./wasmContentTypePlugin.ts";
 
 export type AztecVitePluginOptions = {
@@ -154,6 +155,7 @@ export function aztecVitePlugin(options: AztecVitePluginOptions = {}): Plugin[] 
 
   const plugins: Plugin[] = [
     configPlugin,
+    sqliteRuntimeAssetsPlugin(),
     nodePolyfillsFix({ include: ["buffer", "path", "tty"] }),
   ];
 
