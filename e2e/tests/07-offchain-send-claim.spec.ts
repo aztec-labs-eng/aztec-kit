@@ -200,6 +200,13 @@ test.describe.serial("offchain send → claim", () => {
       // 2. Sender onboards, drips GoCoin, sends N to the recipient.
       await onboardEmbedded(sender.page);
       await dripInModal(sender.page, swap.password);
+      // LOAD-BEARING reload — do NOT replace with an in-app tab switch. The drip leaves
+      // background jobs in flight on the PXE; dispatching the (heavy, multi-proof) send onto
+      // that busy PXE deadlocks it ("concurrent execution is not supported" → the send stalls
+      // after the first proof and never produces the link). A full reload resets the PXE so the
+      // send runs on a clean queue. Reloading *after* the send is the opposite mistake (it forces
+      // a cold re-sync that times out) — which is why the post-send reads below use a tab switch.
+      await sender.page.goto("/");
       const senderBefore = await readGoCoinBalance(sender.page);
       const link = await sendOffchain(sender.page, recipientAddr, SEND_AMOUNT);
       console.log(`[e2e] claim link length=${link.length}`);
