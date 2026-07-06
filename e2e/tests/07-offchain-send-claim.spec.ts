@@ -22,7 +22,6 @@ import {
  * (deployed tokens + FPC signed up for transfer_in_private_with_offchain_delivery).
  */
 
-const APP = "http://localhost:5175";
 const SEND_AMOUNT = "5";
 
 /** Tee a manually-created page's console to stdout (test-base only wires the default `page`). */
@@ -36,12 +35,17 @@ function attachConsole(page: Page, tag: string) {
   page.on("pageerror", (err) => console.log(`[browser:${tag}:pageerror] ${err.message}`));
 }
 
-/** Fresh isolated context (own OPFS/IndexedDB → own embedded wallet), pinned to local network. */
+/**
+ * Fresh isolated context (own OPFS/IndexedDB → own embedded wallet), pinned to local network.
+ * `baseURL` is threaded from the test's `baseURL` fixture (the project's `use.baseURL`) because a
+ * manually-created `browser.newContext()` does NOT inherit it the way the default `page` fixture does.
+ */
 async function newAppContext(
   browser: Browser,
   tag: string,
+  baseURL: string | undefined,
 ): Promise<{ ctx: BrowserContext; page: Page }> {
-  const ctx = await browser.newContext({ baseURL: APP });
+  const ctx = await browser.newContext({ baseURL });
   const page = await ctx.newPage();
   attachConsole(page, tag);
   await page.addInitScript(() => {
@@ -140,14 +144,17 @@ async function assertGoCoinBalance(page: Page, expected: string): Promise<void> 
 test.describe.serial("offchain send → claim", () => {
   test.slow();
 
-  test("sender delivers offchain; recipient claims; intruder cannot", async ({ browser }) => {
+  test("sender delivers offchain; recipient claims; intruder cannot", async ({
+    browser,
+    baseURL,
+  }) => {
     const global = await readState<GlobalState>(STATE_FILES.global);
     const swap = await readState<SwapDeploymentState>(STATE_FILES.swapDeployment);
     console.log(`[e2e] node=${global.nodeUrl} goCoin=${swap.goCoin}`);
 
-    const recipient = await newAppContext(browser, "recipient");
-    const sender = await newAppContext(browser, "sender");
-    const intruder = await newAppContext(browser, "intruder");
+    const recipient = await newAppContext(browser, "recipient", baseURL);
+    const sender = await newAppContext(browser, "sender", baseURL);
+    const intruder = await newAppContext(browser, "intruder", baseURL);
     try {
       // 1. Recipient onboards; expose its address for the sender.
       await onboardEmbedded(recipient.page);
