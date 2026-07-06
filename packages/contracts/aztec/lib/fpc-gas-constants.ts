@@ -28,28 +28,28 @@
  */
 
 /** Subscribe overhead on L2 gas when the sponsored fn is private-only */
-export const FPC_SUBSCRIBE_OVERHEAD_L2_GAS_PRIVATE = 83800;
+export const FPC_SUBSCRIBE_OVERHEAD_L2_GAS_PRIVATE = 39400;
 
 /** Subscribe overhead on DA gas when the sponsored fn is private-only */
-export const FPC_SUBSCRIBE_OVERHEAD_DA_GAS_PRIVATE = 3456;
+export const FPC_SUBSCRIBE_OVERHEAD_DA_GAS_PRIVATE = 1184;
 
 /** Subscribe overhead on L2 gas when the sponsored fn has a public call */
-export const FPC_SUBSCRIBE_OVERHEAD_L2_GAS_PUBLIC = 43550;
+export const FPC_SUBSCRIBE_OVERHEAD_L2_GAS_PUBLIC = 74350;
 
 /** Subscribe overhead on DA gas when the sponsored fn has a public call */
-export const FPC_SUBSCRIBE_OVERHEAD_DA_GAS_PUBLIC = 1152;
+export const FPC_SUBSCRIBE_OVERHEAD_DA_GAS_PUBLIC = 1184;
 
 /** Sponsor overhead on L2 gas when the sponsored fn is private-only */
-export const FPC_SPONSOR_OVERHEAD_L2_GAS_PRIVATE = 11700;
+export const FPC_SPONSOR_OVERHEAD_L2_GAS_PRIVATE = 27700;
 
 /** Sponsor overhead on DA gas when the sponsored fn is private-only */
-export const FPC_SPONSOR_OVERHEAD_DA_GAS_PRIVATE = 576;
+export const FPC_SPONSOR_OVERHEAD_DA_GAS_PRIVATE = 608;
 
 /** Sponsor overhead on L2 gas when the sponsored fn has a public call */
-export const FPC_SPONSOR_OVERHEAD_L2_GAS_PUBLIC = 21775;
+export const FPC_SPONSOR_OVERHEAD_L2_GAS_PUBLIC = 52575;
 
 /** Sponsor overhead on DA gas when the sponsored fn has a public call */
-export const FPC_SPONSOR_OVERHEAD_DA_GAS_PUBLIC = 576;
+export const FPC_SPONSOR_OVERHEAD_DA_GAS_PUBLIC = 608;
 
 /** FPC teardown L2 gas */
 export const FPC_TEARDOWN_L2_GAS = 0;
