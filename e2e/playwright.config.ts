@@ -109,6 +109,12 @@ export default defineConfig({
       dependencies: ["fpc-signup"],
       use: { ...desktopChrome, baseURL: "http://localhost:5175" },
     },
+    {
+      name: "offchain-send-claim",
+      testMatch: /07-offchain-send-claim\.spec\.ts$/,
+      dependencies: ["fpc-signup"],
+      use: { ...desktopChrome, baseURL: "http://localhost:5175" },
+    },
     ...(storeBackend === "sqlite-opfs"
       ? [
           {
