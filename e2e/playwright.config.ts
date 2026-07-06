@@ -4,13 +4,16 @@ import { defineConfig, devices } from "@playwright/test";
  * Project dependency graph (each edge is a `dependencies` link):
  *
  *   fpc-setup  →  bridge-fund  →  swap-deploy  →  fpc-signup  →  swap-flow
+ *                                                             ↳  offchain-send-claim
  *
- * - fpc-setup   (fpc-operator UI + bridge iframe) — creates fpc-admin + deploys FPC.
- * - bridge-fund (bridge UI) — funds swap-admin with fee juice.
- * - swap-deploy (node script) — runs swap-admin's deploy.ts with --payment feejuice.
- * - fpc-signup  (fpc-operator UI) — mints + registers contracts + 2× AppSignUp
- *                                   with calibration; writes swap's local.json.
- * - swap-flow   (swap UI) — end-user onboarding + sponsored swap + drip + send.
+ * - fpc-setup    (fpc-operator UI + bridge iframe) — creates fpc-admin + deploys FPC.
+ * - bridge-fund  (bridge UI) — funds swap-admin with fee juice.
+ * - swap-deploy  (node script) — runs swap-admin's deploy.ts with --payment feejuice.
+ * - fpc-signup   (fpc-operator UI) — mints + registers contracts + 2× AppSignUp
+ *                                    with calibration; writes swap's local.json.
+ * - swap-flow    (swap UI) — end-user onboarding + sponsored swap + drip + send.
+ * - offchain-send-claim (swap UI) — end-user offchain send → claim, including a
+ *                                    wrong-recipient (intruder) check.
  *
  * The shared `aztec start --local-network`, L1 bridge deploy, and swap-admin
  * key derivation all happen in `globalSetup`.

@@ -71,6 +71,14 @@ async function onboardEmbedded(page: Page): Promise<void> {
   await expect(modal).toHaveAttribute("data-status", "awaiting_drip", { timeout: 120_000 });
 }
 
+/** Close the onboarding modal (for actors that don't drip). CLOSE_MODAL keeps currentAddress/wallet;
+ *  the open modal's backdrop would otherwise occlude the claim button after a hash-only navigation. */
+async function closeOnboardingModal(page: Page): Promise<void> {
+  const modal = page.getByTestId("onboarding-modal");
+  await modal.getByRole("button", { name: "close" }).click(); // IconButton aria-label="close"
+  await modal.waitFor({ state: "hidden", timeout: 10_000 });
+}
+
 /** Read the connected wallet's full L2 address from the chip. */
 async function readAddress(page: Page): Promise<string> {
   const chip = page.getByTestId("wallet-chip");
@@ -145,6 +153,7 @@ test.describe.serial("offchain send → claim", () => {
       await onboardEmbedded(recipient.page);
       const recipientAddr = await readAddress(recipient.page);
       console.log(`[e2e] recipient=${recipientAddr}`);
+      await closeOnboardingModal(recipient.page);
 
       // 2. Sender onboards, drips GoCoin, sends N to the recipient.
       await onboardEmbedded(sender.page);
@@ -171,10 +180,11 @@ test.describe.serial("offchain send → claim", () => {
       //    nothing. We assert the invariant (no credit / no verified success)
       //    without assuming whether the contract reverts or silently no-ops.
       await onboardEmbedded(intruder.page);
+      await closeOnboardingModal(intruder.page);
       await openAndClaim(intruder.page, link);
 
       const intruderPhase = intruder.page.getByTestId("claim-page");
-      await expect(intruderPhase).toHaveAttribute("data-phase", /claimed|error/, {
+      await expect(intruderPhase).toHaveAttribute("data-phase", /^(claimed|error)$/, {
         timeout: 300_000,
       });
       if ((await intruderPhase.getAttribute("data-phase")) === "claimed") {
