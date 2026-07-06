@@ -75,12 +75,15 @@ async function onboardEmbedded(page: Page): Promise<void> {
   await expect(modal).toHaveAttribute("data-status", "awaiting_drip", { timeout: 120_000 });
 }
 
-/** Close the onboarding modal (for actors that don't drip). CLOSE_MODAL keeps currentAddress/wallet;
- *  the open modal's backdrop would otherwise occlude the claim button after a hash-only navigation. */
-async function closeOnboardingModal(page: Page): Promise<void> {
-  const modal = page.getByTestId("onboarding-modal");
-  await modal.getByRole("button", { name: "close" }).click(); // IconButton aria-label="close"
-  await modal.waitFor({ state: "hidden", timeout: 10_000 });
+/**
+ * Park a page on about:blank so its embedded-wallet PXE stops running — freeing CI CPU + the
+ * shared node for whichever actor is proving. Multiple live PXEs contend and stall the (heavy)
+ * send. Parking also makes the next `page.goto(claimLink)` a FULL load rather than a hash-only
+ * no-op: the wallet auto-restores from OPFS on arrival, and the onboarding modal (which only
+ * re-opens on an explicit chip click) is absent — so it can't occlude the Claim button.
+ */
+async function park(page: Page): Promise<void> {
+  await page.goto("about:blank");
 }
 
 /** Read the connected wallet's full L2 address from the chip. */
@@ -123,8 +126,14 @@ async function sendOffchain(page: Page, recipient: string, amount: string): Prom
 
 /** Navigate to a claim link and click Claim (leaves the page in a claiming/verifying/claimed/error phase). */
 async function openAndClaim(page: Page, link: string): Promise<void> {
-  await page.goto(link);
+  await page.goto(link); // full load (page was parked) → wallet restores from OPFS
   await page.getByTestId("claim-page").waitFor({ timeout: 60_000 });
+  // The claim needs currentAddress, which restores asynchronously on this fresh load.
+  // Wait for the chip's address to populate before clicking (spec 06's restore signal).
+  await expect(async () => {
+    const addr = await page.getByTestId("wallet-chip").getAttribute("data-address");
+    expect(addr).toMatch(/^0x[0-9a-fA-F]+$/);
+  }).toPass({ timeout: 120_000 });
   const claimBtn = page.getByTestId("claim-submit");
   await claimBtn.waitFor({ timeout: 30_000 });
   await claimBtn.click();
@@ -178,11 +187,15 @@ test.describe.serial("offchain send → claim", () => {
     const sender = await newAppContext(browser, "sender", baseURL);
     const intruder = await newAppContext(browser, "intruder", baseURL);
     try {
-      // 1. Recipient onboards; expose its address for the sender.
+      // Only ONE embedded-wallet PXE runs at a time: each actor is parked on about:blank
+      // while another proves. Concurrent PXEs contend for CI CPU + the shared node and
+      // stall the heavy send (an earlier all-live-at-once version timed out mid-send).
+
+      // 1. Recipient onboards, exposes its address, then parks (idle during the send).
       await onboardEmbedded(recipient.page);
       const recipientAddr = await readAddress(recipient.page);
       console.log(`[e2e] recipient=${recipientAddr}`);
-      await closeOnboardingModal(recipient.page);
+      await park(recipient.page);
 
       // 2. Sender onboards, drips GoCoin, sends N to the recipient.
       await onboardEmbedded(sender.page);
@@ -203,8 +216,9 @@ test.describe.serial("offchain send → claim", () => {
         expect(raw).not.toBe("");
         expect(senderBefore - BigInt(raw)).toBeGreaterThanOrEqual(BigInt(SEND_AMOUNT));
       }).toPass({ timeout: 60_000 });
+      await park(sender.page); // idle during the recipient's claim
 
-      // 3. Recipient claims — balance 0 → N, verified.
+      // 3. Recipient claims — the only active PXE; its wallet restores from OPFS.
       await openAndClaim(recipient.page, link);
       await expect(recipient.page.getByTestId("claim-page")).toHaveAttribute(
         "data-phase",
@@ -221,13 +235,16 @@ test.describe.serial("offchain send → claim", () => {
       // the tokens are actually held, not only reported by the claim's own check.
       await recipient.page.getByRole("button", { name: /back to app/i }).click();
       await assertGoCoinBalance(recipient.page, SEND_AMOUNT);
+      await park(recipient.page); // idle during the intruder
 
       // 4. Intruder opens the SAME link with a different wallet → never credited.
       //    The note is encrypted to the recipient, so the intruder can decrypt
       //    nothing. We assert the invariant (no credit / no verified success)
       //    without assuming whether the contract reverts or silently no-ops.
+      //    Park after onboarding so the claim opens via a full load (fresh wallet
+      //    restore, no leftover onboarding modal).
       await onboardEmbedded(intruder.page);
-      await closeOnboardingModal(intruder.page);
+      await park(intruder.page);
       await openAndClaim(intruder.page, link);
 
       const intruderPhase = intruder.page.getByTestId("claim-page");
