@@ -10,7 +10,11 @@ interface ClaimSuccessProps {
 
 export function ClaimSuccess({ amount, tokenName, verified, onGoToSend }: ClaimSuccessProps) {
   return (
-    <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2, py: 3 }}>
+    <Box
+      data-testid="claim-success"
+      data-verified={verified ? "true" : "false"}
+      sx={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2, py: 3 }}
+    >
       <CheckCircleIcon sx={{ fontSize: 48, color: "primary.main" }} />
       <Typography variant="h5" color="primary" sx={{ fontWeight: "bold" }}>
         Tokens Claimed!

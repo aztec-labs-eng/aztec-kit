@@ -109,7 +109,7 @@ export function ClaimPage({ onClaimComplete }: ClaimPageProps) {
   const tokenName = (t: string) => (t === "gc" ? "GoCoin" : "GoCoinPremium");
 
   return (
-    <Box sx={{ py: 4 }}>
+    <Box sx={{ py: 4 }} data-testid="claim-page" data-phase={state.phase}>
       <Box sx={{ textAlign: "center", mb: 6, mt: 4 }}>
         <Box sx={{ display: "flex", justifyContent: "center", mb: 2 }}>
           <GoSwapLogo height={56} />
@@ -144,6 +144,7 @@ export function ClaimPage({ onClaimComplete }: ClaimPageProps) {
               variant="contained"
               size="large"
               onClick={doClaim}
+              data-testid="claim-submit"
               sx={{ mt: 2, fontWeight: "bold", px: 6 }}
             >
               Claim

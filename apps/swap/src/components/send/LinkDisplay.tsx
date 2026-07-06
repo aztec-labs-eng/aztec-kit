@@ -43,6 +43,7 @@ export function LinkDisplay({ link, amount, token, recipient, onReset }: LinkDis
       >
         <Typography
           variant="body2"
+          data-testid="send-link"
           sx={{
             flex: 1,
             overflow: "hidden",
