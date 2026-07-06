@@ -53,7 +53,7 @@ function ClaimSummary({ allCredentials }: { allCredentials: ClaimCredentials[] }
       await Promise.all(
         allCredentials.map(async (cred) => {
           try {
-            const target = AztecAddress.fromString(cred.recipient);
+            const target = AztecAddress.fromStringUnsafe(cred.recipient);
             const { result } = await fj.methods
               .balance_of_public(target)
               .simulate({ from: address });

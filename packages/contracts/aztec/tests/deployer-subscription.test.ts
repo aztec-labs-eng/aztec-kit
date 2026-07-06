@@ -83,7 +83,7 @@ describe("Account deployment subscription", () => {
 
     await ctx.fpc.methods
       .sign_up(sampleCall.to, sampleCall.selector, PRODUCTION_INDEX, 1, maxFee, 1)
-      .send({ from: ctx.admin });
+      .send({ from: ctx.admin, additionalScopes: [ctx.fpc.address] });
   });
 
   it("allows a user to subscribe and get a sponsored call in the same tx", async () => {
