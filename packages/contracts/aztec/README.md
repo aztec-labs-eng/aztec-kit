@@ -18,7 +18,7 @@ Noir contracts for the aztec-kit ecosystem + generated TypeScript artifacts + a 
 ```ts
 import { SubscriptionFPC } from "@aztec-kit/contracts-aztec/subscription-fpc";
 import { FPC_GAS_CONSTANTS } from "@aztec-kit/contracts-aztec/fpc-gas-constants";
-import { TokenContract, TokenContractArtifact } from "@aztec-kit/contracts-aztec/artifacts/Token";
+import { TokenContract, TokenContractArtifact } from "@aztec/noir-contracts.js/Token";
 // … any artifact under noir/artifacts/* is reachable via /artifacts/<Name>
 ```
 
