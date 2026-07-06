@@ -132,13 +132,14 @@ async function assertGoCoinBalance(page: Page, expected: string): Promise<void> 
 test.describe.serial("offchain send → claim", () => {
   test.slow();
 
-  test("sender delivers offchain; recipient claims", async ({ browser }) => {
+  test("sender delivers offchain; recipient claims; intruder cannot", async ({ browser }) => {
     const global = await readState<GlobalState>(STATE_FILES.global);
     const swap = await readState<SwapDeploymentState>(STATE_FILES.swapDeployment);
     console.log(`[e2e] node=${global.nodeUrl} goCoin=${swap.goCoin}`);
 
     const recipient = await newAppContext(browser, "recipient");
     const sender = await newAppContext(browser, "sender");
+    const intruder = await newAppContext(browser, "intruder");
     try {
       // 1. Recipient onboards; expose its address for the sender.
       await onboardEmbedded(recipient.page);
@@ -164,9 +165,29 @@ test.describe.serial("offchain send → claim", () => {
         { timeout: 10_000 },
       );
       await assertGoCoinBalance(recipient.page, SEND_AMOUNT);
+
+      // 4. Intruder opens the SAME link with a different wallet → never credited.
+      //    The note is encrypted to the recipient, so the intruder can decrypt
+      //    nothing. We assert the invariant (no credit / no verified success)
+      //    without assuming whether the contract reverts or silently no-ops.
+      await onboardEmbedded(intruder.page);
+      await openAndClaim(intruder.page, link);
+
+      const intruderPhase = intruder.page.getByTestId("claim-page");
+      await expect(intruderPhase).toHaveAttribute("data-phase", /claimed|error/, {
+        timeout: 300_000,
+      });
+      if ((await intruderPhase.getAttribute("data-phase")) === "claimed") {
+        await expect(intruder.page.getByTestId("claim-success")).toHaveAttribute(
+          "data-verified",
+          "false",
+        );
+      }
+      await assertGoCoinBalance(intruder.page, "0");
     } finally {
       await recipient.ctx.close();
       await sender.ctx.close();
+      await intruder.ctx.close();
     }
   });
 });
