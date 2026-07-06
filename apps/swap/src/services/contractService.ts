@@ -18,7 +18,7 @@ import {
 } from "@aztec/aztec.js/contracts";
 import { poseidon2Hash } from "@aztec/foundation/crypto/poseidon";
 import type { TxReceipt } from "@aztec/stdlib/tx";
-import type { TokenContract } from "@aztec-kit/contracts-aztec/artifacts/Token";
+import type { TokenContract } from "@aztec/noir-contracts.js/Token";
 import type { AMMContract } from "@aztec-kit/contracts-aztec/artifacts/AMM";
 import type { ProofOfPasswordContract } from "@aztec-kit/contracts-aztec/artifacts/ProofOfPassword";
 import { SubscriptionFPC } from "@aztec-kit/contracts-aztec/subscription-fpc";
@@ -62,8 +62,7 @@ export async function registerSwapContracts(
   const contractSalt = Fr.fromString(network.contracts.salt);
 
   // Import contract artifacts
-  const { TokenContract, TokenContractArtifact } =
-    await import("@aztec-kit/contracts-aztec/artifacts/Token");
+  const { TokenContract, TokenContractArtifact } = await import("@aztec/noir-contracts.js/Token");
   const { AMMContract, AMMContractArtifact } =
     await import("@aztec-kit/contracts-aztec/artifacts/AMM");
 
@@ -611,7 +610,7 @@ export async function executeTransferOffchain(
 
   const authwitNonce = Fr.random();
   const call = await token.methods
-    .transfer_in_private_deliver_offchain(fromAddress, recipient, amount, authwitNonce)
+    .transfer_in_private_with_offchain_delivery(fromAddress, recipient, amount, authwitNonce)
     .getFunctionCall();
 
   const fnConfig = subFPC.functions[token.address.toString()]?.[call.selector.toString()];
