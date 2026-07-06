@@ -30,6 +30,28 @@ function detectViteMajor(): number {
 }
 
 /**
+ * Reads the app's `@aztec/aztec.js` pin from its own package.json (Vite runs
+ * with cwd = the app dir). Pins are exact in this repo, so the pin IS the
+ * installed version; the installed package.json itself is not reachable
+ * (`@aztec/aztec.js` doesn't export `./package.json`). Returns "unknown" if
+ * the pin can't be read.
+ */
+function detectAztecVersion(): string {
+  try {
+    const require = createRequire(import.meta.url);
+    const pkg = require(`${process.cwd()}/package.json`) as {
+      dependencies?: Record<string, string>;
+      devDependencies?: Record<string, string>;
+    };
+    return (
+      pkg.dependencies?.["@aztec/aztec.js"] ?? pkg.devDependencies?.["@aztec/aztec.js"] ?? "unknown"
+    );
+  } catch {
+    return "unknown";
+  }
+}
+
+/**
  * Drop-in Vite plugin for all aztec-kit apps. Sets the headers, pre-bundle
  * config, and polyfill plumbing that every app needs, adapting to the
  * installed Vite major version.
@@ -63,6 +85,12 @@ export function aztecVitePlugin(options: AztecVitePluginOptions = {}): Plugin[] 
     config(): UserConfig {
       // Cross-cutting defaults that apply on all Vite versions.
       const base = {
+        // Every app gets the @aztec/* version it was built against as a
+        // compile-time constant (shown in the footers). Declared for TS in
+        // each app's src/vite-env.d.ts.
+        define: {
+          __AZTEC_VERSION__: JSON.stringify(detectAztecVersion()),
+        },
         server: {
           headers: {
             // SharedArrayBuffer requires cross-origin isolation (bb.js threads).
