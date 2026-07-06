@@ -26,10 +26,10 @@ import type { NetworkConfig } from "./networks";
  */
 export function createGoSwapCapabilities(network: NetworkConfig): AppCapabilities {
   // Parse contract addresses from network config
-  const goCoinAddress = AztecAddress.fromString(network.contracts.goCoin);
-  const goCoinPremiumAddress = AztecAddress.fromString(network.contracts.goCoinPremium);
-  const ammAddress = AztecAddress.fromString(network.contracts.amm);
-  const popAddress = AztecAddress.fromString(network.contracts.pop);
+  const goCoinAddress = AztecAddress.fromStringUnsafe(network.contracts.goCoin);
+  const goCoinPremiumAddress = AztecAddress.fromStringUnsafe(network.contracts.goCoinPremium);
+  const ammAddress = AztecAddress.fromStringUnsafe(network.contracts.amm);
+  const popAddress = AztecAddress.fromStringUnsafe(network.contracts.pop);
 
   // All contracts that need registration
   const contractAddresses = [ammAddress, goCoinAddress, goCoinPremiumAddress, popAddress];
@@ -37,7 +37,7 @@ export function createGoSwapCapabilities(network: NetworkConfig): AppCapabilitie
   // Include subscription FPC if configured
   const hasSubFPC = !!network.subscriptionFPC;
   if (hasSubFPC) {
-    contractAddresses.push(AztecAddress.fromString(network.subscriptionFPC!.address));
+    contractAddresses.push(AztecAddress.fromStringUnsafe(network.subscriptionFPC!.address));
   }
 
   // Simulation patterns
@@ -60,7 +60,7 @@ export function createGoSwapCapabilities(network: NetworkConfig): AppCapabilitie
   // Subscription FPC: the user calls subscribe/sponsor which internally dispatch
   // the sponsored call + auth witnesses
   if (hasSubFPC) {
-    const fpcAddress = AztecAddress.fromString(network.subscriptionFPC!.address);
+    const fpcAddress = AztecAddress.fromStringUnsafe(network.subscriptionFPC!.address);
     transactionPatterns.push(
       { contract: fpcAddress, function: "subscribe" },
       { contract: fpcAddress, function: "sponsor" },
