@@ -47,6 +47,10 @@ const SWAP_LOCAL_JSON = resolve(SWAP_DIR, "src/config/networks/local.json");
 const ARTIFACTS_DIR = resolve(REPO_ROOT, "packages/contracts/aztec/noir/target");
 const POP_ARTIFACT_PATH = resolve(ARTIFACTS_DIR, "proof_of_password-ProofOfPassword.json");
 const AMM_ARTIFACT_PATH = resolve(ARTIFACTS_DIR, "amm_contract-AMM.json");
+const TOKEN_ARTIFACT_PATH = resolve(
+  REPO_ROOT,
+  "node_modules/@aztec/noir-contracts.js/artifacts/token_contract-Token.json",
+);
 
 function runMint(env: NodeJS.ProcessEnv, toAddress: string): Promise<void> {
   return new Promise((res, rej) => {
@@ -312,7 +316,7 @@ test.describe.serial("fpc signs up sponsored apps", () => {
       },
       extras: [
         {
-          artifactPath: resolve(ARTIFACTS_DIR, "token_contract-Token.json"),
+          artifactPath: TOKEN_ARTIFACT_PATH,
           address: swap.goCoin,
           alias: "GoCoin",
         },
@@ -337,7 +341,7 @@ test.describe.serial("fpc signs up sponsored apps", () => {
       },
       extras: [
         {
-          artifactPath: resolve(ARTIFACTS_DIR, "token_contract-Token.json"),
+          artifactPath: TOKEN_ARTIFACT_PATH,
           address: swap.goCoinPremium,
           alias: "GoCoinPremium",
         },
