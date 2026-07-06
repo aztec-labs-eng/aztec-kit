@@ -3,7 +3,7 @@
  * Manages contract instances and registration state
  */
 
-import type { TokenContract } from "@aztec-kit/contracts-aztec/artifacts/Token";
+import type { TokenContract } from "@aztec/noir-contracts.js/Token";
 import type { AMMContract } from "@aztec-kit/contracts-aztec/artifacts/AMM";
 import type { ProofOfPasswordContract } from "@aztec-kit/contracts-aztec/artifacts/ProofOfPassword";
 import type { SubscriptionFPC } from "@aztec-kit/contracts-aztec/subscription-fpc";

@@ -58,6 +58,32 @@ let sponsorPrivateGas: GasValues;
 let calibratePublicGas: GasValues;
 let calibratePrivateGas: GasValues;
 
+/** Side-effect counts of a mined tx, read back from the node. */
+type EffectCounts = {
+  noteHashes: number;
+  nullifiers: number;
+  privateLogs: number;
+  logFieldLengths: number[];
+};
+
+let bootstrapTransferEffects: EffectCounts;
+let steadyTransferEffects: EffectCounts;
+let signUpEffects: EffectCounts;
+let subscribePrivateEffects: EffectCounts;
+let sponsorPrivateEffects: EffectCounts;
+
+async function getEffectCounts(txHash: unknown): Promise<EffectCounts> {
+  const indexed = await ctx.node.getTxEffect(txHash as never);
+  if (!indexed) throw new Error("tx effect not found");
+  const e = indexed.data;
+  return {
+    noteHashes: e.noteHashes.length,
+    nullifiers: e.nullifiers.length,
+    privateLogs: e.privateLogs.length,
+    logFieldLengths: e.privateLogs.map((l) => l.emittedLength),
+  };
+}
+
 beforeAll(async () => {
   ctx = await setupTestContext();
 });
@@ -105,6 +131,29 @@ describe("FPC gas overhead", () => {
     await token.methods.mint_to_private(userAddress, 100000n).send({ from: ctx.admin });
     await userWallet.registerSender(ctx.admin, "admin");
 
+    // ── Pre-establish the token's constrained-delivery chains ─────────
+    // `transfer_in_private` delivers its notes with constrained delivery,
+    // whose FIRST message per (sender → recipient) chain emits a one-time
+    // handshake bootstrap (extra note hashes, nullifiers and logs). That
+    // cost belongs to the sponsored function, not the FPC, and it must be
+    // IDENTICAL in the calibrate and subscribe/sponsor simulations for the
+    // overhead diff to isolate the FPC's own bookkeeping. Sending one plain
+    // transfer up front establishes both chains (admin→recipient and the
+    // admin→admin change note), so every later simulation reuses them.
+    // The second transfer is the steady-state baseline for the
+    // side-effect assertions below.
+    {
+      const { receipt: bootstrapReceipt } = await token.methods
+        .transfer_in_private(ctx.admin, recipientAddress, 10n, 0)
+        .send({ from: ctx.admin });
+      bootstrapTransferEffects = await getEffectCounts(bootstrapReceipt.txHash);
+
+      const { receipt: steadyReceipt } = await token.methods
+        .transfer_in_private(ctx.admin, recipientAddress, 10n, 0)
+        .send({ from: ctx.admin });
+      steadyTransferEffects = await getEffectCounts(steadyReceipt.txHash);
+    }
+
     const adminFpc = SubscriptionFPCContract.at(ctx.fpc.address, ctx.wallet);
 
     // ── Public subscribe + sponsor ───────────────────────────────────
@@ -129,7 +178,7 @@ describe("FPC gas overhead", () => {
 
       await ctx.fpc.methods
         .sign_up(sampleCall.to, sampleCall.selector, PUBLIC_INDEX, 2, MAX_U128, 1)
-        .send({ from: ctx.admin });
+        .send({ from: ctx.admin, additionalScopes: [ctx.fpc.address] });
 
       // Measure subscribe
       const noirCall = await buildNoirFunctionCall(sampleCall);
@@ -253,9 +302,10 @@ describe("FPC gas overhead", () => {
       const signUpCall = await token.methods
         .transfer_in_private(ctx.admin, recipientAddress, 10n, 0)
         .getFunctionCall();
-      await ctx.fpc.methods
+      const { receipt: signUpReceipt } = await ctx.fpc.methods
         .sign_up(signUpCall.to, signUpCall.selector, PRIVATE_INDEX, 2, MAX_U128, 1)
-        .send({ from: ctx.admin });
+        .send({ from: ctx.admin, additionalScopes: [ctx.fpc.address] });
+      signUpEffects = await getEffectCounts(signUpReceipt.txHash);
     }
 
     // Measure subscribe (unique nonce for simulation)
@@ -298,7 +348,7 @@ describe("FPC gas overhead", () => {
         call: subCall,
       });
       const subNoirCall = await buildNoirFunctionCall(subCall);
-      await adminFpc.methods
+      const { receipt: subscribeReceipt } = await adminFpc.methods
         .subscribe(subNoirCall, PRIVATE_INDEX, ctx.admin)
         .with({
           authWitnesses: [subAuthwit],
@@ -317,6 +367,7 @@ describe("FPC gas overhead", () => {
             },
           },
         });
+      subscribePrivateEffects = await getEffectCounts(subscribeReceipt.txHash);
     }
 
     // Measure sponsor (unique nonce)
@@ -386,6 +437,41 @@ describe("FPC gas overhead", () => {
       calibratePrivateGas = toGas(gasUsed!);
     }
 
+    // Execute sponsor (after all measurements, so it can't perturb them)
+    // to pin its emitted side effects.
+    {
+      const nonce5 = Fr.random();
+      const sampleCall = await token.methods
+        .transfer_in_private(ctx.admin, recipientAddress, 10n, nonce5)
+        .getFunctionCall();
+      const authwit = await ctx.wallet.createAuthWit(ctx.admin, {
+        caller: ctx.fpc.address,
+        call: sampleCall,
+      });
+      const noirCall = await buildNoirFunctionCall(sampleCall);
+
+      const { receipt: sponsorReceipt } = await adminFpc.methods
+        .sponsor(noirCall, PRIVATE_INDEX, ctx.admin)
+        .with({
+          authWitnesses: [authwit],
+          extraHashedArgs: await buildExtraHashedArgs(sampleCall),
+        })
+        .send({
+          from: NO_FROM,
+          sendMessagesAs: ctx.admin,
+          additionalScopes: [ctx.admin, ctx.fpc.address],
+          fee: {
+            gasSettings: {
+              gasLimits: new Gas(
+                sponsorPrivateGas.gasLimits.daGas,
+                sponsorPrivateGas.gasLimits.l2Gas,
+              ),
+            },
+          },
+        });
+      sponsorPrivateEffects = await getEffectCounts(sponsorReceipt.txHash);
+    }
+
     // ── Print all measurements ───────────────────────────────────────
 
     console.log("=== ALL MEASUREMENTS ===");
@@ -398,6 +484,45 @@ describe("FPC gas overhead", () => {
   });
 
   // ── TESTS ──────────────────────────────────────────────────────────
+
+  // Pins the exact side effects each tx emits, so a protocol change that
+  // inflates emissions (ours OR the sponsored function's) surfaces as a
+  // count change here instead of an unexplained shift in the gas constants.
+  // This is how we caught the 20260630 constrained-delivery bootstrap being
+  // misattributed to the FPC: the FPC's own emissions never changed.
+  it("FPC calls emit exactly the expected side effects", () => {
+    console.log("=== SIDE EFFECTS ===");
+    console.log("bootstrap transfer:", JSON.stringify(bootstrapTransferEffects));
+    console.log("steady transfer:   ", JSON.stringify(steadyTransferEffects));
+    console.log("sign_up:           ", JSON.stringify(signUpEffects));
+    console.log("subscribe private: ", JSON.stringify(subscribePrivateEffects));
+    console.log("sponsor private:   ", JSON.stringify(sponsorPrivateEffects));
+
+    // sign_up is FPC-only: 1 SlotNote (+ its message log), the per-config
+    // uniqueness nullifier, and the tx-hash nullifier every tx has.
+    expect(signUpEffects).toEqual({
+      noteHashes: 1,
+      nullifiers: 2,
+      privateLogs: 1,
+      logFieldLengths: [16],
+    });
+
+    // The FPC's own footprint on top of the sponsored fn (steady-state
+    // baseline: same transfer, delivery chains already established):
+    // subscribe adds the SlotNote re-insert + SubscriptionNote (2 note
+    // hashes + 2 message logs), the SlotNote pop nullifier, and — on this
+    // private line — one extra protocol nullifier per sponsored call.
+    expect(subscribePrivateEffects.noteHashes - steadyTransferEffects.noteHashes).toBe(2);
+    expect(subscribePrivateEffects.nullifiers - steadyTransferEffects.nullifiers).toBe(2);
+    expect(subscribePrivateEffects.privateLogs - steadyTransferEffects.privateLogs).toBe(2);
+
+    // sponsor adds the SubscriptionNote pop + decremented re-insert
+    // (1 note hash + 1 message log + 1 nullifier) plus the same extra
+    // protocol nullifier.
+    expect(sponsorPrivateEffects.noteHashes - steadyTransferEffects.noteHashes).toBe(1);
+    expect(sponsorPrivateEffects.nullifiers - steadyTransferEffects.nullifiers).toBe(2);
+    expect(sponsorPrivateEffects.privateLogs - steadyTransferEffects.privateLogs).toBe(1);
+  });
 
   it("teardown is equal across all FPC calls", () => {
     const teardownL2 = subscribePublicGas.teardownGasLimits.l2Gas;
