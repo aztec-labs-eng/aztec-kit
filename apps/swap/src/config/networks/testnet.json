@@ -2,25 +2,25 @@
   "id": "testnet",
   "nodeUrl": "https://canonical.testnet.rpc.aztec-labs.com",
   "chainId": "11155111",
-  "rollupVersion": "4239416255",
+  "rollupVersion": "2787991301",
   "contracts": {
-    "goCoin": "0x18e7ff7c32896f39f94bc0845223da619c6fd1bb2f9d20c16b598c59e972c384",
-    "goCoinPremium": "0x13f898e4368a7d254150fad60a369add89e1e464208f54d3937ff584408872ba",
-    "amm": "0x2b529135d3451aa2f6dabd788c3b3517478fb5e1c57eba3a4cd123dba99c916c",
-    "liquidityToken": "0x154b5dcbfee1bf8ddf2c9c114a463f30c2b5d4c65c7bc265d7fcecaabfa928cd",
-    "pop": "0x1c48e4fcaf89d51482ec57ef865740ca110bc36ea8a4673ee96193d7e458f6c6",
-    "sponsoredFPC": "0x261366b3c0a9b4c30864629556cf282be409e6822b1f3a065fcb7e34f36d7880",
-    "salt": "0x00000000000000000000000000000000000000000000000000000000000000e7"
+    "goCoin": "0x22c102b6e014bc21997a8037602a96587d367611a75c8ddec78969d2f9851339",
+    "goCoinPremium": "0x0abcf5c194afbbf676453fed1e9aa412477ecc0aeac1ec6348e44a04574ceed6",
+    "amm": "0x27bde383b12ecade71d4545dc9e994c6d759ce3e58550dae28e876adf771ce23",
+    "liquidityToken": "0x062e148c2d189c05ce7472e3a98d2d8bc912972e0a5511b364c06eae55eb6d0f",
+    "pop": "0x1bd6c7c605543c305dcc7660722c404cc02b97d056b192b2ef9ec0b2e7c33e2f",
+    "sponsoredFPC": "0x1969946536f0c09269e2c75e414eef4e21a76e763c5514125208db33d7d944d7",
+    "salt": "0x0000000000000000000000000000000000000000000000000000000000000000"
   },
   "deployer": {
-    "address": "0x06d3cac5cec7c2382487c73608382655c0efaaa0b056922e6a121a2b8525387f"
+    "address": "0x082731ec89704e7b9d54f5ec8d46c0a1ec469c9da38e9bfc637e8534c7d74f4c"
   },
-  "deployedAt": "2026-06-19T14:28:55.480Z",
+  "deployedAt": "2026-07-06T11:53:01.408Z",
   "subscriptionFPC": {
-    "address": "0x02cd8d8360aab365628e17170c5f679eff469aa06b0f32d93077fd7182f8def8",
+    "address": "0x0c4bb4180474ac2c610d336d88139365a2be8ad43ed7166275821673dc5a87e2",
     "secretKey": "0x000000000000000000000000000000000000000000000000000000000000002c",
     "functions": {
-      "0x1c48e4fcaf89d51482ec57ef865740ca110bc36ea8a4673ee96193d7e458f6c6": {
+      "0x1bd6c7c605543c305dcc7660722c404cc02b97d056b192b2ef9ec0b2e7c33e2f": {
         "0xa539bd29": {
           "configIndex": 0,
           "gasLimits": {
@@ -30,18 +30,18 @@
           "hasPublicCall": true
         }
       },
-      "0x2b529135d3451aa2f6dabd788c3b3517478fb5e1c57eba3a4cd123dba99c916c": {
+      "0x27bde383b12ecade71d4545dc9e994c6d759ce3e58550dae28e876adf771ce23": {
         "0xfd228669": {
           "configIndex": 0,
           "gasLimits": {
-            "daGas": 2464,
-            "l2Gas": 1032976
+            "daGas": 3648,
+            "l2Gas": 1118851
           },
           "hasPublicCall": true
         }
       },
-      "0x18e7ff7c32896f39f94bc0845223da619c6fd1bb2f9d20c16b598c59e972c384": {
-        "0x859e4f61": {
+      "0x22c102b6e014bc21997a8037602a96587d367611a75c8ddec78969d2f9851339": {
+        "0xb27dc0cb": {
           "configIndex": 0,
           "gasLimits": {
             "daGas": 288,
@@ -50,8 +50,8 @@
           "hasPublicCall": false
         }
       },
-      "0x13f898e4368a7d254150fad60a369add89e1e464208f54d3937ff584408872ba": {
-        "0x859e4f61": {
+      "0x0abcf5c194afbbf676453fed1e9aa412477ecc0aeac1ec6348e44a04574ceed6": {
+        "0xb27dc0cb": {
           "configIndex": 0,
           "gasLimits": {
             "daGas": 288,
