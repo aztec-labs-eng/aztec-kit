@@ -27,6 +27,9 @@ export function FooterInfo() {
       <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>
         Aztec Network
       </Typography>
+      <Typography variant="caption" color="text.secondary" sx={{ opacity: 0.7 }}>
+        {__AZTEC_VERSION__}
+      </Typography>
     </Box>
   );
 }

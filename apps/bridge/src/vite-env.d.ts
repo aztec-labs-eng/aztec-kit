@@ -14,3 +14,6 @@ interface ImportMetaEnv {
   readonly VITE_CUSTOM_L1_RPC_URL?: string;
   readonly VITE_CUSTOM_L1_CHAIN_ID?: string;
 }
+
+/** The app's `@aztec/aztec.js` version, injected at build time by `aztecVitePlugin`. */
+declare const __AZTEC_VERSION__: string;

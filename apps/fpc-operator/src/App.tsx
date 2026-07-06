@@ -154,6 +154,9 @@ export function App() {
               Deploy and manage Subscription FPC contracts for sponsoring user transactions on
               Aztec.
             </Typography>
+            <Typography variant="caption" sx={{ color: "rgba(242, 238, 225, 0.3)" }}>
+              {__AZTEC_VERSION__}
+            </Typography>
           </Box>
         </Container>
       </Box>
