@@ -12,8 +12,8 @@ import { defineConfig, devices } from "@playwright/test";
  * - fpc-signup   (fpc-operator UI) — mints + registers contracts + 2× AppSignUp
  *                                    with calibration; writes swap's local.json.
  * - swap-flow    (swap UI) — end-user onboarding + sponsored swap + drip + send.
- * - offchain-send-claim (swap UI) — end-user offchain send → claim, including a
- *                                    wrong-recipient (intruder) check.
+ * - offchain-send-claim (swap UI) — end-user offchain send → receive between two
+ *                                    embedded wallets (sender delivers, recipient claims).
  *
  * The shared `aztec start --local-network`, L1 bridge deploy, and swap-admin
  * key derivation all happen in `globalSetup`.

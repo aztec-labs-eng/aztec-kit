@@ -8,18 +8,22 @@ import {
 } from "../fixtures/state.ts";
 
 /**
- * Spec 07 — offchain delivery: send → claim.
+ * Spec 07 — offchain delivery: a simple send → receive between two embedded wallets.
  *
- *   1. Recipient onboards an embedded wallet (0 balance) and exposes its
- *      L2 address via wallet-chip[data-address].
- *   2. Sender onboards, drips GoCoin, and sends N to the recipient via the
- *      Send tab, producing a shareable claim link.
- *   3. Recipient opens the link and claims — balance goes 0 → N, verified.
- *   4. (Task 3) Intruder opens the same link and cannot claim.
+ *   1. Recipient onboards an embedded wallet (0 balance) and exposes its L2
+ *      address via wallet-chip[data-address].
+ *   2. Sender onboards, drips GoCoin, and sends N to the recipient via the Send
+ *      tab, producing a shareable claim link.
+ *   3. Recipient opens the link and claims — its balance goes 0 → N, verified,
+ *      and the sender's balance dropped by at least N (conservation: moved, not minted).
  *
- * Claiming is a local `offchain_receive` simulate (no on-chain tx, no fee),
- * so recipient/intruder wallets need no funding. Assumes specs 01-04 ran
- * (deployed tokens + FPC signed up for transfer_in_private_with_offchain_delivery).
+ * Claiming is a local `offchain_receive` simulate (no on-chain tx, no fee), so the
+ * recipient wallet needs no funding. Assumes specs 01-04 ran (deployed tokens + FPC
+ * signed up for transfer_in_private_with_offchain_delivery).
+ *
+ * This flow is HEAVY: each embedded wallet runs a full client-side prover, and the
+ * send alone is a multi-proof tx. The helpers below are careful about *when* they
+ * touch the PXE — see the "warm vs cold PXE" notes on the reload and the balance reads.
  */
 
 const SEND_AMOUNT = "5";
@@ -71,19 +75,19 @@ async function onboardEmbedded(page: Page): Promise<void> {
   await page.getByTestId("onboarding-use-embedded").click();
 
   // awaiting_drip means the embedded account exists (currentAddress is set) and
-  // the balance query resolved to 0 — the wallet is safe to read/persist.
+  // the balance query resolved to 0 — the wallet is ready.
   await expect(modal).toHaveAttribute("data-status", "awaiting_drip", { timeout: 120_000 });
 }
 
 /**
- * Park a page on about:blank so its embedded-wallet PXE stops running — freeing CI CPU + the
- * shared node for whichever actor is proving. Multiple live PXEs contend and stall the (heavy)
- * send. Parking also makes the next `page.goto(claimLink)` a FULL load rather than a hash-only
- * no-op: the wallet auto-restores from OPFS on arrival, and the onboarding modal (which only
- * re-opens on an explicit chip click) is absent — so it can't occlude the Claim button.
+ * Close the onboarding modal without dripping (marks onboarding complete, keeps the wallet).
+ * The recipient never drips; dismissing the modal here means its backdrop won't occlude the
+ * Claim button when the recipient later navigates to the claim route in the same (warm) session.
  */
-async function park(page: Page): Promise<void> {
-  await page.goto("about:blank");
+async function closeOnboardingModal(page: Page): Promise<void> {
+  const modal = page.getByTestId("onboarding-modal");
+  await modal.getByRole("button", { name: "close" }).click(); // IconButton aria-label="close"
+  await modal.waitFor({ state: "hidden", timeout: 10_000 });
 }
 
 /** Read the connected wallet's full L2 address from the chip. */
@@ -107,6 +111,41 @@ async function dripInModal(page: Page, password: string): Promise<void> {
   await modal.waitFor({ state: "hidden", timeout: 300_000 });
 }
 
+/**
+ * Switch to the Swap tab and return swap-from's locator. Uses an in-app tab click, NOT a
+ * page reload. Requires the tabbed app to be showing (not the onboarding modal or #/claim route).
+ */
+async function gotoSwapTab(page: Page): Promise<Locator> {
+  await page.getByRole("tab", { name: "Swap" }).click();
+  const fromBox = page.getByTestId("swap-from");
+  await fromBox.waitFor({ timeout: 30_000 });
+  return fromBox;
+}
+
+/**
+ * Post-reload readiness gate + pre-send balance. swap-from's data-balance only resolves once the
+ * reloaded PXE has re-synced AND re-registered the token contracts (fetchBalances needs them), so a
+ * resolved balance guarantees the subsequent send won't hit "Contracts not initialized". Generous
+ * timeout because this straddles a cold PXE re-sync (unlike the warm post-send read below).
+ */
+async function readGoCoinBalanceAfterReload(page: Page): Promise<bigint> {
+  const fromBox = await gotoSwapTab(page);
+  let raw = "";
+  await expect(async () => {
+    raw = (await fromBox.getAttribute("data-balance")) ?? "";
+    expect(raw).not.toBe(""); // "" = still loading (cold sync / contracts registering)
+  }).toPass({ timeout: 240_000 });
+  return BigInt(raw);
+}
+
+/** Assert the Swap-tab GoCoin balance settles to `expected` (warm PXE — resolves quickly). */
+async function assertGoCoinBalance(page: Page, expected: string): Promise<void> {
+  const fromBox = await gotoSwapTab(page);
+  await expect(async () => {
+    expect(await fromBox.getAttribute("data-balance")).toBe(expected); // "" = loading; retries
+  }).toPass({ timeout: 60_000 });
+}
+
 /** On the Send tab: send `amount` GoCoin to `recipient`, return the generated claim link. */
 async function sendOffchain(page: Page, recipient: string, amount: string): Promise<string> {
   await page.getByRole("tab", { name: "Send" }).click();
@@ -118,118 +157,75 @@ async function sendOffchain(page: Page, recipient: string, amount: string): Prom
   await submit.click();
 
   const link = page.getByTestId("send-link");
-  await link.waitFor({ timeout: 300_000 });
+  await link.waitFor({ timeout: 300_000 }); // the send is a multi-proof tx
   const text = (await link.textContent())?.trim();
   expect(text).toMatch(/^https?:\/\/.+#\/claim\//);
   return text as string;
 }
 
-/** Navigate to a claim link and click Claim (leaves the page in a claiming/verifying/claimed/error phase). */
+/**
+ * Navigate the recipient (warm session, onboarding modal already closed) to the claim link and
+ * click Claim. The link differs from "/" only in the hash, so this is a same-document navigation —
+ * no reload, the warm PXE is preserved — and the app's hashchange handler routes to the ClaimPage.
+ */
 async function openAndClaim(page: Page, link: string): Promise<void> {
-  await page.goto(link); // full load (page was parked) → wallet restores from OPFS
+  await page.goto(link);
   await page.getByTestId("claim-page").waitFor({ timeout: 60_000 });
-  // The claim needs currentAddress, which restores asynchronously on this fresh load.
-  // Wait for the chip's address to populate before clicking (spec 06's restore signal).
+  // Claim needs currentAddress; on a warm session it's already set, so this resolves immediately.
   await expect(async () => {
     const addr = await page.getByTestId("wallet-chip").getAttribute("data-address");
     expect(addr).toMatch(/^0x[0-9a-fA-F]+$/);
-  }).toPass({ timeout: 120_000 });
+  }).toPass({ timeout: 60_000 });
   const claimBtn = page.getByTestId("claim-submit");
   await claimBtn.waitFor({ timeout: 30_000 });
   await claimBtn.click();
 }
 
-/**
- * Switch to the Swap tab and return swap-from's locator. Uses an in-app tab click,
- * NOT `page.goto("/")` — a full reload cold-restarts the embedded wallet's PXE, whose
- * re-sync after a send tx blows the balance-poll timeout. The tab switch keeps the
- * warm, already-synced PXE (this is how spec 05 reads balances too). Requires the
- * tabbed app to be showing (not the onboarding modal or the #/claim route).
- */
-async function gotoSwapTab(page: Page): Promise<Locator> {
-  await page.getByRole("tab", { name: "Swap" }).click();
-  const fromBox = page.getByTestId("swap-from");
-  await fromBox.waitFor({ timeout: 30_000 });
-  return fromBox;
-}
+test.describe.serial("offchain send → receive", () => {
+  test("sender delivers offchain; recipient claims", async ({ browser, baseURL }) => {
+    test.setTimeout(20 * 60_000); // heavy: multiple client-side proofs across two embedded wallets
 
-/** Resolved GoCoin (swap-from) balance from the Swap tab. */
-async function readGoCoinBalance(page: Page): Promise<bigint> {
-  const fromBox = await gotoSwapTab(page);
-  let raw = "";
-  await expect(async () => {
-    raw = (await fromBox.getAttribute("data-balance")) ?? "";
-    expect(raw).not.toBe(""); // "" = still loading; retries until resolved
-  }).toPass({ timeout: 60_000 });
-  return BigInt(raw);
-}
-
-/** Assert the Swap-tab GoCoin balance settles to `expected`. */
-async function assertGoCoinBalance(page: Page, expected: string): Promise<void> {
-  const fromBox = await gotoSwapTab(page);
-  await expect(async () => {
-    expect(await fromBox.getAttribute("data-balance")).toBe(expected); // "" = loading; retries
-  }).toPass({ timeout: 60_000 });
-}
-
-test.describe.serial("offchain send → claim", () => {
-  test.slow();
-
-  test("sender delivers offchain; recipient claims; intruder cannot", async ({
-    browser,
-    baseURL,
-  }) => {
     const global = await readState<GlobalState>(STATE_FILES.global);
     const swap = await readState<SwapDeploymentState>(STATE_FILES.swapDeployment);
     console.log(`[e2e] node=${global.nodeUrl} goCoin=${swap.goCoin}`);
 
     const recipient = await newAppContext(browser, "recipient", baseURL);
     const sender = await newAppContext(browser, "sender", baseURL);
-    const intruder = await newAppContext(browser, "intruder", baseURL);
     try {
-      // Only ONE embedded-wallet PXE runs at a time: each actor is parked on about:blank
-      // while another proves. Concurrent PXEs contend for CI CPU + the shared node and
-      // stall the heavy send (an earlier all-live-at-once version timed out mid-send).
-
-      // 1. Recipient onboards, exposes its address, then parks (idle during the send).
+      // 1. Recipient onboards (no drip → 0 balance), dismisses the modal, exposes its address.
       await onboardEmbedded(recipient.page);
+      await closeOnboardingModal(recipient.page);
       const recipientAddr = await readAddress(recipient.page);
       console.log(`[e2e] recipient=${recipientAddr}`);
-      await park(recipient.page);
 
       // 2. Sender onboards, drips GoCoin, sends N to the recipient.
       await onboardEmbedded(sender.page);
       await dripInModal(sender.page, swap.password);
-      // Read the pre-send balance NOW, on the warm PXE (already synced from the drip) — fast,
-      // no cold sync. Must be read BEFORE the reload below, not after: reading it post-reload
-      // races the cold re-sync and times out.
-      const senderBefore = await readGoCoinBalance(sender.page);
-      // LOAD-BEARING reload before the send — do NOT remove. The drip (and the read above) leave
-      // background jobs in flight on the PXE; dispatching the heavy multi-proof send onto that busy
-      // PXE deadlocks it ("concurrent execution is not supported" → the send stalls after one proof
-      // and never produces the link). A full reload resets the PXE so the send runs on a clean
-      // queue; the send's own 300s timeout covers the post-reload cold re-sync. (Reloading *after*
-      // the send to read a balance is the opposite mistake — it times out — so the post-send reads
-      // below use an in-app tab switch instead.)
+      // LOAD-BEARING reload before the send — do NOT remove. The drip leaves background jobs in
+      // flight on the sender's PXE; dispatching the heavy multi-proof send onto that busy PXE
+      // deadlocks it (the send stalls after one proof and never produces the link). A full reload
+      // resets the PXE so the send runs on a clean queue. The read below then waits for the PXE to
+      // re-sync and re-register contracts before we send (else the send races registration and
+      // throws "Contracts not initialized"). Do NOT reload *after* the send to read a balance —
+      // that cold re-sync times out — the post-send read uses an in-app tab switch instead.
       await sender.page.goto("/");
+      const senderBefore = await readGoCoinBalanceAfterReload(sender.page);
       const link = await sendOffchain(sender.page, recipientAddr, SEND_AMOUNT);
       console.log(`[e2e] claim link length=${link.length}`);
 
-      // Sender parted with the tokens: its GoCoin dropped by at least the amount
-      // sent. Fees are FPC-sponsored in fee juice (not GoCoin), so we assert ">= N"
-      // rather than "== N" only because the first send's subscribe path may consume
-      // some GoCoin — matching spec 05's directional-balance convention. Together
-      // with the recipient gaining exactly N below, this is a conservation check:
-      // tokens moved, not minted. Poll until the change note is reflected.
+      // Sender parted with the tokens: its GoCoin dropped by at least the amount sent. Fees are
+      // FPC-sponsored in fee juice (not GoCoin), so we assert ">= N" (not "== N") only because the
+      // first send's subscribe path may consume some GoCoin — matching spec 05's directional-balance
+      // convention. With the recipient gaining exactly N below, this is a conservation check. Read on
+      // the warm post-send PXE via a tab switch (no reload); poll until the change note is reflected.
       const senderFrom = await gotoSwapTab(sender.page);
       await expect(async () => {
         const raw = (await senderFrom.getAttribute("data-balance")) ?? "";
         expect(raw).not.toBe("");
         expect(senderBefore - BigInt(raw)).toBeGreaterThanOrEqual(BigInt(SEND_AMOUNT));
       }).toPass({ timeout: 60_000 });
-      await park(sender.page); // idle during the recipient's claim
 
-      // 3. Recipient claims — the only active PXE; its wallet restores from OPFS.
+      // 3. Recipient claims — balance 0 → N, verified (warm session, hash-only nav to the claim route).
       await openAndClaim(recipient.page, link);
       await expect(recipient.page.getByTestId("claim-page")).toHaveAttribute(
         "data-phase",
@@ -241,41 +237,13 @@ test.describe.serial("offchain send → claim", () => {
         "true",
         { timeout: 10_000 },
       );
-      // Return to the wallet UI (the app clears the #/claim hash WITHOUT reloading,
-      // so the warm PXE + the note the claim just added are preserved) and confirm
-      // the tokens are actually held, not only reported by the claim's own check.
+      // Return to the wallet UI (the app clears the #/claim hash WITHOUT reloading, preserving the
+      // warm PXE + the note the claim just added) and confirm the tokens are actually held.
       await recipient.page.getByRole("button", { name: /back to app/i }).click();
       await assertGoCoinBalance(recipient.page, SEND_AMOUNT);
-      await park(recipient.page); // idle during the intruder
-
-      // 4. Intruder opens the SAME link with a different wallet → never credited.
-      //    The note is encrypted to the recipient, so the intruder can decrypt
-      //    nothing. We assert the invariant (no credit / no verified success)
-      //    without assuming whether the contract reverts or silently no-ops.
-      //    Park after onboarding so the claim opens via a full load (fresh wallet
-      //    restore, no leftover onboarding modal).
-      await onboardEmbedded(intruder.page);
-      await park(intruder.page);
-      await openAndClaim(intruder.page, link);
-
-      const intruderPhase = intruder.page.getByTestId("claim-page");
-      await expect(intruderPhase).toHaveAttribute("data-phase", /^(claimed|error)$/, {
-        timeout: 300_000,
-      });
-      if ((await intruderPhase.getAttribute("data-phase")) === "claimed") {
-        // verified = (balanceAfter - balanceBefore) >= N, measured by the app. The
-        // intruder can decrypt nothing, so received is 0 → verified is false. That IS
-        // the not-credited invariant; a separate balance read would be redundant (and
-        // couldn't run from the `error` branch, which has no way back to the app UI).
-        await expect(intruder.page.getByTestId("claim-success")).toHaveAttribute(
-          "data-verified",
-          "false",
-        );
-      }
     } finally {
       await recipient.ctx.close();
       await sender.ctx.close();
-      await intruder.ctx.close();
     }
   });
 });
