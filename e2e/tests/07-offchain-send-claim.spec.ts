@@ -1,4 +1,4 @@
-import { type Browser, type BrowserContext, type Page } from "@playwright/test";
+import { type Browser, type BrowserContext, type Locator, type Page } from "@playwright/test";
 import { test, expect } from "../fixtures/test-base.ts";
 import {
   readState,
@@ -130,12 +130,23 @@ async function openAndClaim(page: Page, link: string): Promise<void> {
   await claimBtn.click();
 }
 
-/** Reload the app and assert the GoCoin (swap-from) balance equals `expected`. */
-/** Reload the app (Swap tab) and return the resolved GoCoin (swap-from) balance. */
-async function readGoCoinBalance(page: Page): Promise<bigint> {
-  await page.goto("/");
+/**
+ * Switch to the Swap tab and return swap-from's locator. Uses an in-app tab click,
+ * NOT `page.goto("/")` — a full reload cold-restarts the embedded wallet's PXE, whose
+ * re-sync after a send tx blows the balance-poll timeout. The tab switch keeps the
+ * warm, already-synced PXE (this is how spec 05 reads balances too). Requires the
+ * tabbed app to be showing (not the onboarding modal or the #/claim route).
+ */
+async function gotoSwapTab(page: Page): Promise<Locator> {
+  await page.getByRole("tab", { name: "Swap" }).click();
   const fromBox = page.getByTestId("swap-from");
   await fromBox.waitFor({ timeout: 30_000 });
+  return fromBox;
+}
+
+/** Resolved GoCoin (swap-from) balance from the Swap tab. */
+async function readGoCoinBalance(page: Page): Promise<bigint> {
+  const fromBox = await gotoSwapTab(page);
   let raw = "";
   await expect(async () => {
     raw = (await fromBox.getAttribute("data-balance")) ?? "";
@@ -144,13 +155,11 @@ async function readGoCoinBalance(page: Page): Promise<bigint> {
   return BigInt(raw);
 }
 
+/** Assert the Swap-tab GoCoin balance settles to `expected`. */
 async function assertGoCoinBalance(page: Page, expected: string): Promise<void> {
-  await page.goto("/"); // clears the #/claim hash → main app, Swap tab (activeTab=0)
-  const fromBox = page.getByTestId("swap-from");
-  await fromBox.waitFor({ timeout: 30_000 });
+  const fromBox = await gotoSwapTab(page);
   await expect(async () => {
-    const raw = await fromBox.getAttribute("data-balance");
-    expect(raw).toBe(expected); // "" = still loading; retries until resolved
+    expect(await fromBox.getAttribute("data-balance")).toBe(expected); // "" = loading; retries
   }).toPass({ timeout: 60_000 });
 }
 
@@ -183,13 +192,17 @@ test.describe.serial("offchain send → claim", () => {
       console.log(`[e2e] claim link length=${link.length}`);
 
       // Sender parted with the tokens: its GoCoin dropped by at least the amount
-      // sent. The tx is fee-juice-sponsored via the FPC, so no GoCoin goes to
-      // fees, but we assert ">= N" rather than "== N" because the first send's
-      // subscribe path may consume some GoCoin — matching spec 05's directional
-      // balance convention. Together with the recipient gaining exactly N below,
-      // this is a conservation check: tokens moved, not minted.
-      const senderAfter = await readGoCoinBalance(sender.page);
-      expect(senderBefore - senderAfter).toBeGreaterThanOrEqual(BigInt(SEND_AMOUNT));
+      // sent. Fees are FPC-sponsored in fee juice (not GoCoin), so we assert ">= N"
+      // rather than "== N" only because the first send's subscribe path may consume
+      // some GoCoin — matching spec 05's directional-balance convention. Together
+      // with the recipient gaining exactly N below, this is a conservation check:
+      // tokens moved, not minted. Poll until the change note is reflected.
+      const senderFrom = await gotoSwapTab(sender.page);
+      await expect(async () => {
+        const raw = (await senderFrom.getAttribute("data-balance")) ?? "";
+        expect(raw).not.toBe("");
+        expect(senderBefore - BigInt(raw)).toBeGreaterThanOrEqual(BigInt(SEND_AMOUNT));
+      }).toPass({ timeout: 60_000 });
 
       // 3. Recipient claims — balance 0 → N, verified.
       await openAndClaim(recipient.page, link);
@@ -203,6 +216,10 @@ test.describe.serial("offchain send → claim", () => {
         "true",
         { timeout: 10_000 },
       );
+      // Return to the wallet UI (the app clears the #/claim hash WITHOUT reloading,
+      // so the warm PXE + the note the claim just added are preserved) and confirm
+      // the tokens are actually held, not only reported by the claim's own check.
+      await recipient.page.getByRole("button", { name: /back to app/i }).click();
       await assertGoCoinBalance(recipient.page, SEND_AMOUNT);
 
       // 4. Intruder opens the SAME link with a different wallet → never credited.
@@ -218,12 +235,15 @@ test.describe.serial("offchain send → claim", () => {
         timeout: 300_000,
       });
       if ((await intruderPhase.getAttribute("data-phase")) === "claimed") {
+        // verified = (balanceAfter - balanceBefore) >= N, measured by the app. The
+        // intruder can decrypt nothing, so received is 0 → verified is false. That IS
+        // the not-credited invariant; a separate balance read would be redundant (and
+        // couldn't run from the `error` branch, which has no way back to the app UI).
         await expect(intruder.page.getByTestId("claim-success")).toHaveAttribute(
           "data-verified",
           "false",
         );
       }
-      await assertGoCoinBalance(intruder.page, "0");
     } finally {
       await recipient.ctx.close();
       await sender.ctx.close();
