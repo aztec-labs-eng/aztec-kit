@@ -131,6 +131,19 @@ async function openAndClaim(page: Page, link: string): Promise<void> {
 }
 
 /** Reload the app and assert the GoCoin (swap-from) balance equals `expected`. */
+/** Reload the app (Swap tab) and return the resolved GoCoin (swap-from) balance. */
+async function readGoCoinBalance(page: Page): Promise<bigint> {
+  await page.goto("/");
+  const fromBox = page.getByTestId("swap-from");
+  await fromBox.waitFor({ timeout: 30_000 });
+  let raw = "";
+  await expect(async () => {
+    raw = (await fromBox.getAttribute("data-balance")) ?? "";
+    expect(raw).not.toBe(""); // "" = still loading; retries until resolved
+  }).toPass({ timeout: 60_000 });
+  return BigInt(raw);
+}
+
 async function assertGoCoinBalance(page: Page, expected: string): Promise<void> {
   await page.goto("/"); // clears the #/claim hash → main app, Swap tab (activeTab=0)
   const fromBox = page.getByTestId("swap-from");
@@ -165,8 +178,18 @@ test.describe.serial("offchain send → claim", () => {
       // 2. Sender onboards, drips GoCoin, sends N to the recipient.
       await onboardEmbedded(sender.page);
       await dripInModal(sender.page, swap.password);
+      const senderBefore = await readGoCoinBalance(sender.page);
       const link = await sendOffchain(sender.page, recipientAddr, SEND_AMOUNT);
       console.log(`[e2e] claim link length=${link.length}`);
+
+      // Sender parted with the tokens: its GoCoin dropped by at least the amount
+      // sent. The tx is fee-juice-sponsored via the FPC, so no GoCoin goes to
+      // fees, but we assert ">= N" rather than "== N" because the first send's
+      // subscribe path may consume some GoCoin — matching spec 05's directional
+      // balance convention. Together with the recipient gaining exactly N below,
+      // this is a conservation check: tokens moved, not minted.
+      const senderAfter = await readGoCoinBalance(sender.page);
+      expect(senderBefore - senderAfter).toBeGreaterThanOrEqual(BigInt(SEND_AMOUNT));
 
       // 3. Recipient claims — balance 0 → N, verified.
       await openAndClaim(recipient.page, link);
