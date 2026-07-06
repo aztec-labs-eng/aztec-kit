@@ -35,7 +35,7 @@ import {
 } from "@aztec-kit/contracts-aztec/artifacts/SubscriptionFPC";
 import { ProofOfPasswordContractArtifact } from "@aztec-kit/contracts-aztec/artifacts/ProofOfPassword";
 import { AMMContractArtifact } from "@aztec-kit/contracts-aztec/artifacts/AMM";
-import { TokenContractArtifact } from "@aztec-kit/contracts-aztec/artifacts/Token";
+import { TokenContractArtifact } from "@aztec/noir-contracts.js/Token";
 import { SubscriptionFPC, fpcSubscribeOverhead } from "@aztec-kit/contracts-aztec/subscription-fpc";
 import { Gas } from "@aztec/stdlib/gas";
 import {
@@ -125,7 +125,7 @@ const SIGNUPS: SignupSpec[] = [
   },
   {
     artifact: TokenContractArtifact,
-    functionName: "transfer_in_private_deliver_offchain",
+    functionName: "transfer_in_private_with_offchain_delivery",
     contractAlias: ["goCoin", "goCoinPremium"],
     sampleArgs: ({ admin }) => [admin.toString(), admin.toString(), 10n, 0n],
   },
