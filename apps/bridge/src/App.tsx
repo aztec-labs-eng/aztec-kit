@@ -70,6 +70,9 @@ export function App() {
                 <br />
                 On testnet, tokens are minted for free via the faucet.
               </Typography>
+              <Typography variant="caption" sx={{ color: "rgba(242, 238, 225, 0.3)" }}>
+                {__AZTEC_VERSION__}
+              </Typography>
             </Box>
           )}
         </Container>
