@@ -1,3 +1,4 @@
+import { readFileSync } from "fs";
 import { createRequire } from "module";
 import type { Plugin, UserConfig } from "vite";
 import { nodePolyfillsFix } from "./nodePolyfillsFix.ts";
@@ -154,6 +155,7 @@ export function aztecVitePlugin(options: AztecVitePluginOptions = {}): Plugin[] 
 
   const plugins: Plugin[] = [
     configPlugin,
+    sqliteRuntimeAssetsPlugin(),
     nodePolyfillsFix({ include: ["buffer", "path", "tty"] }),
   ];
 
@@ -162,4 +164,43 @@ export function aztecVitePlugin(options: AztecVitePluginOptions = {}): Plugin[] 
   }
 
   return plugins;
+}
+
+/**
+ * Emits `@aztec/sqlite3mc-wasm`'s runtime-loaded files into `assets/` under
+ * their ORIGINAL names.
+ *
+ * The sqlite3mc loader always goes through its `Module['locateFile']` hook,
+ * which computes `new URL(path, import.meta.url)` with a *dynamic* `path` —
+ * invisible to the bundler, so at runtime the worker chunk requests
+ * `assets/sqlite3.wasm` (unhashed) relative to itself. The bundler only
+ * rewrites the *static* dead-code fallback, emitting a hashed copy nothing
+ * references. Result: 404 + "unsupported MIME type" in production builds
+ * (dev is unaffected — the dev server serves straight from node_modules).
+ * The OPFS async-proxy worker script is resolved the same way
+ * (`scriptInfo.sqlite3Dir + 'sqlite3-opfs-async-proxy.js'`), so both files
+ * are emitted. Fails soft when the package isn't installed.
+ */
+function sqliteRuntimeAssetsPlugin(): Plugin {
+  const RUNTIME_FILES = ["sqlite3.wasm", "sqlite3-opfs-async-proxy.js"];
+  return {
+    name: "aztec-sqlite-runtime-assets",
+    apply: "build",
+    generateBundle() {
+      const require = createRequire(`${process.cwd()}/package.json`);
+      for (const file of RUNTIME_FILES) {
+        let resolved: string;
+        try {
+          resolved = require.resolve(`@aztec/sqlite3mc-wasm/vendor/jswasm/${file}`);
+        } catch {
+          return; // package not installed (e.g. a line that predates sqlite-opfs)
+        }
+        this.emitFile({
+          type: "asset",
+          fileName: `assets/${file}`,
+          source: readFileSync(resolved),
+        });
+      }
+    },
+  };
 }
