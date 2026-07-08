@@ -161,7 +161,11 @@ export function ClaimPage({ onClaimComplete }: ClaimPageProps) {
             onGoToSend={handleGoToSend}
           />
         )}
-        {state.phase === "error" && <Alert severity="error">{state.message}</Alert>}
+        {state.phase === "error" && (
+          <Alert severity="error" data-testid="claim-error">
+            {state.message}
+          </Alert>
+        )}
       </Box>
     </Box>
   );
