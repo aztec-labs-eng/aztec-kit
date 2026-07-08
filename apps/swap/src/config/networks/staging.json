@@ -1,47 +1,48 @@
 {
   "id": "staging",
   "nodeUrl": "https://staging-internal.rpc.aztec-labs.com",
+  "apiKey": "${VITE_STAGING_API_KEY}",
   "chainId": "11155111",
-  "rollupVersion": "1706309090",
+  "rollupVersion": "1823758613",
   "contracts": {
-    "goCoin": "0x04205d506424f4513685c3665fe00dbe39243d9ef17892f382322961f0a491dc",
-    "goCoinPremium": "0x1473661abd5fd31076ac6fe00f7447db56524dc2e125ab012bf47fbefa2f468b",
-    "amm": "0x29229014f5c38db0fc038dafb13fc0e3ed660d7efddcf82dd03af5d5f1275e9f",
-    "liquidityToken": "0x2e7c8f179fac34a3cb7d3cbae991d4c988cb2c4f1bff5c97f0432647b76dae6c",
-    "pop": "0x1ff355b7cb9a2a05f80be99ed3eb5a38aad502db74a44585c75cd30d750b2615",
-    "sponsoredFPC": "0x2056bc99d6884d3fc7d5abafa5fad7353da01591b769bc0b80cd1e5507a0fcb1",
+    "goCoin": "0x264c88381265e4554e8e52366561570d9dc7c7a388ac7f760dd32d660d06ef16",
+    "goCoinPremium": "0x07c8936a5832465d8f7c33302f4853e9b36a8336277f23ef216ecbc6b3714c8e",
+    "amm": "0x00488c33bea963b206b46b2f3c5d231b3af9b137930a578d43752211e247d823",
+    "liquidityToken": "0x0c2a393417931f63b29826c3f109074e84264bfc91ee3f3a10936c85991e3401",
+    "pop": "0x03537105274273e7204ff1129997e3104158669bdbcdfb530ff340ed41e6b04a",
+    "sponsoredFPC": "0x043337b6958bdcd9e41ea08b835c11b587e7d230ce82b9277de7c947e98d7318",
     "salt": "0x0000000000000000000000000000000000000000000000000000000000000000"
   },
   "deployer": {
-    "address": "0x00d5f26a90ddf3ea6dd0ded7b276c1367a6f92587f60bfd285ce8ca40f0061d5"
+    "address": "0x300c603c0e422d0b077e01447e4bbcb6defe1a0825447980fa599cc7efc9641d"
   },
-  "deployedAt": "2026-06-17T11:40:52.059Z",
+  "deployedAt": "2026-07-06T12:52:40.591Z",
   "subscriptionFPC": {
-    "address": "0x2cb17a55d9334a34201829b18a84d60a6cdde3b4eca5679e40d70750a852330e",
+    "address": "0x045450924bb68ca32e624ff47b12c63487dde3d2253ac83f26b1c502e526ecac",
     "secretKey": "0x000000000000000000000000000000000000000000000000000000000000002c",
     "functions": {
-      "0x1ff355b7cb9a2a05f80be99ed3eb5a38aad502db74a44585c75cd30d750b2615": {
+      "0x03537105274273e7204ff1129997e3104158669bdbcdfb530ff340ed41e6b04a": {
         "0xa539bd29": {
           "configIndex": 0,
           "gasLimits": {
             "daGas": 992,
-            "l2Gas": 721331
+            "l2Gas": 721172
           },
           "hasPublicCall": true
         }
       },
-      "0x29229014f5c38db0fc038dafb13fc0e3ed660d7efddcf82dd03af5d5f1275e9f": {
+      "0x00488c33bea963b206b46b2f3c5d231b3af9b137930a578d43752211e247d823": {
         "0xfd228669": {
           "configIndex": 0,
           "gasLimits": {
             "daGas": 2464,
-            "l2Gas": 1033042
+            "l2Gas": 1032877
           },
           "hasPublicCall": true
         }
       },
-      "0x04205d506424f4513685c3665fe00dbe39243d9ef17892f382322961f0a491dc": {
-        "0x859e4f61": {
+      "0x264c88381265e4554e8e52366561570d9dc7c7a388ac7f760dd32d660d06ef16": {
+        "0xb27dc0cb": {
           "configIndex": 0,
           "gasLimits": {
             "daGas": 352,
@@ -50,8 +51,8 @@
           "hasPublicCall": false
         }
       },
-      "0x1473661abd5fd31076ac6fe00f7447db56524dc2e125ab012bf47fbefa2f468b": {
-        "0x859e4f61": {
+      "0x07c8936a5832465d8f7c33302f4853e9b36a8336277f23ef216ecbc6b3714c8e": {
+        "0xb27dc0cb": {
           "configIndex": 0,
           "gasLimits": {
             "daGas": 352,

@@ -24,6 +24,8 @@ import ExpandLessIcon from "@mui/icons-material/ExpandLess";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import UnfoldLessIcon from "@mui/icons-material/UnfoldLess";
 import UnfoldMoreIcon from "@mui/icons-material/UnfoldMore";
+import ContentCopyIcon from "@mui/icons-material/ContentCopy";
+import DoneIcon from "@mui/icons-material/Done";
 import { txProgress, type TxProgressEvent, type PhaseTiming } from "./tx-progress.js";
 
 // ─── Live phase support ───────────────────────────────────────────────────────
@@ -54,6 +56,14 @@ const formatDuration = (ms: number): string => {
   const seconds = ((ms % 60000) / 1000).toFixed(1);
   return `${minutes}m ${seconds}s`;
 };
+
+/** Wall-clock time-of-day, e.g. "14:32:05" — used to show when a tx landed. */
+const formatClockTime = (ms: number): string =>
+  new Date(ms).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+
+/** `0x1234…cdef` — middle-truncated for compact display next to the copy button. */
+const truncateHash = (hash: string): string =>
+  hash.length > 14 ? `${hash.slice(0, 8)}…${hash.slice(-6)}` : hash;
 
 const formatDurationLong = (ms: number): string => {
   if (ms < 1000) return `${Math.round(ms)} milliseconds`;
@@ -322,7 +332,19 @@ function TxToast({ event, onDismiss }: TxToastProps) {
     isActive ? Date.now() - event.phaseStartTime : 0,
   );
   const [expanded, setExpanded] = useState(true);
+  const [copied, setCopied] = useState(false);
   const frozen = useRef(!isActive);
+
+  const handleCopyHash = async () => {
+    if (!event.aztecTxHash) return;
+    try {
+      await navigator.clipboard.writeText(event.aztecTxHash);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch {
+      /* clipboard unavailable (insecure context) — ignore */
+    }
+  };
 
   // Tick elapsed time while active, freeze when done
   useEffect(() => {
@@ -355,6 +377,11 @@ function TxToast({ event, onDismiss }: TxToastProps) {
 
   const isComplete = event.phase === "complete";
   const isError = event.phase === "error";
+
+  // Wall-clock time the tx landed = start + total recorded phase duration.
+  // (No explicit completion timestamp is emitted, but the summed phases are
+  // stable across refreshes, unlike `Date.now()`.)
+  const landedAt = isComplete ? event.startTime + computeFinalElapsed() : null;
 
   // Build display phases: completed phases + live shimmer phase when active
   const displayPhases: LivePhaseTiming[] = useMemo(() => {
@@ -474,6 +501,48 @@ function TxToast({ event, onDismiss }: TxToastProps) {
           <PhaseTimelineBar phases={displayPhases} />
         </Box>
       </Collapse>
+
+      {/* Footer: tx hash (copyable) + landed time */}
+      {(event.aztecTxHash || landedAt) && (
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            gap: 0.5,
+            px: 1.5,
+            pb: 1,
+            color: "text.secondary",
+          }}
+        >
+          {event.aztecTxHash && (
+            <>
+              <Typography
+                variant="caption"
+                sx={{ fontFamily: "monospace", fontSize: "0.65rem" }}
+                title={event.aztecTxHash}
+              >
+                {truncateHash(event.aztecTxHash)}
+              </Typography>
+              <Tooltip title={copied ? "Copied!" : "Copy tx hash"} placement="top">
+                <IconButton size="small" onClick={handleCopyHash} sx={{ p: 0.25 }}>
+                  {copied ? (
+                    <DoneIcon sx={{ fontSize: 13, color: "#4caf50" }} />
+                  ) : (
+                    <ContentCopyIcon sx={{ fontSize: 13 }} />
+                  )}
+                </IconButton>
+              </Tooltip>
+            </>
+          )}
+          {landedAt && (
+            <Tooltip title={new Date(landedAt).toLocaleString()} placement="top">
+              <Typography variant="caption" sx={{ ml: "auto", fontSize: "0.65rem" }}>
+                Landed {formatClockTime(landedAt)}
+              </Typography>
+            </Tooltip>
+          )}
+        </Box>
+      )}
 
       {/* Error message */}
       {isError && event.error && (
