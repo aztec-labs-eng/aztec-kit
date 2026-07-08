@@ -164,6 +164,12 @@ export interface Ctx<C = Steps> extends Resolver {
 export interface DeploymentSpec<C extends Steps = Steps> {
   network: NetworkName;
   nodeUrl: string;
+  /**
+   * API key for gateway-fronted nodes, sent as the `X-Aztec-API-Key` header on every node
+   * request. Callers resolve it from their environment (e.g. `apiKeyForNetwork(network)`);
+   * omit for public nodes.
+   */
+  apiKey?: string;
   /** Default salt for account + contract derivation; each can override. Defaults to Fr(0). */
   salt?: Fr;
   /** Directory for the resume-state file. Defaults to `<cwd>/.deploy-state`. */

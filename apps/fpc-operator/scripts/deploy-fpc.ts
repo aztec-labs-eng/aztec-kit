@@ -32,6 +32,7 @@ import {
   parseNetwork,
   parsePaymentMode,
   NETWORK_URLS,
+  apiKeyForNetwork,
   L1_DEFAULTS,
   resolveL1Funder,
   bridgeMode,
@@ -84,6 +85,7 @@ async function main() {
   await runDeployment({
     network,
     nodeUrl: NETWORK_URLS[network],
+    apiKey: apiKeyForNetwork(network),
     salt: getSalt(),
     accounts: { admin: { secret: fpcAdminSecret.secretKey } },
     fees: forcePaymentMode(paymentMode),

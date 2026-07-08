@@ -15,7 +15,6 @@
  */
 import { join } from "node:path";
 
-import { createAztecNodeClient } from "@aztec/aztec.js/node";
 import { EmbeddedWallet } from "@aztec/wallets/embedded";
 import { getPXEConfig } from "@aztec/pxe/server";
 import { Fr } from "@aztec/aztec.js/fields";
@@ -28,6 +27,7 @@ import {
 } from "@aztec/stdlib/contract";
 import type { TxReceipt } from "@aztec/stdlib/tx";
 
+import { createNode } from "../node/create-node.ts";
 import { accountFunding, networkFeeDefaults, prepareFeeSession, type SendFee } from "./fees.ts";
 import { loadState, saveState } from "./state.ts";
 import { scheduleLayers, topologicalLayers } from "./graph.ts";
@@ -69,9 +69,9 @@ interface ExecutionUnit {
 }
 
 export async function runDeployment<C extends Steps>(spec: DeploymentSpec<C>): Promise<void> {
-  const { network, nodeUrl } = spec;
+  const { network, nodeUrl, apiKey } = spec;
   const reporter = spec.reporter ?? consoleReporter();
-  const node = createAztecNodeClient(nodeUrl);
+  const node = createNode(nodeUrl, apiKey);
   const wallet = await EmbeddedWallet.create(node, {
     ephemeral: true,
     pxeConfig: { ...getPXEConfig(), proverEnabled: network !== "local" },

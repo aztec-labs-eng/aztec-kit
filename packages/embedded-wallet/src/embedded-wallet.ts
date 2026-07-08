@@ -368,6 +368,10 @@ export class EmbeddedWallet extends EmbeddedWalletBase {
     const fnName = executionPayload.calls?.[0]?.name ?? "Transaction";
     const label = fnName.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 
+    // Captured as soon as the proven tx hash is known (just before the node
+    // submit) and carried onto every later emit, so the mining/complete/error
+    // toasts can all surface it — including when `sendTx` itself fails.
+    let aztecTxHash: string | undefined;
     const emit = (phase: TxProgressEvent["phase"], extra?: Partial<TxProgressEvent>) => {
       txProgress.emit({
         txId,
@@ -376,6 +380,7 @@ export class EmbeddedWallet extends EmbeddedWalletBase {
         startTime,
         phaseStartTime: Date.now(),
         phases: [...phases],
+        ...(aztecTxHash ? { aztecTxHash } : {}),
         ...extra,
       });
     };
@@ -556,7 +561,10 @@ export class EmbeddedWallet extends EmbeddedWalletBase {
 
       const tx = await provenTx.toTx();
       const txHash = tx.getTxHash();
-      emit("sending", { aztecTxHash: txHash.toString() });
+      // Known before the node submit below — capture it now so a failed
+      // `sendTx` (or the duplicate-tx guard) still reports the hash for diagnosis.
+      aztecTxHash = txHash.toString();
+      emit("sending");
       const sendingStart = Date.now();
       if (await this.aztecNode.getTxEffect(txHash)) {
         throw new Error(`A settled tx with equal hash ${txHash.toString()} exists.`);
