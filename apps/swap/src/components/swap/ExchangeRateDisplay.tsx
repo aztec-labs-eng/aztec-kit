@@ -8,8 +8,6 @@ interface ExchangeRateDisplayProps {
 export function ExchangeRateDisplay({ exchangeRate, isLoadingRate }: ExchangeRateDisplayProps) {
   return (
     <Box
-      data-testid="exchange-rate"
-      data-resolved={!isLoadingRate && exchangeRate !== null ? "true" : "false"}
       sx={{
         mt: 2,
         p: 2,

@@ -97,7 +97,7 @@ export function SendContainer() {
         </>
       )}
       {error && (
-        <Alert severity="error" onClose={dismissError} sx={{ mt: 2 }}>
+        <Alert severity="error" onClose={dismissError} sx={{ mt: 2 }} data-testid="send-error">
           {error}
         </Alert>
       )}
