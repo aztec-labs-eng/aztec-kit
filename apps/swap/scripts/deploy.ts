@@ -135,9 +135,7 @@ function writeNetworkConfig(
     // loader substitutes `${VITE_*}` from `import.meta.env` (see
     // src/config/networks/index.ts). Gated on the deploy env having a key for
     // this network, which is what marks it gateway-fronted.
-    ...(apiKeyForNetwork(network)
-      ? { apiKey: `\${VITE_${network.toUpperCase()}_API_KEY}` }
-      : {}),
+    ...(apiKeyForNetwork(network) ? { apiKey: `\${VITE_${network.toUpperCase()}_API_KEY}` } : {}),
     chainId: deploymentInfo.chainId,
     rollupVersion: deploymentInfo.rollupVersion,
     contracts: {
