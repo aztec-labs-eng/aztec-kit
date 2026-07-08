@@ -36,11 +36,16 @@ import {
 
 const SEND_AMOUNT = "5";
 
-/** Tee a manually-created page's console to stdout (test-base only wires the default `page`). */
+/**
+ * Tee a manually-created page's console to stdout (test-base only wires the default `page`).
+ * Quieter than test-base's fixture: errors + warnings only, no `info` — this spec runs two
+ * actors (double the stream), the info level is dominated by PXE/profiler boot dumps, and the
+ * fail-fast races below surface app errors directly, so info earns little here.
+ */
 function attachConsole(page: Page, tag: string) {
   page.on("console", (msg) => {
     const t = msg.type();
-    if (t === "error" || t === "warning" || t === "info") {
+    if (t === "error" || t === "warning") {
       console.log(`[browser:${tag}:${t}] ${msg.text()}`);
     }
   });
