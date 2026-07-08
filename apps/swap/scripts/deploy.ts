@@ -26,6 +26,7 @@ import { ProofOfPasswordContract } from "@aztec-kit/contracts-aztec/artifacts/Pr
 import { runDeployment } from "@aztec-kit/common/deploy";
 import type { ActionStep, ContractStep, FeePolicy } from "@aztec-kit/common/deploy";
 import {
+  apiKeyForNetwork,
   parseNetwork,
   parseAddressList,
   parsePaymentMode,
@@ -130,6 +131,11 @@ function writeNetworkConfig(
   const config = {
     id: network,
     nodeUrl,
+    // Emit a build-time placeholder, never the key itself: the client's config
+    // loader substitutes `${VITE_*}` from `import.meta.env` (see
+    // src/config/networks/index.ts). Gated on the deploy env having a key for
+    // this network, which is what marks it gateway-fronted.
+    ...(apiKeyForNetwork(network) ? { apiKey: `\${VITE_${network.toUpperCase()}_API_KEY}` } : {}),
     chainId: deploymentInfo.chainId,
     rollupVersion: deploymentInfo.rollupVersion,
     contracts: {
