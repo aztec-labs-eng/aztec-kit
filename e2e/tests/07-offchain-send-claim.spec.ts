@@ -195,9 +195,7 @@ async function openAndClaim(page: Page, link: string): Promise<void> {
   // Wait for a terminal phase, then fail fast with the app's message if it's "error".
   await expect(claimPage).toHaveAttribute("data-phase", /^(claimed|error)$/, { timeout: 300_000 });
   if ((await claimPage.getAttribute("data-phase")) === "error") {
-    throw new Error(
-      `claim failed: ${await page.getByTestId("claim-error").textContent()}`,
-    );
+    throw new Error(`claim failed: ${await page.getByTestId("claim-error").textContent()}`);
   }
   await expect(page.getByTestId("claim-success")).toHaveAttribute("data-verified", "true", {
     timeout: 10_000,
