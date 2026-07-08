@@ -67,6 +67,7 @@ export function SendForm({ balance, onRequestFaucet, faucetBusy }: SendFormProps
               endAdornment:
                 currentBalance !== null ? (
                   <Typography
+                    data-testid="send-balance"
                     variant="caption"
                     color="text.secondary"
                     sx={{ whiteSpace: "nowrap" }}

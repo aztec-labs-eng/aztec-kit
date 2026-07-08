@@ -31,6 +31,18 @@ import {
  * reload forced a cold re-sync that was the real source of the flakiness. One wallet, no
  * reload, warm reads throughout.)
  *
+ * PXE-QUIESCENCE GATES — the send MUST NOT fire while post-drip background jobs are still
+ * on the PXE's serial job queue. The moment the drip modal closes, the app enqueues an
+ * exchange-rate simulate (suppressed during onboarding, fired on completion — see
+ * SwapContext's rate effect) plus balance refetches; dispatching the send into that pile-up
+ * has twice been observed (CI, both retries) to wedge the queue permanently — the send's
+ * simulation never starts and nothing ever logs again. Spec 05 never hits this because its
+ * swap-submit only enables once the rate query has RESOLVED — an implicit drained-queue
+ * gate. We make that gate explicit, twice: (1) wait for exchange-rate[data-resolved] on the
+ * Swap tab, (2) after switching tabs, wait for the Send tab's own mount-time balance fetch
+ * to resolve (send-balance visible) — on a serial queue, the last-enqueued job resolving
+ * proves everything before it drained.
+ *
  * Assumes specs 01-04 ran (deployed tokens + FPC signed up for
  * transfer_in_private_with_offchain_delivery).
  */
@@ -92,6 +104,10 @@ async function readGoCoinBalance(fromBox: Locator): Promise<bigint> {
 /** On the Send tab: send `amount` GoCoin to `recipient`, return the generated claim link. */
 async function sendOffchain(page: Page, recipient: string, amount: string): Promise<string> {
   await page.getByRole("tab", { name: "Send" }).click();
+  // Quiescence gate 2: the Send tab fetches balances on mount, and the balance adornment
+  // only renders once that resolves. Its job was enqueued after every post-drip job, so on
+  // the PXE's serial queue its resolution proves the queue is fully drained — safe to send.
+  await page.getByTestId("send-balance").waitFor({ timeout: 60_000 });
   await page.getByTestId("send-recipient-input").fill(recipient);
   await page.getByTestId("send-amount-input").fill(amount);
 
@@ -126,6 +142,13 @@ test.describe.serial("offchain send", () => {
     await fromBox.waitFor({ timeout: 30_000 });
     const senderBefore = await readGoCoinBalance(fromBox);
     console.log(`[e2e] senderBefore=${senderBefore}`);
+
+    // Quiescence gate 1: wait for the post-drip exchange-rate simulate to resolve before
+    // leaving the Swap tab — the same condition spec 05's swap-submit enablement implicitly
+    // waits on. See the PXE-QUIESCENCE GATES note in the file docblock.
+    await expect(page.getByTestId("exchange-rate")).toHaveAttribute("data-resolved", "true", {
+      timeout: 120_000,
+    });
 
     // 3. Send N offchain to the recipient.
     const link = await sendOffchain(page, recipient, SEND_AMOUNT);
