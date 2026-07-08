@@ -22,14 +22,6 @@ import {
  * Claiming is a local `offchain_receive` simulate (no on-chain tx, no fee), so the
  * recipient wallet needs no funding.
  *
- * Structure notes (each earned the hard way):
- * - NO reloads anywhere. Reloading restarts the PXE and forces a cold re-sync that
- *   times out balance reads; every read here happens on a warm PXE via in-app tab
- *   switches, mirroring spec 05's proven rhythm.
- * - FAIL FAST: every long wait races the app's error surface (send-error alert,
- *   claim-page data-phase="error"). This spec's early CI failures were a missing FPC
- *   signup whose error alert sat invisible behind a 300s link timeout, twice per run.
- *
  * Assumes specs 01-04 ran (deployed tokens + FPC signed up for
  * transfer_in_private_with_offchain_delivery — spec 04's signup 2c).
  */
@@ -163,7 +155,8 @@ async function sendOffchain(page: Page, recipient: string, amount: string): Prom
   await expect(submit).toBeEnabled({ timeout: 30_000 });
   await submit.click();
 
-  // Race the link against the send-error alert — see the FAIL FAST note in the docblock.
+  // Race the link against the send-error alert so a failing send surfaces the app's
+  // actual error message immediately instead of burning the full link timeout.
   const link = page.getByTestId("send-link");
   const sendError = page.getByTestId("send-error");
   await Promise.race([

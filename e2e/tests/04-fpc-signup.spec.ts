@@ -32,9 +32,9 @@ import {
  *        for a user that presents the password.
  *      - AMM::swap_tokens_for_exact_tokens_from — swaps GoCoin for
  *        GoCoinPremium on behalf of a user.
- *      - Token(GoCoin)::transfer_in_private_with_offchain_delivery — the
- *        swap app's offchain send (exercised by spec 07). Without this
- *        signup the app's send path throws "No subscription config found".
+ *      - Token(GoCoin)::transfer_in_private_with_offchain_delivery — transfers GoCoin
+ *        privately and creates a message containing the note to be delivered offchain
+ *        to the recipient of the funds.
  *   4. Compute function selectors from the artifacts and write the
  *      `subscriptionFPC` section into swap's `local.json`, plus update
  *      `e2e/.state/fpc.json` with the signed-up apps.
@@ -269,8 +269,9 @@ async function signUpOneApp(page: Page, args: SignUpArgs) {
 test.describe.serial("fpc signs up sponsored apps", () => {
   // Three signups × (calibrate ≤ 240s for standalone sim + submit ≤ 300s for
   // the real sign_up tx). `test.slow()`'s ×3 (15 min) cuts it too close on
-  // CI when proving is slow. Bump to 35 min for headroom.
-  test.setTimeout(35 * 60_000);
+  // CI when proving is slow. 25 min is ample: all three signups measured
+  // ~50-60s each on CI (whole spec ~3 min).
+  test.setTimeout(25 * 60_000);
 
   // Mint BEFORE the browser starts. If we ran this inside the test body
   // the `page` fixture would instantiate first, popping an empty browser
@@ -356,15 +357,7 @@ test.describe.serial("fpc signs up sponsored apps", () => {
       configIndex: 0,
     });
 
-    // ── 2c. Sign up GoCoin::transfer_in_private_with_offchain_delivery ─
-    // Sponsors the swap app's offchain send (spec 07). Mirrors the entry in
-    // apps/swap/scripts/register-fpc-signups.ts: calibration runs a 10-token
-    // self-transfer (from == to == fpc-admin, authwit_nonce 0 — self-calls
-    // need no authwit). fpc-admin's GoCoin was minted by swap-admin in
-    // beforeAll; the swap-admin sender chip from 2b (persisted in
-    // localStorage) lets note discovery find those notes. GoCoin was already
-    // registered as an extra in 2a — re-registering it as the main contract
-    // is an idempotent PXE call.
+    // ── 2c. Sign up GoCoin::transfer_in_private_with_offchain_delivery
     console.log("[e2e] signing up GoCoin::transfer_in_private_with_offchain_delivery");
     await signUpOneApp(page, {
       artifactPath: TOKEN_ARTIFACT_PATH,
