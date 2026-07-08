@@ -4,7 +4,7 @@ import { defineConfig, devices } from "@playwright/test";
  * Project dependency graph (each edge is a `dependencies` link):
  *
  *   fpc-setup  →  bridge-fund  →  swap-deploy  →  fpc-signup  →  swap-flow
- *                                                             ↳  offchain-send-claim
+ *                                                             ↳  offchain-send
  *
  * - fpc-setup    (fpc-operator UI + bridge iframe) — creates fpc-admin + deploys FPC.
  * - bridge-fund  (bridge UI) — funds swap-admin with fee juice.
@@ -12,8 +12,8 @@ import { defineConfig, devices } from "@playwright/test";
  * - fpc-signup   (fpc-operator UI) — mints + registers contracts + 2× AppSignUp
  *                                    with calibration; writes swap's local.json.
  * - swap-flow    (swap UI) — end-user onboarding + sponsored swap + drip + send.
- * - offchain-send-claim (swap UI) — end-user offchain send → receive between two
- *                                    embedded wallets (sender delivers, recipient claims).
+ * - offchain-send (swap UI) — end-user offchain send: one embedded wallet drips and
+ *                              delivers N to a distinct address; its balance is debited.
  *
  * The shared `aztec start --local-network`, L1 bridge deploy, and swap-admin
  * key derivation all happen in `globalSetup`.
@@ -113,8 +113,8 @@ export default defineConfig({
       use: { ...desktopChrome, baseURL: "http://localhost:5175" },
     },
     {
-      name: "offchain-send-claim",
-      testMatch: /07-offchain-send-claim\.spec\.ts$/,
+      name: "offchain-send",
+      testMatch: /07-offchain-send\.spec\.ts$/,
       dependencies: ["fpc-signup"],
       use: { ...desktopChrome, baseURL: "http://localhost:5175" },
     },
