@@ -50,6 +50,7 @@ export function SendForm({ balance, onRequestFaucet, faucetBusy }: SendFormProps
         fullWidth
         disabled={isSending}
         size="small"
+        slotProps={{ htmlInput: { "data-testid": "send-recipient-input" } }}
       />
       <Box>
         <TextField
@@ -61,10 +62,12 @@ export function SendForm({ balance, onRequestFaucet, faucetBusy }: SendFormProps
           disabled={isSending}
           size="small"
           slotProps={{
+            htmlInput: { "data-testid": "send-amount-input" },
             input: {
               endAdornment:
                 currentBalance !== null ? (
                   <Typography
+                    data-testid="send-balance"
                     variant="caption"
                     color="text.secondary"
                     sx={{ whiteSpace: "nowrap" }}
@@ -93,6 +96,7 @@ export function SendForm({ balance, onRequestFaucet, faucetBusy }: SendFormProps
         fullWidth
         disabled={!canSend || isSending}
         onClick={executeSend}
+        data-testid="send-submit"
         sx={{ mt: 1, fontWeight: "bold" }}
       >
         {isSending ? "Sending..." : "Send & Generate Link"}

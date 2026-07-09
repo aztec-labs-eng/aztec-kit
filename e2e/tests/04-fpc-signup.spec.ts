@@ -7,6 +7,7 @@ import { fileURLToPath } from "node:url";
 import { FunctionSelector } from "@aztec/stdlib/abi";
 import { ProofOfPasswordContractArtifact } from "@aztec-kit/contracts-aztec/artifacts/ProofOfPassword";
 import { AMMContractArtifact } from "@aztec-kit/contracts-aztec/artifacts/AMM";
+import { TokenContractArtifact } from "@aztec/noir-contracts.js/Token";
 import {
   readState,
   writeState,
@@ -18,7 +19,7 @@ import {
 } from "../fixtures/state.ts";
 
 /**
- * Spec 04 — fpc-admin signs up two sponsored apps.
+ * Spec 04 — fpc-admin signs up three sponsored apps.
  *
  * Flow:
  *   1. Mint GoCoin + GoCoinPremium to fpc-admin (so calibration can
@@ -26,11 +27,14 @@ import {
  *      `apps/swap/scripts/mint.ts` in a subprocess.
  *   2. Restore the spec-01 backup into a fresh fpc-dashboard context so we
  *      have the same fpc-admin + FPC contract.
- *   3. In the "Sign Up App" tab, run the full 4-step wizard twice:
+ *   3. In the "Sign Up App" tab, run the full 4-step wizard three times:
  *      - ProofOfPassword::check_password_and_mint — mints GoCoin
  *        for a user that presents the password.
  *      - AMM::swap_tokens_for_exact_tokens_from — swaps GoCoin for
  *        GoCoinPremium on behalf of a user.
+ *      - Token(GoCoin)::transfer_in_private_with_offchain_delivery — transfers GoCoin
+ *        privately and creates a message containing the note to be delivered offchain
+ *        to the recipient of the funds.
  *   4. Compute function selectors from the artifacts and write the
  *      `subscriptionFPC` section into swap's `local.json`, plus update
  *      `e2e/.state/fpc.json` with the signed-up apps.
@@ -263,9 +267,10 @@ async function signUpOneApp(page: Page, args: SignUpArgs) {
 }
 
 test.describe.serial("fpc signs up sponsored apps", () => {
-  // Two signups × (calibrate ≤ 240s for standalone sim + submit ≤ 300s for
+  // Three signups × (calibrate ≤ 240s for standalone sim + submit ≤ 300s for
   // the real sign_up tx). `test.slow()`'s ×3 (15 min) cuts it too close on
-  // CI when proving is slow. Bump to 25 min for headroom.
+  // CI when proving is slow. 25 min is ample: all three signups measured
+  // ~50-60s each on CI (whole spec ~3 min).
   test.setTimeout(25 * 60_000);
 
   // Mint BEFORE the browser starts. If we ran this inside the test body
@@ -289,7 +294,9 @@ test.describe.serial("fpc signs up sponsored apps", () => {
     );
   });
 
-  test("signs up PoP + AMM via the fpc-dashboard UI", async ({ page }) => {
+  test("signs up PoP + AMM + GoCoin offchain transfer via the fpc-dashboard UI", async ({
+    page,
+  }) => {
     test.skip(hasState(STATE_FILES.fpcSignedUp), `checkpoint exists at ${STATE_FILES.fpcSignedUp}`);
     const fpc = await readState<FpcState>(STATE_FILES.fpc);
     const swap = await readState<SwapDeploymentState>(STATE_FILES.swapDeployment);
@@ -350,9 +357,27 @@ test.describe.serial("fpc signs up sponsored apps", () => {
       configIndex: 0,
     });
 
-    // ── 3. Sanity: the list tab shows 2 apps ─────────────────────────
+    // ── 2c. Sign up GoCoin::transfer_in_private_with_offchain_delivery
+    console.log("[e2e] signing up GoCoin::transfer_in_private_with_offchain_delivery");
+    await signUpOneApp(page, {
+      artifactPath: TOKEN_ARTIFACT_PATH,
+      contractAddress: swap.goCoin,
+      contractAlias: "GoCoin",
+      functionName: "transfer_in_private_with_offchain_delivery",
+      args: {
+        from: fpc.fpcAdminAddress,
+        to: fpc.fpcAdminAddress,
+        amount: "10",
+        authwit_nonce: "0",
+      },
+      extras: [],
+      senders: [{ address: swap.deployerAddress, alias: "swap-admin" }],
+      configIndex: 0,
+    });
+
+    // ── 3. Sanity: the list tab shows 3 apps ─────────────────────────
     await page.getByTestId("tab-registered-apps").click();
-    await expect(page.getByTestId("app-list")).toHaveAttribute("data-count", "2", {
+    await expect(page.getByTestId("app-list")).toHaveAttribute("data-count", "3", {
       timeout: 30_000,
     });
 
@@ -366,9 +391,16 @@ test.describe.serial("fpc signs up sponsored apps", () => {
     const ammFn = AMMContractArtifact.functions.find(
       (f) => f.name === "swap_tokens_for_exact_tokens_from",
     );
-    if (!popFn || !ammFn) throw new Error("Expected functions missing from artifact");
+    const tokenFn = TokenContractArtifact.functions.find(
+      (f) => f.name === "transfer_in_private_with_offchain_delivery",
+    );
+    if (!popFn || !ammFn || !tokenFn) throw new Error("Expected functions missing from artifact");
     const popSelector = await FunctionSelector.fromNameAndParameters(popFn.name, popFn.parameters);
     const ammSelector = await FunctionSelector.fromNameAndParameters(ammFn.name, ammFn.parameters);
+    const tokenSelector = await FunctionSelector.fromNameAndParameters(
+      tokenFn.name,
+      tokenFn.parameters,
+    );
 
     // Pull the sponsored fn's gas limits (no FPC overhead) from the
     // app-list row's data-* attrs. Swap's helpers add the subscribe/sponsor
@@ -392,6 +424,7 @@ test.describe.serial("fpc signs up sponsored apps", () => {
     };
     const popInfo = await readGasInfo(swap.pop, popSelector.toString());
     const ammInfo = await readGasInfo(swap.amm, ammSelector.toString());
+    const tokenInfo = await readGasInfo(swap.goCoin, tokenSelector.toString());
 
     const swapConfig = JSON.parse(await readFile(SWAP_LOCAL_JSON, "utf-8"));
     swapConfig.subscriptionFPC = {
@@ -410,6 +443,13 @@ test.describe.serial("fpc signs up sponsored apps", () => {
             configIndex: 0,
             gasLimits: ammInfo.gasLimits,
             hasPublicCall: ammInfo.hasPublicCall,
+          },
+        },
+        [swap.goCoin]: {
+          [tokenSelector.toString()]: {
+            configIndex: 0,
+            gasLimits: tokenInfo.gasLimits,
+            hasPublicCall: tokenInfo.hasPublicCall,
           },
         },
       },
@@ -431,6 +471,12 @@ test.describe.serial("fpc signs up sponsored apps", () => {
           contractAddress: swap.amm,
           functionName: "swap_tokens_for_exact_tokens_from",
           selector: ammSelector.toString(),
+          configIndex: 0,
+        },
+        "goCoin:transfer_in_private_with_offchain_delivery": {
+          contractAddress: swap.goCoin,
+          functionName: "transfer_in_private_with_offchain_delivery",
+          selector: tokenSelector.toString(),
           configIndex: 0,
         },
       },
