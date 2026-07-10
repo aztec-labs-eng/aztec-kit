@@ -29,7 +29,7 @@ import {
   type EmbeddedWalletOptions,
 } from "@aztec/wallets/embedded";
 import { AztecSQLiteOPFSStore } from "@aztec/kv-store/sqlite-opfs";
-import { AztecIndexedDBStore } from "@aztec/kv-store/indexeddb";
+import { AztecIndexedDBStore } from "@aztec/kv-store/deprecated/indexeddb";
 import type { AztecAsyncKVStore } from "@aztec/kv-store";
 import { createLogger } from "@aztec/foundation/log";
 import { Fr } from "@aztec/foundation/curves/bn254";

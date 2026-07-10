@@ -31,7 +31,6 @@ import {
   parseAddressList,
   parsePaymentMode,
   NETWORK_URLS,
-  apiKeyForNetwork,
   loadOrCreateSecret,
   getSalt,
   getSponsoredFPCContract,
@@ -225,7 +224,7 @@ export async function runSwapDeploy(opts: SwapDeployOptions): Promise<SwapDeploy
   // only when that token is freshly deployed (a reused token already carries balances forward).
   const mintToActions: Record<string, ActionStep<Contracts>> = Object.fromEntries(
     mintTo.flatMap((address, i) => {
-      const recipient = AztecAddress.fromString(address);
+      const recipient = AztecAddress.fromStringUnsafe(address);
       return [
         [
           `mintGoCoinTo${i}`,
