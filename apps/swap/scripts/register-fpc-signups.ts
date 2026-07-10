@@ -241,6 +241,15 @@ async function main() {
       .send({
         from: admin,
         fee: { paymentMethod },
+        // `sign_up` reads the FPC's own slot-tracking notes during simulation
+        // (via the handshake registry's `get_app_siloed_secrets`), so the PXE
+        // needs the FPC's key in scope — the same scope `calibrate` already
+        // uses. Without it, nightly fails with "Key validation request denied:
+        // no scoped account has a key with hash …".
+        additionalScopes: [fpcAddress],
+        // Upstream `EmbeddedWallet.sendTx`'s "default to PROPOSED" is a dead
+        // mutation; `waitForTx` falls back to CHECKPOINTED otherwise. Pin
+        // explicitly so scripts don't block on L1 publication.
         wait: { timeout: 120 },
       });
 

@@ -7,7 +7,7 @@
  * framework agree on the admin's address.
  */
 import { EmbeddedWallet } from "@aztec/wallets/embedded";
-import { deriveSigningKey } from "@aztec/stdlib/keys";
+import { deriveMasterMessageSigningSecretKey } from "@aztec/stdlib/keys";
 import { AztecAddress } from "@aztec/stdlib/aztec-address";
 import { Fr } from "@aztec/foundation/curves/bn254";
 
@@ -55,7 +55,7 @@ export async function getAdmin(
   const account = await wallet.createSchnorrInitializerlessAccount(
     secretKey,
     salt,
-    deriveSigningKey(secretKey),
+    deriveMasterMessageSigningSecretKey(secretKey),
   );
   return account.address;
 }
