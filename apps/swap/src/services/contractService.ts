@@ -54,11 +54,13 @@ export async function registerSwapContracts(
   node: AztecNode,
   network: NetworkConfig,
 ): Promise<SwapContracts> {
-  const goCoinAddress = AztecAddressClass.fromString(network.contracts.goCoin);
-  const goCoinPremiumAddress = AztecAddressClass.fromString(network.contracts.goCoinPremium);
-  const liquidityTokenAddress = AztecAddressClass.fromString(network.contracts.liquidityToken);
-  const ammAddress = AztecAddressClass.fromString(network.contracts.amm);
-  const deployerAddress = AztecAddressClass.fromString(network.deployer.address);
+  const goCoinAddress = AztecAddressClass.fromStringUnsafe(network.contracts.goCoin);
+  const goCoinPremiumAddress = AztecAddressClass.fromStringUnsafe(network.contracts.goCoinPremium);
+  const liquidityTokenAddress = AztecAddressClass.fromStringUnsafe(
+    network.contracts.liquidityToken,
+  );
+  const ammAddress = AztecAddressClass.fromStringUnsafe(network.contracts.amm);
+  const deployerAddress = AztecAddressClass.fromStringUnsafe(network.deployer.address);
   const contractSalt = Fr.fromString(network.contracts.salt);
 
   // Import contract artifacts
@@ -68,7 +70,7 @@ export async function registerSwapContracts(
 
   // Determine subscription FPC for sponsored swaps
   const subFPC = network.subscriptionFPC;
-  const fpcAddress = subFPC ? AztecAddressClass.fromString(subFPC.address) : undefined;
+  const fpcAddress = subFPC ? AztecAddressClass.fromStringUnsafe(subFPC.address) : undefined;
 
   // Check which contracts are already registered
   const metadataChecks: { name: "getContractMetadata"; args: [AztecAddress] }[] = [
@@ -177,7 +179,7 @@ export async function registerDripContracts(
   node: AztecNode,
   network: NetworkConfig,
 ): Promise<DripContracts> {
-  const popAddress = AztecAddressClass.fromString(network.contracts.pop);
+  const popAddress = AztecAddressClass.fromStringUnsafe(network.contracts.pop);
 
   const { ProofOfPasswordContract, ProofOfPasswordContractArtifact } =
     await import("@aztec-kit/contracts-aztec/artifacts/ProofOfPassword");
@@ -192,7 +194,7 @@ export async function registerDripContracts(
   if (subFPC) {
     metadataChecks.push({
       name: "getContractMetadata",
-      args: [AztecAddressClass.fromString(subFPC.address)],
+      args: [AztecAddressClass.fromStringUnsafe(subFPC.address)],
     });
   }
 
@@ -219,7 +221,7 @@ export async function registerDripContracts(
   }
   const subFPCMetadata = metadataResults[1];
   if (!subFPCMetadata.result.instance) {
-    const fpcAddress = AztecAddressClass.fromString(subFPC.address);
+    const fpcAddress = AztecAddressClass.fromStringUnsafe(subFPC.address);
     const secretKey = Fr.fromString(subFPC.secretKey);
     const instance = await node.getContract(fpcAddress);
     if (!instance) {
@@ -242,7 +244,7 @@ export async function registerDripContracts(
   const pop = ProofOfPasswordContract.at(popAddress, wallet);
 
   // Instantiate FPC wrapper if configured
-  const fpcAddr = subFPC ? AztecAddressClass.fromString(subFPC.address) : undefined;
+  const fpcAddr = subFPC ? AztecAddressClass.fromStringUnsafe(subFPC.address) : undefined;
   const fpc = fpcAddr ? SubscriptionFPC.at(fpcAddr, wallet) : null;
 
   return { pop, fpc };

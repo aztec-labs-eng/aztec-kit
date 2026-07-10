@@ -136,7 +136,7 @@ async function main() {
   const configPath = path.join(import.meta.dirname, `../src/config/networks/${network}.json`);
   const config = JSON.parse(fs.readFileSync(configPath, "utf-8"));
 
-  const fpcAddress = AztecAddress.fromString(requireEnv("FPC_ADDRESS"));
+  const fpcAddress = AztecAddress.fromStringUnsafe(requireEnv("FPC_ADDRESS"));
   const fpcSalt = Fr.fromString(requireEnv("FPC_SALT"));
   console.error(`Registering swap signups on FPC ${fpcAddress.toString()}...`);
 
@@ -152,7 +152,7 @@ async function main() {
   // were minted to the FPC admin during the `mint:<network>` step of the
   // setup orchestration. Without this, the AMM swap calibration can't see
   // its own balances and fails "Balance too low".
-  const swapAdmin = AztecAddress.fromString(config.deployer.address);
+  const swapAdmin = AztecAddress.fromStringUnsafe(config.deployer.address);
   await wallet.registerSender(swapAdmin, "swap-admin");
 
   // Register the FPC contract so we can simulate subscribe() against it.
@@ -241,6 +241,15 @@ async function main() {
       .send({
         from: admin,
         fee: { paymentMethod },
+        // `sign_up` reads the FPC's own slot-tracking notes during simulation
+        // (via the handshake registry's `get_app_siloed_secrets`), so the PXE
+        // needs the FPC's key in scope — the same scope `calibrate` already
+        // uses. Without it, nightly fails with "Key validation request denied:
+        // no scoped account has a key with hash …".
+        additionalScopes: [fpcAddress],
+        // Upstream `EmbeddedWallet.sendTx`'s "default to PROPOSED" is a dead
+        // mutation; `waitForTx` falls back to CHECKPOINTED otherwise. Pin
+        // explicitly so scripts don't block on L1 publication.
         wait: { timeout: 120 },
       });
 
@@ -329,7 +338,7 @@ async function registerSwapContracts(
   for (const [alias, addressStr] of Object.entries(contracts)) {
     const artifact = ARTIFACT_BY_ALIAS[alias];
     if (!artifact) continue; // ignore config entries we don't know about (sponsoredFPC etc)
-    const address = AztecAddress.fromString(addressStr);
+    const address = AztecAddress.fromStringUnsafe(addressStr);
     const instance = await node.getContract(address);
     if (!instance) {
       throw new Error(`Contract ${alias} (${addressStr}) not found on-chain`);

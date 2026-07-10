@@ -29,7 +29,7 @@ import {
   type EmbeddedWalletOptions,
 } from "@aztec/wallets/embedded";
 import { AztecSQLiteOPFSStore } from "@aztec/kv-store/sqlite-opfs";
-import { AztecIndexedDBStore } from "@aztec/kv-store/indexeddb";
+import { AztecIndexedDBStore } from "@aztec/kv-store/deprecated/indexeddb";
 import type { AztecAsyncKVStore } from "@aztec/kv-store";
 import { createLogger } from "@aztec/foundation/log";
 import { Fr } from "@aztec/foundation/curves/bn254";
@@ -37,6 +37,7 @@ import { registerSqliteInspectors } from "./sqlite-inspector";
 import { EncryptionKeyMismatchError, type StoreName } from "./encryption-key-mismatch-error";
 import { GasSettings } from "@aztec/stdlib/gas";
 import type { AztecAddress } from "@aztec/stdlib/aztec-address";
+import { deriveMasterMessageSigningSecretKey } from "@aztec/stdlib/keys";
 
 /**
  * Sqlite3mc raises one of these messages when the supplied key fails to
@@ -305,10 +306,11 @@ export class EmbeddedWallet extends EmbeddedWalletBase {
    * random secret/salt defaults; the signing key is derived from the secret.
    */
   async createInitializerlessAccount(secretKey?: Fr, salt?: Fr): Promise<AccountManager> {
+    const secret = secretKey ?? Fr.random();
     return this.createSchnorrInitializerlessAccount(
-      secretKey ?? Fr.random(),
+      secret,
       salt ?? Fr.random(),
-      undefined,
+      deriveMasterMessageSigningSecretKey(secret),
       "main",
     );
   }

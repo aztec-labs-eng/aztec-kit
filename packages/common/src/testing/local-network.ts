@@ -173,6 +173,13 @@ export async function setupLocalNetwork(opts: LocalNetworkOptions = {}): Promise
     minTxsPerBlock: 0,
     aztecTargetCommitteeSize: 0,
     useAutomineSequencer: true,
+    // This in-process, single-node test harness has no persistent
+    // `dataDirectory`. As of nightly.20260708 the validator's local
+    // signing-protection factory throws unless a data directory is
+    // configured or the ephemeral store is explicitly opted into. Opt in
+    // here — double-signing protection surviving restarts is irrelevant
+    // for a throwaway automining test node.
+    allowEphemeralSigningProtection: true,
   };
 
   // ── 4. Genesis ─────────────────────────────────────────────────────

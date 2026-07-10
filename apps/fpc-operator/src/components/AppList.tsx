@@ -117,7 +117,7 @@ export function AppList({ fpc, fpcAddress }: AppListProps) {
     const results = await Promise.allSettled(
       apps.map(async (app) => {
         const configId = await computeConfigId(
-          AztecAddress.fromString(app.appAddress),
+          AztecAddress.fromStringUnsafe(app.appAddress),
           FunctionSelector.fromString(app.functionSelector),
           app.configIndex,
         );

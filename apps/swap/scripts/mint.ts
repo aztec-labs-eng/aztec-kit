@@ -56,8 +56,8 @@ async function main() {
   console.log(`Deployer: ${deployer.toString()}`);
 
   // Register token contracts
-  const goCoinAddress = AztecAddress.fromString(config.contracts.goCoin);
-  const goCoinPremiumAddress = AztecAddress.fromString(config.contracts.goCoinPremium);
+  const goCoinAddress = AztecAddress.fromStringUnsafe(config.contracts.goCoin);
+  const goCoinPremiumAddress = AztecAddress.fromStringUnsafe(config.contracts.goCoinPremium);
 
   const [goCoinInstance, goCoinPremiumInstance] = await Promise.all([
     wallet.getContractMetadata(goCoinAddress).then((m) => m.instance),
@@ -79,7 +79,7 @@ async function main() {
 
   // Build mint calls
   const mintCalls = MINT_TO.flatMap((addr) => {
-    const recipient = AztecAddress.fromString(addr);
+    const recipient = AztecAddress.fromStringUnsafe(addr);
     console.log(`Will mint ${AMOUNT} GoCoin + GoCoinPremium to ${addr}`);
     return [
       goCoin.methods.mint_to_private(recipient, AMOUNT),

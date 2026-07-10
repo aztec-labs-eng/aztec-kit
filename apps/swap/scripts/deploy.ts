@@ -26,11 +26,11 @@ import { ProofOfPasswordContract } from "@aztec-kit/contracts-aztec/artifacts/Pr
 import { runDeployment } from "@aztec-kit/common/deploy";
 import type { ActionStep, ContractStep, FeePolicy } from "@aztec-kit/common/deploy";
 import {
+  apiKeyForNetwork,
   parseNetwork,
   parseAddressList,
   parsePaymentMode,
   NETWORK_URLS,
-  apiKeyForNetwork,
   loadOrCreateSecret,
   getSalt,
   getSponsoredFPCContract,
@@ -224,7 +224,7 @@ export async function runSwapDeploy(opts: SwapDeployOptions): Promise<SwapDeploy
   // only when that token is freshly deployed (a reused token already carries balances forward).
   const mintToActions: Record<string, ActionStep<Contracts>> = Object.fromEntries(
     mintTo.flatMap((address, i) => {
-      const recipient = AztecAddress.fromString(address);
+      const recipient = AztecAddress.fromStringUnsafe(address);
       return [
         [
           `mintGoCoinTo${i}`,
@@ -293,8 +293,11 @@ export async function runSwapDeploy(opts: SwapDeployOptions): Promise<SwapDeploy
         return Boolean(result);
       },
     },
-    // Seed the pool — needs the minted balances + the AMM as LP minter first. Seeding mints LP, so a
-    // non-zero LiquidityToken supply means the pool is already seeded.
+    // Seed the pool — needs the minted balances + the AMM as LP minter first. "Done" iff THIS AMM
+    // already holds token0 liquidity. We read the AMM's own public GoCoin balance rather than the
+    // liquidity token's total supply: the liquidity token is reused across AMM redeploys, so an
+    // AMM-only redeploy (e.g. after a contract recompile changes only the AMM class) would look
+    // already-seeded off the old supply and leave the fresh pool empty → INSUFFICIENT_LIQUIDITY.
     addLiquidity: {
       kind: "action",
       from: (resolve) => resolve.account("admin"),
@@ -311,8 +314,8 @@ export async function runSwapDeploy(opts: SwapDeployOptions): Promise<SwapDeploy
           ),
       done: async (ctx) => {
         const { result } = await ctx
-          .instance("liquidityToken")
-          .methods.total_supply()
+          .instance("goCoin")
+          .methods.balance_of_public(ctx.contract("amm"))
           .simulate({ from: ctx.account("admin") });
         return BigInt(result) > 0n;
       },

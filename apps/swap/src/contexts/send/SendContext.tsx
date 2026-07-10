@@ -62,7 +62,7 @@ export function SendProvider({ children }: SendProviderProps) {
     actions.startSend();
 
     try {
-      const recipient = AztecAddress.fromString(state.recipientAddress);
+      const recipient = AztecAddress.fromStringUnsafe(state.recipientAddress);
       const amount = BigInt(Math.round(parseFloat(state.amount)));
       const tokenKey = state.token === "gc" ? ("goCoin" as const) : ("goCoinPremium" as const);
       const contractAddress = activeNetwork.contracts[tokenKey];
