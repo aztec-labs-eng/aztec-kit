@@ -2,7 +2,7 @@ import { createContext, useContext, useState, useEffect, useRef, type ReactNode 
 import type { AztecAddress } from "@aztec/aztec.js/addresses";
 import { type AztecNode } from "@aztec/aztec.js/node";
 import { createNode } from "@aztec-kit/common/node";
-import { EmbeddedWallet, txProgress } from "@aztec-kit/embedded-wallet";
+import { EmbeddedWallet, StaleStoredAccountError, txProgress } from "@aztec-kit/embedded-wallet";
 import { useNetwork } from "./NetworkContext";
 
 type WalletStatus = "disconnected" | "loading" | "ready" | "error";
@@ -74,7 +74,13 @@ export function WalletProvider({ children }: { children: ReactNode }) {
         setL1ChainId(nodeInfo.l1ChainId);
         setStatus("ready");
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Failed to initialize wallet");
+        if (err instanceof StaleStoredAccountError) {
+          setError(
+            "This wallet was created by an older, incompatible version. Clear site data to re-onboard.",
+          );
+        } else {
+          setError(err instanceof Error ? err.message : "Failed to initialize wallet");
+        }
         setStatus("error");
       }
     })();
