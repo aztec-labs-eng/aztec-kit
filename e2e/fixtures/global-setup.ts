@@ -79,6 +79,13 @@ export default async function globalSetup(_config: FullConfig): Promise<void> {
       const expectedNodeUrl = process.env.AZTEC_NODE_URL ?? "http://localhost:8080";
       const expectedL1RpcUrl = process.env.ETHEREUM_HOST ?? "http://localhost:8545";
       if (existing.nodeUrl === expectedNodeUrl && existing.l1RpcUrl === expectedL1RpcUrl) {
+        const l1BridgeAddress = await deployL1Bridge({
+          chainName: "anvil",
+          rpcUrl: expectedL1RpcUrl,
+        });
+        if (existing.l1BridgeAddress !== l1BridgeAddress) {
+          await writeState(STATE_FILES.global, { ...existing, l1BridgeAddress });
+        }
         console.log(
           `[e2e] reusing ${STATE_FILES.global} (swap-admin=${existing.swapAdmin.address})`,
         );

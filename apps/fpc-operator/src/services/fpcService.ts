@@ -256,7 +256,7 @@ export async function signUpApp(
       params.maxFee,
       params.maxUsers,
     )
-    .send({ from: adminAddress });
+    .send({ from: adminAddress, additionalScopes: [fpc.address] });
 
   addSignedUpApp({
     appAddress: params.appAddress.toString(),

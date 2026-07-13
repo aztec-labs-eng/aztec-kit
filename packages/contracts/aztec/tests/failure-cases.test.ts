@@ -96,7 +96,7 @@ describe("Failure cases", () => {
 
     await ctx.fpc.methods
       .sign_up(sampleCall.to, sampleCall.selector, FAILURE_INDEX, 1, maxFee, 1)
-      .send({ from: ctx.admin });
+      .send({ from: ctx.admin, additionalScopes: [ctx.fpc.address] });
 
     // Subscribe — consumes the only slot and the only use
     const userToken = TokenContract.at(token.address, userWallet);
@@ -234,7 +234,7 @@ describe("Failure cases", () => {
         /*max_fee=*/ 1n, // VERY LOW MAX FEE
         /*max_users=*/ 1,
       )
-      .send({ from: ctx.admin });
+      .send({ from: ctx.admin, additionalScopes: [ctx.fpc.address] });
 
     const tightAuthWit = await tightUserWallet.createAuthWit(tightUserAddress, {
       caller: ctx.fpc.address,
@@ -268,17 +268,17 @@ describe("Failure cases", () => {
 
     await ctx.fpc.methods
       .sign_up(sample.to, sample.selector, UNIQ_INDEX, 1, MAX_FEE, 1)
-      .send({ from: ctx.admin });
+      .send({ from: ctx.admin, additionalScopes: [ctx.fpc.address] });
 
     await expect(
       ctx.fpc.methods
         .sign_up(sample.to, sample.selector, UNIQ_INDEX, 1, MAX_FEE, 1)
-        .send({ from: ctx.admin }),
+        .send({ from: ctx.admin, additionalScopes: [ctx.fpc.address] }),
     ).rejects.toThrow();
 
     // A different config index on the same (app, selector) is unaffected.
     await ctx.fpc.methods
       .sign_up(sample.to, sample.selector, UNIQ_INDEX + 1, 1, MAX_FEE, 1)
-      .send({ from: ctx.admin });
+      .send({ from: ctx.admin, additionalScopes: [ctx.fpc.address] });
   });
 });

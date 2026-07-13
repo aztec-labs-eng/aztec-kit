@@ -62,6 +62,7 @@ describe("ProofOfPassword", () => {
     await pop.methods.check_password_and_mint(PASSWORD, recipientAddress).send({
       from: ctx.admin,
       sendMessagesAs: recipientAddress,
+      additionalScopes: [recipientAddress],
     });
 
     const { result: balance } = await token.methods

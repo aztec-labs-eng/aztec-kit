@@ -21,7 +21,7 @@ import { getPXEConfig } from "@aztec/pxe/server";
 import { Fr } from "@aztec/aztec.js/fields";
 import { AztecAddress } from "@aztec/aztec.js/addresses";
 import { BatchCall, DeployMethod, type ContractBase } from "@aztec/aztec.js/contracts";
-import { deriveKeys, deriveSigningKey } from "@aztec/stdlib/keys";
+import { deriveKeys, deriveMasterMessageSigningSecretKey } from "@aztec/stdlib/keys";
 import {
   getContractClassFromArtifact,
   getContractInstanceFromInstantiationParams,
@@ -89,7 +89,7 @@ export async function runDeployment<C extends Steps>(spec: DeploymentSpec<C>): P
     const derived = await wallet.createSchnorrInitializerlessAccount(
       account.secret,
       account.salt ?? defaultSalt,
-      deriveSigningKey(account.secret),
+      deriveMasterMessageSigningSecretKey(account.secret),
     );
     accountAddresses.set(alias, derived.address);
     policyByAddress.set(derived.address.toString(), account.fees ?? globalPolicy);

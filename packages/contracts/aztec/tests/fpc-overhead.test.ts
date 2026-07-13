@@ -178,7 +178,7 @@ describe("FPC gas overhead", () => {
 
       await ctx.fpc.methods
         .sign_up(sampleCall.to, sampleCall.selector, PUBLIC_INDEX, 2, MAX_U128, 1)
-        .send({ from: ctx.admin });
+        .send({ from: ctx.admin, additionalScopes: [ctx.fpc.address] });
 
       // Measure subscribe
       const noirCall = await buildNoirFunctionCall(sampleCall);
@@ -304,7 +304,7 @@ describe("FPC gas overhead", () => {
         .getFunctionCall();
       const { receipt: signUpReceipt } = await ctx.fpc.methods
         .sign_up(signUpCall.to, signUpCall.selector, PRIVATE_INDEX, 2, MAX_U128, 1)
-        .send({ from: ctx.admin });
+        .send({ from: ctx.admin, additionalScopes: [ctx.fpc.address] });
       signUpEffects = await getEffectCounts(signUpReceipt.txHash);
     }
 
