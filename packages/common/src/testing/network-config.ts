@@ -8,7 +8,7 @@ export type NetworkName = (typeof VALID_NETWORKS)[number];
 
 export const NETWORK_URLS: Record<NetworkName, string> = {
   local: "http://localhost:8080",
-  testnet: "https://canonical.testnet.rpc.aztec-labs.com",
+  testnet: "https://v5.testnet.rpc2.aztec-labs.com",
 };
 
 /**

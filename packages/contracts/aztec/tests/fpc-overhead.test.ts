@@ -178,7 +178,7 @@ describe("FPC gas overhead", () => {
 
       await ctx.fpc.methods
         .sign_up(sampleCall.to, sampleCall.selector, PUBLIC_INDEX, 2, MAX_U128, 1)
-        .send({ from: ctx.admin });
+        .send({ from: ctx.admin, additionalScopes: [ctx.fpc.address] });
 
       // Measure subscribe
       const noirCall = await buildNoirFunctionCall(sampleCall);
@@ -304,7 +304,7 @@ describe("FPC gas overhead", () => {
         .getFunctionCall();
       const { receipt: signUpReceipt } = await ctx.fpc.methods
         .sign_up(signUpCall.to, signUpCall.selector, PRIVATE_INDEX, 2, MAX_U128, 1)
-        .send({ from: ctx.admin });
+        .send({ from: ctx.admin, additionalScopes: [ctx.fpc.address] });
       signUpEffects = await getEffectCounts(signUpReceipt.txHash);
     }
 
@@ -510,15 +510,17 @@ describe("FPC gas overhead", () => {
     // The FPC's own footprint on top of the sponsored fn (steady-state
     // baseline: same transfer, delivery chains already established):
     // subscribe adds the SlotNote re-insert + SubscriptionNote (2 note
-    // hashes + 2 message logs) and the SlotNote pop nullifier.
+    // hashes + 2 message logs), the SlotNote pop nullifier, and — as of
+    // v5.0.0 — one extra protocol nullifier per sponsored call.
     expect(subscribePrivateEffects.noteHashes - steadyTransferEffects.noteHashes).toBe(2);
-    expect(subscribePrivateEffects.nullifiers - steadyTransferEffects.nullifiers).toBe(1);
+    expect(subscribePrivateEffects.nullifiers - steadyTransferEffects.nullifiers).toBe(2);
     expect(subscribePrivateEffects.privateLogs - steadyTransferEffects.privateLogs).toBe(2);
 
-    // sponsor adds the SubscriptionNote pop + decremented re-insert:
-    // 1 note hash + 1 message log + 1 nullifier.
+    // sponsor adds the SubscriptionNote pop + decremented re-insert
+    // (1 note hash + 1 message log + 1 nullifier) plus the same extra
+    // protocol nullifier.
     expect(sponsorPrivateEffects.noteHashes - steadyTransferEffects.noteHashes).toBe(1);
-    expect(sponsorPrivateEffects.nullifiers - steadyTransferEffects.nullifiers).toBe(1);
+    expect(sponsorPrivateEffects.nullifiers - steadyTransferEffects.nullifiers).toBe(2);
     expect(sponsorPrivateEffects.privateLogs - steadyTransferEffects.privateLogs).toBe(1);
   });
 

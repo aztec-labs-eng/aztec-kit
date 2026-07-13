@@ -7,7 +7,6 @@ import { randomBytes } from "@aztec/foundation/crypto/random";
 import { Ecdsa } from "@aztec/foundation/crypto/ecdsa";
 import type { AccountManager } from "@aztec/aztec.js/wallet";
 import { Gas } from "@aztec/stdlib/gas";
-import { DA_GAS_PER_FIELD, L2_GAS_PER_NULLIFIER } from "@aztec/constants";
 
 import { EcdsaAccountDeployerContract } from "../noir/artifacts/EcdsaAccountDeployer.js";
 import { SubscriptionFPC, fpcSubscribeOverhead } from "../lib/subscription-fpc.js";
@@ -83,7 +82,7 @@ describe("Account deployment subscription", () => {
 
     await ctx.fpc.methods
       .sign_up(sampleCall.to, sampleCall.selector, PRODUCTION_INDEX, 1, maxFee, 1)
-      .send({ from: ctx.admin });
+      .send({ from: ctx.admin, additionalScopes: [ctx.fpc.address] });
   });
 
   it("allows a user to subscribe and get a sponsored call in the same tx", async () => {
@@ -108,28 +107,11 @@ describe("Account deployment subscription", () => {
       )
       .getFunctionCall();
 
-    // TODO(upstream stub fix): the SDK's `simulateViaEntrypoint` overrides the
-    // user account's contract artifact with a stub during simulation. The stub
-    // ECDSA constructor (`SimulatedEcdsaAccount`) doesn't carry `#[initializer]`,
-    // so it skips the address-init nullifier the real `#[initializer]` macro
-    // injects. That makes the simulated `gasUsed` come in 1 nullifier short of
-    // what the kernel meters at proveTx time — and the tx OOGs at the tail
-    // validator. Same applies to calibration: the calibrated standalone gas is
-    // also 1 nullifier short. Bump the limits by L2_GAS_PER_NULLIFIER (16k L2)
-    // and DA_GAS_PER_FIELD (32 DA) — the cost of the missing nullifier under
-    // private-only pricing — to cover the gap. Drop this once the upstream stub
-    // is fixed to mirror the real constructor's side effects, or once the SDK
-    // skips overrides for `from === NO_FROM`.
-    const adjustedGasLimits = {
-      daGas: gasLimits.daGas + DA_GAS_PER_FIELD,
-      l2Gas: gasLimits.l2Gas + L2_GAS_PER_NULLIFIER,
-    };
-
     await fpc.helpers.subscribe({
       call: sponsoredCall,
       configIndex: PRODUCTION_INDEX,
       userAddress: subscribedAccountManager.address,
-      gasLimits: adjustedGasLimits,
+      gasLimits,
       hasPublicCall,
     });
   });
