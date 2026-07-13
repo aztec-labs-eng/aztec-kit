@@ -84,8 +84,8 @@ export function Step2AztecAccount({
                   </Button>
                 }
               >
-                This embedded wallet was created by an older, incompatible version and can no
-                longer be used. Re-onboard to create a fresh account.
+                This embedded wallet was created by an older, incompatible version and can no longer
+                be used. Re-onboard to create a fresh account.
               </Alert>
             )}
           </Box>
