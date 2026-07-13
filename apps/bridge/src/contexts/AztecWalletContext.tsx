@@ -10,7 +10,7 @@ import {
 import { AztecAddress } from "@aztec/stdlib/aztec-address";
 import type { Wallet } from "@aztec/aztec.js/wallet";
 import { FeeJuiceContract } from "@aztec/aztec.js/protocol";
-import { EmbeddedWallet } from "@aztec-kit/embedded-wallet";
+import { EmbeddedWallet, StaleStoredAccountError } from "@aztec-kit/embedded-wallet";
 import { useNetwork } from "./NetworkContext";
 import {
   getAztecNode,
@@ -27,6 +27,7 @@ export type AztecWalletStatus =
   | "ready" // account registered with PXE, usable immediately
   | "claiming" // claiming fee juice
   | "funded" // account has fee juice
+  | "incompatible" // stored account was created by an older, incompatible build
   | "error";
 
 interface AztecWalletContextType {
@@ -120,6 +121,9 @@ export function AztecWalletProvider({ children }: { children: ReactNode }) {
       setError(null);
       try {
         const w = await initEmbeddedWallet();
+        // Keep the wallet reference before loading the account so `resetAccount`
+        // can still wipe the stale account if the load below rejects.
+        setWallet(w);
 
         // Try loading existing stored account, or create a new one
         let accountManager = await w.loadStoredAccount();
@@ -127,12 +131,18 @@ export function AztecWalletProvider({ children }: { children: ReactNode }) {
           accountManager = await w.createInitializerlessAccount();
         }
 
-        setWallet(w);
         setAddress(accountManager.address);
         setStatus("ready");
       } catch (err: unknown) {
-        setError(err instanceof Error ? err.message : "Failed to create Aztec wallet");
-        setStatus("error");
+        if (err instanceof StaleStoredAccountError) {
+          // A stored account from an incompatible older build — prompt a
+          // re-onboard rather than surfacing the raw "does not exist" error.
+          setError(err.message);
+          setStatus("incompatible");
+        } else {
+          setError(err instanceof Error ? err.message : "Failed to create Aztec wallet");
+          setStatus("error");
+        }
       } finally {
         connectingRef.current = null;
       }
