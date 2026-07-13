@@ -14,7 +14,11 @@ import {
   type DiscoverySession,
 } from "@aztec/wallet-sdk/manager";
 import type { AztecAddress } from "@aztec/aztec.js/addresses";
-import { EmbeddedWallet, EncryptionKeyMismatchError } from "@aztec-kit/embedded-wallet";
+import {
+  EmbeddedWallet,
+  EncryptionKeyMismatchError,
+  StaleStoredAccountError,
+} from "@aztec-kit/embedded-wallet";
 import type { NetworkConfig } from "../config/networks";
 import {
   ensurePlaintextMigrationDone,
@@ -82,7 +86,21 @@ export async function createEmbeddedWallet(
     throw err;
   }
 
-  let accountManager = await wallet.loadStoredAccount();
+  let accountManager;
+  try {
+    accountManager = await wallet.loadStoredAccount();
+  } catch (err) {
+    if (err instanceof StaleStoredAccountError) {
+      // Stored account was created by an incompatible older build (its account
+      // contract class changed, so its address no longer resolves). Wipe the
+      // stale store and force a fresh re-onboard on reload.
+      await resetWalletKeyAndStorage(rollupHex);
+      throw new Error(
+        "This wallet was created by an older, incompatible version. Storage was reset — please reload the page to re-onboard.",
+      );
+    }
+    throw err;
+  }
   if (!accountManager) {
     accountManager = await wallet.createInitializerlessAccount();
   }

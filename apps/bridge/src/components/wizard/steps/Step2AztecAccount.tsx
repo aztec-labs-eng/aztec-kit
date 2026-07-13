@@ -69,6 +69,25 @@ export function Step2AztecAccount({
                 {aztecError || "Failed to create account"}
               </Alert>
             )}
+            {aztecStatus === "incompatible" && (
+              <Alert
+                severity="warning"
+                sx={{ borderRadius: 0 }}
+                action={
+                  <Button
+                    color="inherit"
+                    size="small"
+                    onClick={resetAccount}
+                    data-testid="reonboard-incompatible-account"
+                  >
+                    Re-onboard
+                  </Button>
+                }
+              >
+                This embedded wallet was created by an older, incompatible version and can no longer
+                be used. Re-onboard to create a fresh account.
+              </Alert>
+            )}
           </Box>
         )}
       </Box>

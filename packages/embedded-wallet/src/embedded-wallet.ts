@@ -35,6 +35,7 @@ import { createLogger } from "@aztec/foundation/log";
 import { Fr } from "@aztec/foundation/curves/bn254";
 import { registerSqliteInspectors } from "./sqlite-inspector";
 import { EncryptionKeyMismatchError, type StoreName } from "./encryption-key-mismatch-error";
+import { StaleStoredAccountError } from "./stale-stored-account-error";
 import { GasSettings } from "@aztec/stdlib/gas";
 import type { AztecAddress } from "@aztec/stdlib/aztec-address";
 import { deriveMasterMessageSigningSecretKey } from "@aztec/stdlib/keys";
@@ -323,10 +324,25 @@ export class EmbeddedWallet extends EmbeddedWalletBase {
     const accounts = await this.getAccounts();
     if (accounts.length === 0) return null;
 
-    const address = accounts[0].item;
-    const { secretKey, salt, signingKey, type } = await this.walletDB.retrieveAccount(address);
+    const storedAddress = accounts[0].item;
+    const { secretKey, salt, signingKey, type } =
+      await this.walletDB.retrieveAccount(storedAddress);
 
-    return this.createAccountInternal(type, secretKey, salt, signingKey);
+    const accountManager = await this.createAccountInternal(type, secretKey, salt, signingKey);
+
+    // A persisted account whose recomputed address no longer matches the one we
+    // stored was created against a different account-contract class (e.g. a
+    // build from before an Aztec upgrade — the class id, hence the derived
+    // address, changed). The walletDB is keyed by the old address, so it can't
+    // back the recomputed one and any `send({ from })` would throw
+    // "… does not exist on this wallet." Surface it explicitly so callers can
+    // prompt a re-onboard instead of silently stranding the user on a broken
+    // account.
+    if (!accountManager.address.equals(storedAddress)) {
+      throw new StaleStoredAccountError(storedAddress, accountManager.address);
+    }
+
+    return accountManager;
   }
 
   /**
