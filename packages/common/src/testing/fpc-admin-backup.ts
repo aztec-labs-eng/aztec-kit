@@ -11,7 +11,11 @@
 import fs from "fs";
 import path from "path";
 
-export const BACKUP_VERSION = 1;
+// v2: post AZIP-9 immutables_hash migration (admin.salt is the plain contract
+// instance salt). Must stay in lockstep with BACKUP_VERSION in the fpc-operator's
+// backupService.ts — it rejects the pre-migration v1 shape on import, so a stale
+// value here makes script-produced backups un-importable in the UI.
+export const BACKUP_VERSION = 2;
 
 /** Mirror of `StoredFPC` from the fpc-operator app. */
 export interface StoredFPC {
