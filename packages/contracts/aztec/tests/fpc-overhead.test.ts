@@ -510,17 +510,17 @@ describe("FPC gas overhead", () => {
     // The FPC's own footprint on top of the sponsored fn (steady-state
     // baseline: same transfer, delivery chains already established):
     // subscribe adds the SlotNote re-insert + SubscriptionNote (2 note
-    // hashes + 2 message logs), the SlotNote pop nullifier, and — as of
-    // v5.0.0 — one extra protocol nullifier per sponsored call.
+    // hashes + 2 message logs) and the SlotNote pop nullifier. (The extra
+    // protocol nullifier per sponsored call that v5.0.0 briefly added was
+    // dropped again in v5.0.0-nightly.20260714.)
     expect(subscribePrivateEffects.noteHashes - steadyTransferEffects.noteHashes).toBe(2);
-    expect(subscribePrivateEffects.nullifiers - steadyTransferEffects.nullifiers).toBe(2);
+    expect(subscribePrivateEffects.nullifiers - steadyTransferEffects.nullifiers).toBe(1);
     expect(subscribePrivateEffects.privateLogs - steadyTransferEffects.privateLogs).toBe(2);
 
     // sponsor adds the SubscriptionNote pop + decremented re-insert
-    // (1 note hash + 1 message log + 1 nullifier) plus the same extra
-    // protocol nullifier.
+    // (1 note hash + 1 message log + 1 nullifier).
     expect(sponsorPrivateEffects.noteHashes - steadyTransferEffects.noteHashes).toBe(1);
-    expect(sponsorPrivateEffects.nullifiers - steadyTransferEffects.nullifiers).toBe(2);
+    expect(sponsorPrivateEffects.nullifiers - steadyTransferEffects.nullifiers).toBe(1);
     expect(sponsorPrivateEffects.privateLogs - steadyTransferEffects.privateLogs).toBe(1);
   });
 
