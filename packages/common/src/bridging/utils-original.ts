@@ -116,18 +116,11 @@ export async function bridgeFeeJuice(params: BridgeFeeJuiceParams): Promise<Brid
 
   const l1PrivateKey: Hex = params.l1PrivateKey ?? generatePrivateKey();
   const chain = createEthereumChain([l1RpcUrl], l1ChainId);
-  // Transport-level gas multiplier neutralized (was `L1_GAS_ESTIMATE_MULTIPLIER ?? 3`):
-  // aztec-packages #24607 (in @aztec/* >= 5.0.0 release, 2026-07-13) routes
-  // `bridgeTokensPublic` deposits through `L1TxUtils.sendAndMonitorTransaction`
-  // with `inboxDepositGasConfig()` (gasLimitBufferPercentage >= 100, i.e. a 2x
-  // gas-limit buffer), which covers the Inbox frontier-tree subtree-completion
-  // gas swing at the source. With multiplier 1n the transport is a pure
-  // pass-through.
   const l1Client = createBufferedL1Client(
     chain.rpcUrls,
     l1PrivateKey,
     chain.chainInfo as unknown as Chain,
-    1n,
+    BigInt(process.env.L1_GAS_ESTIMATE_MULTIPLIER ?? 3),
   );
   const portalManager = await L1FeeJuicePortalManager.new(node, l1Client, createLogger("bridging"));
 
