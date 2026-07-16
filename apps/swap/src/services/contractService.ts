@@ -651,10 +651,9 @@ export async function isOnchainDeliverySupported(
 
 /**
  * Execute an on-chain private token transfer (constrained encrypted-log delivery).
- * The recipient's note is delivered on-chain via a tagged log, so the sender's
- * wallet runs its tagging strategy during proving — this is what lets an external
- * wallet bootstrap an interactive handshake with the recipient as a side effect.
- * No claim link: the recipient discovers the note by scanning.
+ * The recipient's note is delivered on-chain via a tagged log, with the sender's
+ * wallet running its tagging strategy during proving. No claim link: the
+ * recipient discovers the note by scanning.
  */
 export async function executeTransferOnchain(
   network: NetworkConfig,

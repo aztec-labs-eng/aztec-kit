@@ -10,8 +10,8 @@ export type SendPhase = "idle" | "sending" | "generating_link" | "link_ready" | 
 
 /**
  * "offchain" delivers the recipient's note via a shareable claim link.
- * "onchain" delivers it on-chain (constrained encrypted log) so the sender's
- * wallet can bootstrap an interactive handshake — no link, recipient scans.
+ * "onchain" delivers it on-chain (constrained encrypted log) — no link,
+ * the recipient discovers the note by scanning.
  */
 export type DeliveryMode = "offchain" | "onchain";
 

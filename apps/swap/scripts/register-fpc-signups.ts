@@ -130,8 +130,7 @@ const SIGNUPS: SignupSpec[] = [
     sampleArgs: ({ admin }) => [admin.toString(), admin.toString(), 10n, 0n],
   },
   {
-    // On-chain (constrained encrypted-log) delivery — the send path that lets a
-    // connected wallet bootstrap an interactive handshake with the recipient.
+    // On-chain (constrained encrypted-log) delivery send path.
     artifact: TokenContractArtifact,
     functionName: "transfer_in_private",
     contractAlias: ["goCoin", "goCoinPremium"],

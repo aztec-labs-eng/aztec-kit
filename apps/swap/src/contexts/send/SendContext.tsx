@@ -87,9 +87,8 @@ export function SendProvider({ children }: SendProviderProps) {
       const amount = BigInt(Math.round(parseFloat(state.amount)));
       const tokenKey = state.token === "gc" ? ("goCoin" as const) : ("goCoinPremium" as const);
 
-      // On-chain path: constrained delivery, no claim link. The recipient's note
-      // is delivered on-chain so the sender's wallet runs its tagging strategy
-      // (and any interactive handshake) during proving; recipient discovers by scanning.
+      // On-chain path: constrained delivery, no claim link — the recipient
+      // discovers the note by scanning (see executeTransferOnchain).
       if (state.deliveryMode === "onchain") {
         const { receipt } = await sendOnchain(tokenKey, recipient, amount);
         actions.sendComplete();
