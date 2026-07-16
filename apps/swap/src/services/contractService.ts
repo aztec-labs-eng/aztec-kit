@@ -351,9 +351,48 @@ export async function executeSwap(
   return receipt;
 }
 
+async function subscriptionConfigId(
+  appAddress: AztecAddress,
+  selector: FunctionSelector,
+  configIndex: number,
+): Promise<Fr> {
+  return poseidon2Hash([appAddress.toField(), selector.toField(), new Fr(configIndex)]);
+}
+
+async function hasCachedOrOnChainSubscription(
+  fpc: SubscriptionFPC,
+  fpcAddress: string,
+  appAddress: AztecAddress,
+  selector: FunctionSelector,
+  configIndex: number,
+  userAddress: AztecAddress,
+): Promise<boolean> {
+  const app = appAddress.toString();
+  const selectorHex = selector.toString();
+  const user = userAddress.toString();
+
+  if (hasSubscription(fpcAddress, app, selectorHex, configIndex, user)) {
+    return true;
+  }
+
+  // The local cache is only a hint and may miss after key-shape changes.
+  // Check the FPC before spending a fresh subscription slot.
+  const configId = await subscriptionConfigId(appAddress, selector, configIndex);
+  const { result } = await fpc.methods
+    .get_subscription_info(userAddress, configId)
+    .simulate({ from: userAddress });
+  const [subscribed] = result as [boolean, bigint];
+
+  if (subscribed) {
+    markSubscribed(fpcAddress, app, selectorHex, configIndex, user);
+  }
+
+  return subscribed;
+}
+
 /**
  * Executes a sponsored swap through the SubscriptionFPC.
- * Uses subscribe on first call, sponsor on subsequent calls.
+ * Uses subscribe when no subscription exists, sponsor when cached or on-chain state shows one.
  */
 export async function executeSponsoredSwap(
   network: NetworkConfig,
@@ -390,12 +429,13 @@ export async function executeSponsoredSwap(
   }
   const { configIndex, gasLimits, hasPublicCall } = fnConfig;
 
-  const subscribed = hasSubscription(
+  const subscribed = await hasCachedOrOnChainSubscription(
+    fpc,
     subFPC.address,
-    amm.address.toString(),
-    call.selector.toString(),
+    amm.address,
+    call.selector,
     configIndex,
-    userAddress.toString(),
+    userAddress,
   );
 
   if (subscribed) {
@@ -485,11 +525,7 @@ export async function querySubscriptionStatus(
 
   // Compute config_id the same way the contract does: poseidon2Hash([app, selector, index])
   const selector = FunctionSelector.fromString(selectorHex);
-  const configId = await poseidon2Hash([
-    amm.address.toField(),
-    selector.toField(),
-    new Fr(configIndex),
-  ]);
+  const configId = await subscriptionConfigId(amm.address, selector, configIndex);
 
   // SlotNote is owned by the FPC — must simulate from fpc.address
   // SubscriptionNote is owned by the user — must simulate from userAddress
@@ -609,12 +645,13 @@ export async function executeTransferOffchain(
   }
   const { configIndex, gasLimits, hasPublicCall } = fnConfig;
 
-  const subscribed = hasSubscription(
+  const subscribed = await hasCachedOrOnChainSubscription(
+    fpc,
     subFPC.address,
-    token.address.toString(),
-    call.selector.toString(),
+    token.address,
+    call.selector,
     configIndex,
-    fromAddress.toString(),
+    fromAddress,
   );
 
   let txResult: { receipt: TxReceipt; offchainMessages: OffchainMessage[] };
