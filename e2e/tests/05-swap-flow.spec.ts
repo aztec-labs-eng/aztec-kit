@@ -141,9 +141,9 @@ test.describe.serial("goswap end-user flow", () => {
     }).toPass({ timeout: 60_000 });
 
     // ── 5. Regression: a send *after* a swap must not collide on the FPC cache ──
-    // This send shares the swap's configIndex but is a different (app, selector). 
-    // With a too-coarse subscription-cache key it would reuse the swap's entry, 
-    // take the sponsor() path against a config_id that has no note, and revert. 
+    // This send shares the swap's configIndex but is a different (app, selector).
+    // With a too-coarse subscription-cache key it would reuse the swap's entry,
+    // take the sponsor() path against a config_id that has no note, and revert.
     // Reaching the claim link proves the send subscribed correctly.
     await page.getByRole("tab", { name: "Send" }).click();
     // Wait for balances to hydrate — the amount adornment renders once they resolve.
