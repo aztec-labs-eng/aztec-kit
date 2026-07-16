@@ -33,21 +33,18 @@ export { loadOrCreateSecret, getSalt, getAdmin } from "./admin.ts";
 
 export {
   setupLocalNetwork,
-  setupLocalNetworkCli,
   TEST_FEE_PADDING,
   type LocalNetwork,
   type LocalNetworkOptions,
+} from "@aztec/aztec/testing";
+
+export {
+  setupLocalNetworkCli,
   type LocalNetworkCli,
   type LocalNetworkCliOptions,
 } from "./local-network.ts";
 
-export {
-  ensureAztecBinsInPath,
-  resolveAnvilBinary,
-  spawnTracked,
-  killTracked,
-  type SpawnTrackedOptions,
-} from "./spawn.ts";
+export { spawnTracked, killTracked, type SpawnTrackedOptions } from "./spawn.ts";
 
 export {
   BACKUP_VERSION,
