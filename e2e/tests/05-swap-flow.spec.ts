@@ -141,10 +141,10 @@ test.describe.serial("goswap end-user flow", () => {
     }).toPass({ timeout: 60_000 });
 
     // ── 5. Regression: a send *after* a swap must not collide on the FPC cache ──
-    // See the spec header (step 5). This send shares the swap's configIndex but is a
-    // different (app, selector); with a too-coarse subscription-cache key it would
-    // reuse the swap's entry, take the sponsor() path against a config_id that has no
-    // note, and revert. Reaching the claim link proves the send subscribed correctly.
+    // This send shares the swap's configIndex but is a different (app, selector). 
+    // With a too-coarse subscription-cache key it would reuse the swap's entry, 
+    // take the sponsor() path against a config_id that has no note, and revert. 
+    // Reaching the claim link proves the send subscribed correctly.
     await page.getByRole("tab", { name: "Send" }).click();
     // Wait for balances to hydrate — the amount adornment renders once they resolve.
     await page.getByTestId("send-balance").waitFor({ timeout: 60_000 });
@@ -161,7 +161,7 @@ test.describe.serial("goswap end-user flow", () => {
     await expect(sendSubmit).toBeEnabled({ timeout: 30_000 });
     await sendSubmit.click();
 
-    // Race the claim link against the error alert so the buggy (pre-fix) path fails fast
+    // Race the claim link against the error alert so a buggy path fails fast
     // with the app's real revert message instead of burning the full proof timeout.
     const sendLink = page.getByTestId("send-link");
     const sendError = page.getByTestId("send-error");
