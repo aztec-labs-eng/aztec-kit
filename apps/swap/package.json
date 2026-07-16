@@ -8,6 +8,7 @@
     "dev": "NODE_OPTIONS=--max_http_header_size=128000 vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
+    "test": "vitest run",
     "typecheck": "tsc -b --noEmit",
     "preview": "NODE_OPTIONS=--max_http_header_size=128000 vite preview",
     "deploy:local": "node --experimental-transform-types scripts/deploy.ts --network local",
@@ -55,6 +56,7 @@
     "@vitejs/plugin-react": "^6.0.1",
     "typescript": "~5.7.3",
     "vite": "^8.0.10",
-    "vite-plugin-node-polyfills": "^0.26.0"
+    "vite-plugin-node-polyfills": "^0.26.0",
+    "vitest": "^4"
   }
 }

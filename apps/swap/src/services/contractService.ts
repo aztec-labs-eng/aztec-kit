@@ -25,6 +25,7 @@ import { SubscriptionFPC } from "@aztec-kit/contracts-aztec/subscription-fpc";
 import { BigDecimal } from "../utils/bigDecimal";
 import type { NetworkConfig } from "../config/networks";
 import type { OnboardingResult } from "../contexts/onboarding/reducer";
+import { hasSubscription, markSubscribed } from "./subscriptionCache";
 
 /**
  * Contracts returned after swap registration
@@ -350,33 +351,6 @@ export async function executeSwap(
   return receipt;
 }
 
-// ── Subscription state tracking ─────────────────────────────────────
-
-const SUBSCRIPTION_KEY = "goswap_subscriptions";
-
-function subscriptionKey(fpcAddress: string, configIndex: number, userAddress: string): string {
-  return `${fpcAddress}:${configIndex}:${userAddress}`;
-}
-
-function hasSubscription(fpcAddress: string, configIndex: number, userAddress: string): boolean {
-  try {
-    const subs = JSON.parse(localStorage.getItem(SUBSCRIPTION_KEY) ?? "{}");
-    return !!subs[subscriptionKey(fpcAddress, configIndex, userAddress)];
-  } catch {
-    return false;
-  }
-}
-
-function markSubscribed(fpcAddress: string, configIndex: number, userAddress: string) {
-  try {
-    const subs = JSON.parse(localStorage.getItem(SUBSCRIPTION_KEY) ?? "{}");
-    subs[subscriptionKey(fpcAddress, configIndex, userAddress)] = true;
-    localStorage.setItem(SUBSCRIPTION_KEY, JSON.stringify(subs));
-  } catch {
-    /* ignore */
-  }
-}
-
 /**
  * Executes a sponsored swap through the SubscriptionFPC.
  * Uses subscribe on first call, sponsor on subsequent calls.
@@ -416,7 +390,13 @@ export async function executeSponsoredSwap(
   }
   const { configIndex, gasLimits, hasPublicCall } = fnConfig;
 
-  const subscribed = hasSubscription(subFPC.address, configIndex, userAddress.toString());
+  const subscribed = hasSubscription(
+    subFPC.address,
+    amm.address.toString(),
+    call.selector.toString(),
+    configIndex,
+    userAddress.toString(),
+  );
 
   if (subscribed) {
     const { receipt } = await fpc.helpers.sponsor({
@@ -435,7 +415,13 @@ export async function executeSponsoredSwap(
       gasLimits,
       hasPublicCall,
     });
-    markSubscribed(subFPC.address, configIndex, userAddress.toString());
+    markSubscribed(
+      subFPC.address,
+      amm.address.toString(),
+      call.selector.toString(),
+      configIndex,
+      userAddress.toString(),
+    );
     return receipt;
   }
 }
@@ -623,7 +609,13 @@ export async function executeTransferOffchain(
   }
   const { configIndex, gasLimits, hasPublicCall } = fnConfig;
 
-  const subscribed = hasSubscription(subFPC.address, configIndex, fromAddress.toString());
+  const subscribed = hasSubscription(
+    subFPC.address,
+    token.address.toString(),
+    call.selector.toString(),
+    configIndex,
+    fromAddress.toString(),
+  );
 
   let txResult: { receipt: TxReceipt; offchainMessages: OffchainMessage[] };
   if (subscribed) {
@@ -642,7 +634,13 @@ export async function executeTransferOffchain(
       gasLimits,
       hasPublicCall,
     });
-    markSubscribed(subFPC.address, configIndex, fromAddress.toString());
+    markSubscribed(
+      subFPC.address,
+      token.address.toString(),
+      call.selector.toString(),
+      configIndex,
+      fromAddress.toString(),
+    );
   }
 
   const { receipt, offchainMessages } = txResult;
