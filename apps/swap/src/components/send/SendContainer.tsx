@@ -13,6 +13,7 @@ import { useContracts } from "../../contexts/contracts";
 import { SendForm } from "./SendForm";
 import { SendProgress } from "./SendProgress";
 import { LinkDisplay } from "./LinkDisplay";
+import { SentConfirmation } from "./SentConfirmation";
 import { SentHistory } from "./SentHistory";
 import { DripPasswordInput } from "../onboarding/DripPasswordInput";
 import { parseDripError } from "../../services/contractService";
@@ -39,7 +40,7 @@ export function SendContainer() {
   }, [currentAddress, fetchBalances]);
 
   useEffect(() => {
-    if (phase === "link_ready" && currentAddress) {
+    if ((phase === "link_ready" || phase === "sent") && currentAddress) {
       fetchBalances().then(([gc, gcp]) => setBalances({ gc, gcp }));
     }
   }, [phase, currentAddress, fetchBalances]);
@@ -81,6 +82,13 @@ export function SendContainer() {
       {phase === "link_ready" && generatedLink ? (
         <LinkDisplay
           link={generatedLink}
+          amount={amount}
+          token={token}
+          recipient={recipientAddress}
+          onReset={reset}
+        />
+      ) : phase === "sent" ? (
+        <SentConfirmation
           amount={amount}
           token={token}
           recipient={recipientAddress}

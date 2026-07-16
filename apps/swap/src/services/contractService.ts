@@ -8,7 +8,7 @@ import type { AztecNode } from "@aztec/aztec.js/node";
 import { AztecAddress } from "@aztec/aztec.js/addresses";
 import { AztecAddress as AztecAddressClass } from "@aztec/aztec.js/addresses";
 import { Fr } from "@aztec/aztec.js/fields";
-import type { ContractArtifact } from "@aztec/aztec.js/abi";
+import type { ContractArtifact, FunctionCall } from "@aztec/aztec.js/abi";
 import { FunctionSelector } from "@aztec/aztec.js/abi";
 import type { ContractInstanceWithAddress } from "@aztec/stdlib/contract";
 import {
@@ -23,7 +23,7 @@ import type { AMMContract } from "@aztec-kit/contracts-aztec/artifacts/AMM";
 import type { ProofOfPasswordContract } from "@aztec-kit/contracts-aztec/artifacts/ProofOfPassword";
 import { SubscriptionFPC } from "@aztec-kit/contracts-aztec/subscription-fpc";
 import { BigDecimal } from "../utils/bigDecimal";
-import type { NetworkConfig } from "../config/networks";
+import type { NetworkConfig, SubscriptionFPCConfig } from "../config/networks";
 import type { OnboardingResult } from "../contexts/onboarding/reducer";
 import { hasSubscription, markSubscribed } from "./subscriptionCache";
 
@@ -575,6 +575,120 @@ export async function executeDrip(
 }
 
 /**
+ * Sends a private token call through the SubscriptionFPC, keeping the sponsor/
+ * subscribe wiring shared by the on-chain and off-chain delivery paths.
+ * Subscribes on the first call per (fpc, config, sender), sponsors after.
+ */
+async function sponsorTokenTransfer(
+  subFPC: SubscriptionFPCConfig,
+  fpc: SubscriptionFPC,
+  tokenAddress: AztecAddress,
+  fromAddress: AztecAddress,
+  call: FunctionCall,
+): Promise<{ receipt: TxReceipt; offchainMessages: OffchainMessage[] }> {
+  const fnConfig = subFPC.functions[tokenAddress.toString()]?.[call.selector.toString()];
+  if (fnConfig == null) {
+    throw new Error(
+      `No subscription config found for token ${tokenAddress.toString()} selector ${call.selector.toString()}`,
+    );
+  }
+  const { configIndex, gasLimits, hasPublicCall } = fnConfig;
+
+  const subscribed = hasSubscription(
+    subFPC.address,
+    tokenAddress.toString(),
+    call.selector.toString(),
+    configIndex,
+    fromAddress.toString(),
+  );
+  if (subscribed) {
+    return fpc.helpers.sponsor({
+      call,
+      configIndex,
+      userAddress: fromAddress,
+      gasLimits,
+      hasPublicCall,
+    });
+  }
+  const txResult = await fpc.helpers.subscribe({
+    call,
+    configIndex,
+    userAddress: fromAddress,
+    gasLimits,
+    hasPublicCall,
+  });
+  markSubscribed(
+    subFPC.address,
+    tokenAddress.toString(),
+    call.selector.toString(),
+    configIndex,
+    fromAddress.toString(),
+  );
+  return txResult;
+}
+
+/**
+ * Whether the active network's FPC actually sponsors on-chain private delivery
+ * (`transfer_in_private`) for the given token. The selector is derived from the
+ * deployed Token artifact — never hardcoded — and matched against the committed
+ * FPC config. False on networks whose signups predate this selector (e.g. a
+ * stale testnet bundle), so the UI can hide the on-chain option instead of
+ * letting the send revert with "No subscription config found".
+ */
+export async function isOnchainDeliverySupported(
+  network: NetworkConfig,
+  tokenKey: "goCoin" | "goCoinPremium",
+): Promise<boolean> {
+  const subFPC = network.subscriptionFPC;
+  if (!subFPC) return false;
+  const tokenAddress = network.contracts[tokenKey];
+  const { TokenContractArtifact } = await import("@aztec/noir-contracts.js/Token");
+  const fn = TokenContractArtifact.functions.find((f) => f.name === "transfer_in_private");
+  if (!fn) return false;
+  const selector = await FunctionSelector.fromNameAndParameters(fn.name, fn.parameters);
+  return !!subFPC.functions[tokenAddress]?.[selector.toString()];
+}
+
+/**
+ * Execute an on-chain private token transfer (constrained encrypted-log delivery).
+ * The recipient's note is delivered on-chain via a tagged log, so the sender's
+ * wallet runs its tagging strategy during proving — this is what lets an external
+ * wallet bootstrap an interactive handshake with the recipient as a side effect.
+ * No claim link: the recipient discovers the note by scanning.
+ */
+export async function executeTransferOnchain(
+  network: NetworkConfig,
+  contracts: SwapContracts,
+  tokenKey: "goCoin" | "goCoinPremium",
+  fromAddress: AztecAddress,
+  recipient: AztecAddress,
+  amount: bigint,
+): Promise<{ receipt: TxReceipt }> {
+  const subFPC = network.subscriptionFPC;
+  if (!subFPC) {
+    throw new Error("No subscriptionFPC configured for this network");
+  }
+  if (!contracts.fpc) {
+    throw new Error("Subscription FPC not initialized");
+  }
+
+  const token = contracts[tokenKey];
+  const authwitNonce = Fr.random();
+  const call = await token.methods
+    .transfer_in_private(fromAddress, recipient, amount, authwitNonce)
+    .getFunctionCall();
+
+  const { receipt } = await sponsorTokenTransfer(
+    subFPC,
+    contracts.fpc,
+    token.address,
+    fromAddress,
+    call,
+  );
+  return { receipt };
+}
+
+/**
  * Execute an offchain token transfer.
  * Sends tokens privately with offchain note delivery, self-delivers the sender's
  * change note, and returns the recipient's offchain messages for link encoding.
@@ -591,8 +705,9 @@ export async function executeTransferOffchain(
   if (!subFPC) {
     throw new Error("No subscriptionFPC configured for this network");
   }
-
-  const fpc = contracts.fpc;
+  if (!contracts.fpc) {
+    throw new Error("Subscription FPC not initialized");
+  }
 
   const token = contracts[tokenKey];
 
@@ -601,49 +716,13 @@ export async function executeTransferOffchain(
     .transfer_in_private_with_offchain_delivery(fromAddress, recipient, amount, authwitNonce)
     .getFunctionCall();
 
-  const fnConfig = subFPC.functions[token.address.toString()]?.[call.selector.toString()];
-  if (fnConfig == null) {
-    throw new Error(
-      `No subscription config found for token ${token.address.toString()} selector ${call.selector.toString()}`,
-    );
-  }
-  const { configIndex, gasLimits, hasPublicCall } = fnConfig;
-
-  const subscribed = hasSubscription(
-    subFPC.address,
-    token.address.toString(),
-    call.selector.toString(),
-    configIndex,
-    fromAddress.toString(),
+  const { receipt, offchainMessages } = await sponsorTokenTransfer(
+    subFPC,
+    contracts.fpc,
+    token.address,
+    fromAddress,
+    call,
   );
-
-  let txResult: { receipt: TxReceipt; offchainMessages: OffchainMessage[] };
-  if (subscribed) {
-    txResult = await fpc.helpers.sponsor({
-      call,
-      configIndex,
-      userAddress: fromAddress,
-      gasLimits,
-      hasPublicCall,
-    });
-  } else {
-    txResult = await fpc.helpers.subscribe({
-      call,
-      configIndex,
-      userAddress: fromAddress,
-      gasLimits,
-      hasPublicCall,
-    });
-    markSubscribed(
-      subFPC.address,
-      token.address.toString(),
-      call.selector.toString(),
-      configIndex,
-      fromAddress.toString(),
-    );
-  }
-
-  const { receipt, offchainMessages } = txResult;
 
   // Self-deliver sender's change note (manual until F-324 lands)
   const senderMessages = offchainMessages.filter((msg: OffchainMessage) =>
