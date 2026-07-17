@@ -23,7 +23,7 @@ import { TokenContract } from "@aztec/noir-contracts.js/Token";
 import { AMMContract } from "@aztec-kit/contracts-aztec/artifacts/AMM";
 import { ProofOfPasswordContract } from "@aztec-kit/contracts-aztec/artifacts/ProofOfPassword";
 
-import { runDeployment } from "@aztec-kit/common/deploy";
+import { runNetworkDeployment } from "@aztec-kit/common/deploy";
 import type { ActionStep, ContractStep, FeePolicy } from "@aztec-kit/common/deploy";
 import {
   apiKeyForNetwork,
@@ -338,7 +338,7 @@ export async function runSwapDeploy(opts: SwapDeployOptions): Promise<SwapDeploy
 
   let result: SwapDeployResult | undefined;
 
-  await runDeployment({
+  await runNetworkDeployment({
     network,
     nodeUrl,
     salt: getSalt(),

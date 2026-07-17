@@ -1,0 +1,89 @@
+/**
+ * Façade over the deploy framework plus the kit's network glue.
+ *
+ * The implementation is vendored at `./deploy/` (see `./deploy/VENDORED.md`); on the first release
+ * that ships `@aztec/aztec/deploy`, delete that directory and re-export from the published package
+ * here instead — the glue below and every consumer stay untouched.
+ */
+import { join } from "node:path";
+
+import {
+  defaultFeePolicy,
+  runDeployment,
+  type DeploymentSpec,
+  type FeePolicy,
+  type Steps,
+} from "./deploy/index.ts";
+import {
+  L1_DEFAULTS,
+  NETWORK_URLS,
+  resolveL1Funder,
+  type NetworkName,
+} from "./testing/network-config.ts";
+
+export * from "./deploy/index.ts";
+
+/**
+ * Fills a fee policy's L1 fields from the kit's per-network defaults: RPC/chain id from
+ * {@link L1_DEFAULTS} and the funder key via {@link resolveL1Funder} (env-driven — this is the
+ * caller-side config layer the framework itself never touches).
+ */
+export function networkFeePolicy(network: NetworkName, base?: FeePolicy): FeePolicy {
+  const policy = base ?? defaultFeePolicy(network === "local");
+  if (policy.kind !== "fee-juice") return policy;
+  return {
+    ...policy,
+    l1RpcUrl: policy.l1RpcUrl ?? L1_DEFAULTS[network].l1RpcUrl,
+    l1ChainId: policy.l1ChainId ?? L1_DEFAULTS[network].l1ChainId,
+    l1FunderKey: policy.l1FunderKey ?? resolveL1Funder(network),
+  };
+}
+
+/** {@link DeploymentSpec} with the kit's network name in place of the framework's target fields. */
+export interface NetworkDeploymentSpec<C extends Steps = Steps> extends Omit<
+  DeploymentSpec<C>,
+  "local" | "label" | "node" | "nodeUrl"
+> {
+  network: NetworkName;
+  /** Aztec node URL; defaults to the network's entry in {@link NETWORK_URLS}. */
+  nodeUrl?: string;
+}
+
+/**
+ * Runs a deployment against a named kit network: maps the network to the framework's target fields
+ * (`local`/`label`/`nodeUrl`), scopes the resume state per network (`<stateDir>/<network>/`), and
+ * fills network L1 defaults into every fee policy and fund step.
+ */
+export function runNetworkDeployment<C extends Steps>(
+  spec: NetworkDeploymentSpec<C>,
+): Promise<void> {
+  const { network, ...rest } = spec;
+  const steps = Object.fromEntries(
+    Object.entries(spec.steps).map(([alias, step]) => [
+      alias,
+      step.kind === "fund"
+        ? {
+            ...step,
+            l1RpcUrl: step.l1RpcUrl ?? L1_DEFAULTS[network].l1RpcUrl,
+            l1ChainId: step.l1ChainId ?? L1_DEFAULTS[network].l1ChainId,
+            l1FunderKey: step.l1FunderKey ?? resolveL1Funder(network),
+          }
+        : step,
+    ]),
+  ) as C;
+  return runDeployment({
+    ...rest,
+    local: network === "local",
+    label: network,
+    nodeUrl: spec.nodeUrl ?? NETWORK_URLS[network],
+    stateDir: join(spec.stateDir ?? join(process.cwd(), ".deploy-state"), network),
+    fees: networkFeePolicy(network, spec.fees),
+    accounts: Object.fromEntries(
+      Object.entries(spec.accounts).map(([alias, account]) => [
+        alias,
+        account.fees ? { ...account, fees: networkFeePolicy(network, account.fees) } : account,
+      ]),
+    ),
+    steps,
+  });
+}
