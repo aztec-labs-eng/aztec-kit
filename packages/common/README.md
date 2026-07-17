@@ -4,13 +4,12 @@ Shared building blocks used by every app + every script in the monorepo. Organis
 
 ## Subpath exports
 
-| Import                       | Contents                                                                                                                                                                 |
-| ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `@aztec-kit/common/ui`       | `shortAddress`, `NetworkSwitcher`, `createNetworkContext`. React + MUI. Used by all three app UIs.                                                                       |
-| `@aztec-kit/common/bridging` | `bridge`, `bridgeAndClaim` — the L1→L2 fee-juice flows. Low-level primitives live in `./bridging/utils.ts` if you need them. Node-only.                                  |
-| `@aztec-kit/common/fees`     | `fetchFeeStats`, `computeMaxFeeFromP75` — calibrate `maxFee` from the clustec public fee API.                                                                            |
-| `@aztec-kit/common/testing`  | Deploy-script plumbing: network config, CLI arg parsing, wallet setup, admin account helpers, in-process + CLI local-network fixtures, tracked-spawn helpers. Node-only. |
-| `@aztec-kit/common/vite`     | `aztecVitePlugin` (drop-in, Vite-version-aware) + `chunkSizeValidator`. See `vite` section below.                                                                        |
+| Import                      | Contents                                                                                                                                                                 |
+| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `@aztec-kit/common/ui`      | `shortAddress`, `NetworkSwitcher`, `createNetworkContext`. React + MUI. Used by all three app UIs.                                                                       |
+| `@aztec-kit/common/fees`    | `fetchFeeStats`, `computeMaxFeeFromP75` — calibrate `maxFee` from the clustec public fee API.                                                                            |
+| `@aztec-kit/common/testing` | Deploy-script plumbing: network config, CLI arg parsing, wallet setup, admin account helpers, in-process + CLI local-network fixtures, tracked-spawn helpers. Node-only. |
+| `@aztec-kit/common/vite`    | `aztecVitePlugin` (drop-in, Vite-version-aware) + `chunkSizeValidator`. See `vite` section below.                                                                        |
 
 ## `testing` — highlights
 

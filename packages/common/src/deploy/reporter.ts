@@ -9,12 +9,12 @@
 import type { AztecAddress } from "@aztec/aztec.js/addresses";
 import type { TxHash } from "@aztec/stdlib/tx";
 
-import type { NetworkName } from "../testing/network-config.ts";
-import { formatList, formatWaves } from "./graph.ts";
+import { formatLayers, formatList } from "./graph.ts";
 
-/** What a unit did: publish a contract, or send an action's tx. */
-export type DeployUnitKind = "publish" | "action";
+/** What a unit did: publish a contract, send an action's tx, or fund an address with Fee Juice. */
+export type DeployUnitKind = "publish" | "action" | "fund";
 
+/** Identity of one execution unit (a single tx), as reported by the unit lifecycle hooks. */
 export interface DeployUnitInfo {
   /** Human label, e.g. `publish goCoin`, `action mintGoCoin`. */
   label: string;
@@ -47,26 +47,27 @@ export interface DeployPlanAccount {
 
 export interface DeployPlanStep {
   id: string;
-  kind: "contract" | "action";
+  kind: "contract" | "action" | "fund";
   /**
    * Status at the start of the run: a contract is `published` / `to publish` (public) or
-   * `registered` (private); an action is `done` / `to run`.
+   * `registered` (private); an action is `done` / `to run`; a fund step is `funded` / `to fund`.
    */
-  status: "published" | "to publish" | "registered" | "done" | "to run";
+  status: "published" | "to publish" | "registered" | "done" | "to run" | "funded" | "to fund";
   /** Steps it depends on (constructor-arg refs and explicit `dependsOn`). */
   dependsOn: string[];
 }
 
 export interface DeployPlan {
-  network: NetworkName;
+  /** Human label for the target (e.g. `local`, or a caller-chosen name). */
+  label: string;
   accounts: DeployPlanAccount[];
   steps: DeployPlanStep[];
-  /** Execution waves (step ids) — what will actually run, in dependency order. A wave runs parallel. */
-  waves: string[][];
+  /** Execution layers (step ids) — what will actually run, in dependency order. A layer runs parallel. */
+  layers: string[][];
 }
 
 export interface DeploySummary {
-  network: NetworkName;
+  label: string;
   contracts: { alias: string; address: AztecAddress; status: "published" | "registered" }[];
   accounts: { alias: string; address: AztecAddress }[];
 }
@@ -83,7 +84,7 @@ export interface DeployReporter {
   /** The resolved plan, before execution. */
   onPlan?(plan: DeployPlan): void;
   /** Everything is already on-chain; nothing will be sent. */
-  onNothingToDo?(network: NetworkName): void;
+  onNothingToDo?(label: string): void;
   /** An account's Fee Juice is being topped up (or a persisted claim is being resumed). */
   onBridge?(event: BridgeEvent): void;
   /** A unit's tx is about to be sent. */
@@ -122,7 +123,7 @@ export function consoleReporter(): DeployReporter {
   const log = (line: string): void => void process.stderr.write(`${line}\n`);
   return {
     onPlan(plan) {
-      log(`\n── Plan (${plan.network}) ──`);
+      log(`\n── Plan (${plan.label}) ──`);
       log(
         formatList(
           "accounts",
@@ -140,14 +141,14 @@ export function consoleReporter(): DeployReporter {
         ),
       );
       log(
-        formatWaves(
-          "execution waves",
-          plan.waves.map((wave) => wave.map((name) => ({ name }))),
+        formatLayers(
+          "execution layers",
+          plan.layers.map((layer) => layer.map((name) => ({ name }))),
         ),
       );
     },
-    onNothingToDo(network) {
-      log(`\nNothing to do on ${network} — everything is already on-chain.`);
+    onNothingToDo(label) {
+      log(`\nNothing to do on ${label} — everything is already on-chain.`);
     },
     onBridge({ recipient, amount, reused }) {
       log(
@@ -171,9 +172,13 @@ export function consoleReporter(): DeployReporter {
       log(`✗ ${unit.label}  failed: ${error instanceof Error ? error.message : String(error)}`);
     },
     onComplete(summary) {
-      log(`\n── Deployed to ${summary.network} ──`);
-      for (const c of summary.contracts) log(`  ${c.alias.padEnd(16)} ${c.address}  (${c.status})`);
-      for (const a of summary.accounts) log(`  account ${a.alias}: ${a.address}`);
+      log(`\n── Deployed to ${summary.label} ──`);
+      for (const c of summary.contracts) {
+        log(`  ${c.alias.padEnd(16)} ${c.address}  (${c.status})`);
+      }
+      for (const a of summary.accounts) {
+        log(`  account ${a.alias}: ${a.address}`);
+      }
     },
   };
 }
