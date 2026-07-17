@@ -665,28 +665,6 @@ async function sponsorTokenTransfer(
 }
 
 /**
- * Whether the active network's FPC actually sponsors on-chain private delivery
- * (`transfer_in_private`) for the given token. The selector is derived from the
- * deployed Token artifact — never hardcoded — and matched against the committed
- * FPC config. False on networks whose signups predate this selector (e.g. a
- * stale testnet bundle), so the UI can hide the on-chain option instead of
- * letting the send revert with "No subscription config found".
- */
-export async function isOnchainDeliverySupported(
-  network: NetworkConfig,
-  tokenKey: "goCoin" | "goCoinPremium",
-): Promise<boolean> {
-  const subFPC = network.subscriptionFPC;
-  if (!subFPC) return false;
-  const tokenAddress = network.contracts[tokenKey];
-  const { TokenContractArtifact } = await import("@aztec/noir-contracts.js/Token");
-  const fn = TokenContractArtifact.functions.find((f) => f.name === "transfer_in_private");
-  if (!fn) return false;
-  const selector = await FunctionSelector.fromNameAndParameters(fn.name, fn.parameters);
-  return !!subFPC.functions[tokenAddress]?.[selector.toString()];
-}
-
-/**
  * Execute an on-chain private token transfer (constrained encrypted-log delivery).
  * The recipient's note is delivered on-chain via a tagged log, with the sender's
  * wallet running its tagging strategy during proving. No claim link: the

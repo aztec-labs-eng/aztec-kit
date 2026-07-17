@@ -3,14 +3,13 @@
  * Manages offchain transfer flow and link generation
  */
 
-import { createContext, useContext, useEffect, useState, type ReactNode, useCallback } from "react";
+import { createContext, useContext, type ReactNode, useCallback } from "react";
 import { AztecAddress } from "@aztec/aztec.js/addresses";
 import { useSendReducer, type SendState, type SendPhase, type DeliveryMode } from "./reducer";
 import { useContracts } from "../contracts";
 import { useWallet } from "../wallet";
 import { useNetwork } from "../network";
 import { encodeTransferLink, type TransferLink } from "../../services/offchainLinkService";
-import { isOnchainDeliverySupported } from "../../services/contractService";
 import { addSentTransfer } from "../../services/sentHistoryService";
 
 interface SendContextType extends SendState {
@@ -26,8 +25,6 @@ interface SendContextType extends SendState {
   dismissError: () => void;
   reset: () => void;
   canSend: boolean;
-  /** Whether the active network's FPC sponsors on-chain delivery for the selected token. */
-  onchainSupported: boolean;
   executeSend: () => Promise<void>;
 }
 
@@ -57,22 +54,6 @@ export function SendProvider({ children }: SendProviderProps) {
     !!state.recipientAddress &&
     !isLoadingContracts &&
     !!currentAddress;
-
-  // Whether on-chain delivery is sponsored for the selected token on this network.
-  // Falls back to offchain if a network switch leaves onchain selected but unsupported.
-  const [onchainSupported, setOnchainSupported] = useState(false);
-  useEffect(() => {
-    let cancelled = false;
-    const tokenKey = state.token === "gc" ? "goCoin" : "goCoinPremium";
-    isOnchainDeliverySupported(activeNetwork, tokenKey).then((supported) => {
-      if (cancelled) return;
-      setOnchainSupported(supported);
-      if (!supported) actions.setDeliveryMode("offchain");
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [activeNetwork, state.token, actions]);
 
   const executeSend = useCallback(async () => {
     if (!currentAddress || !state.recipientAddress || !state.amount) {
@@ -166,7 +147,6 @@ export function SendProvider({ children }: SendProviderProps) {
     dismissError: actions.dismissError,
     reset: actions.reset,
     canSend,
-    onchainSupported,
     executeSend,
   };
 

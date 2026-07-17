@@ -20,7 +20,6 @@ export function SendForm({ balance, onRequestFaucet, faucetBusy }: SendFormProps
     setRecipientAddress,
     setAmount,
     canSend,
-    onchainSupported,
     executeSend,
   } = useSend();
   const isSending = phase === "sending" || phase === "generating_link";
@@ -66,19 +65,10 @@ export function SendForm({ balance, onRequestFaucet, faucetBusy }: SendFormProps
           <ToggleButton value="offchain" data-testid="send-delivery-offchain">
             Off-chain link
           </ToggleButton>
-          <ToggleButton
-            value="onchain"
-            data-testid="send-delivery-onchain"
-            disabled={!onchainSupported}
-          >
+          <ToggleButton value="onchain" data-testid="send-delivery-onchain">
             On-chain private channel
           </ToggleButton>
         </ToggleButtonGroup>
-        {!onchainSupported && (
-          <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: "block" }}>
-            On-chain delivery isn't sponsored on this network yet.
-          </Typography>
-        )}
       </Box>
       <TextField
         label="Recipient Address"
