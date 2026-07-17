@@ -20,21 +20,12 @@
  * Side output: apps/fpc-operator/backups/<network>.fpc-admin.json (git-ignored), in the
  * fpc-operator UI's import format — merged so `register-fpc-signups` can layer on the `apps`.
  */
-import { AztecAddress } from "@aztec/stdlib/aztec-address";
-import { FeeJuiceContract } from "@aztec/aztec.js/protocol";
-import type { EmbeddedWallet } from "@aztec/wallets/embedded";
-
-import { bridge } from "@aztec-kit/common/bridging";
 import { SubscriptionFPCContract } from "@aztec-kit/contracts-aztec/artifacts/SubscriptionFPC";
-import { runDeployment } from "@aztec-kit/common/deploy";
+import { runNetworkDeployment } from "@aztec-kit/common/deploy";
 import type { FeePolicy } from "@aztec-kit/common/deploy";
 import {
   parseNetwork,
   parsePaymentMode,
-  NETWORK_URLS,
-  L1_DEFAULTS,
-  resolveL1Funder,
-  bridgeMode,
   loadOrCreateSecret,
   getSalt,
   writeFpcAdminBackup,
@@ -60,17 +51,6 @@ function forcePaymentMode(paymentMode: PaymentMode): FeePolicy {
   };
 }
 
-/** The FPC's public Fee Juice balance (0 — and a thrown simulate — before it's deployed). */
-async function fpcPublicFeeJuice(
-  wallet: EmbeddedWallet,
-  fpc: AztecAddress,
-  from: AztecAddress,
-): Promise<bigint> {
-  const feeJuice = FeeJuiceContract.at(wallet);
-  const { result } = await feeJuice.methods.balance_of_public(fpc).simulate({ from });
-  return BigInt(result.toString());
-}
-
 async function main() {
   const network = parseNetwork();
   const paymentMode = parsePaymentMode(network);
@@ -81,9 +61,8 @@ async function main() {
   const fpcSecret = loadOrCreateSecret("FPC_SECRET");
   const fpcSalt = getSalt();
 
-  await runDeployment({
+  await runNetworkDeployment({
     network,
-    nodeUrl: NETWORK_URLS[network],
     salt: getSalt(),
     accounts: { admin: { secret: fpcAdminSecret.secretKey } },
     fees: forcePaymentMode(paymentMode),
@@ -101,34 +80,16 @@ async function main() {
         mode: "publish",
       },
 
-      // Fund the FPC so it can sponsor calls: bridge FJ from L1 to the FPC (the async prelude),
-      // then return the L2 `claim` for the framework to send from the admin (paid by the run's
-      // fee session). Idempotent — skipped once the FPC holds Fee Juice.
+      // Fund the FPC so it can sponsor calls. The framework bridges FJ from L1, persists the
+      // claim (so a crash between bridge and claim resumes instead of stranding the funds), and
+      // sends the L2 claim tx from the admin. Idempotent — skipped once the FPC holds Fee Juice.
       fundFpc: {
-        kind: "action",
+        kind: "fund",
+        recipient: (resolve) => resolve.contract("fpc"),
+        threshold: 1n,
+        amount: FUND_AMOUNT,
         from: (resolve) => resolve.account("admin"),
         dependsOn: ["fpc"],
-        done: async (ctx) =>
-          (await fpcPublicFeeJuice(ctx.wallet, ctx.contract("fpc"), ctx.account("admin"))) > 0n,
-        call: async (ctx) => {
-          const fpcAddress = ctx.contract("fpc");
-          console.error(`Bridging ${FUND_AMOUNT} FJ to FPC ${fpcAddress.toString()}...`);
-          const { claim } = await bridge({
-            node: ctx.node,
-            recipient: fpcAddress,
-            l1RpcUrl: L1_DEFAULTS[network].l1RpcUrl,
-            l1ChainId: L1_DEFAULTS[network].l1ChainId,
-            amount: FUND_AMOUNT,
-            l1PrivateKey: resolveL1Funder(network),
-            mode: bridgeMode(network),
-          });
-          return FeeJuiceContract.at(ctx.wallet).methods.claim(
-            fpcAddress,
-            claim.claimAmount,
-            claim.claimSecret,
-            claim.messageLeafIndex,
-          );
-        },
       },
     },
 

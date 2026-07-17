@@ -17,18 +17,17 @@ import type { ContractBase, ContractFunctionInteraction } from "@aztec/aztec.js/
 import type { Fr } from "@aztec/aztec.js/fields";
 import type { AztecNode } from "@aztec/aztec.js/node";
 import type { Wallet } from "@aztec/aztec.js/wallet";
-import type { EmbeddedWallet } from "@aztec/wallets/embedded";
 
-import type { NetworkName } from "../testing/network-config.ts";
 import type { DeployReporter } from "./reporter.ts";
 
 /**
  * How a step's txs are paid.
- * - `sponsored`: a SponsoredFPC pays (local networks).
+ * - `sponsored`: a SponsoredFPC pays (the local-network default).
  * - `fee-juice`: the account pays from its own Fee Juice; if below `threshold` with work to do,
- *   bridge `fundAmount` from L1 and claim it on the first paying tx. `l1FunderKey`/`l1RpcUrl` are
- *   caller-supplied; omit `l1FunderKey` for the testnet faucet + ephemeral key, omit `l1RpcUrl`
- *   for the network default.
+ *   bridge `fundAmount` from L1 and claim it on the first paying tx. `l1FunderKey`/`l1RpcUrl`/
+ *   `l1ChainId` are caller-supplied; omit `l1FunderKey` for the faucet + ephemeral key. On a
+ *   non-local network `l1RpcUrl` and `l1ChainId` are required (there are no hardcoded defaults);
+ *   on local they default to anvil (`127.0.0.1:8545`, chain `31337`).
  */
 export type FeePolicy =
   | { kind: "sponsored" }
@@ -38,6 +37,7 @@ export type FeePolicy =
       fundAmount: bigint;
       l1FunderKey?: `0x${string}`;
       l1RpcUrl?: string;
+      l1ChainId?: number;
     };
 
 /** An account the deployment sends from: a v0 initializerless Schnorr account (no deploy tx). */
@@ -52,7 +52,9 @@ export interface AccountSpec {
 
 /** Resolve addresses of accounts / contracts (for initializer args, action targets, the deployer). */
 export interface Resolver {
+  /** The resolved address of the account declared under `alias`. Throws on an unknown alias. */
   account(alias: string): AztecAddress;
+  /** The resolved address of the contract step declared under `alias`. Throws on an unknown alias. */
   contract(alias: string): AztecAddress;
 }
 
@@ -99,11 +101,16 @@ export interface ContractStep<C = Steps, T extends ContractBase = ContractBase> 
   initializerArgs?: (resolve: Resolver) => unknown[];
   /**
    * Runtime initializer args — may read live state (e.g. `ctx.instance(x).methods.f().simulate()`).
-   * The address can only be derived once {@link dependsOn} has run, so it's resolved AT EXECUTION
-   * TIME, not upfront. Mutually exclusive with {@link initializerArgs}.
+   * Resolved at inventory time when the state it reads already exists (the re-run case, which is
+   * what makes re-runs no-ops), and otherwise AT EXECUTION TIME, once {@link dependsOn} has run.
+   * Mutually exclusive with {@link initializerArgs}.
    */
   deferredInitializerArgs?: (ctx: Ctx<C>) => unknown[] | Promise<unknown[]>;
-  /** Steps that must complete first. Auto-derived from {@link initializerArgs}; required for deferred. */
+  /**
+   * Steps that must complete first. Auto-derived from {@link initializerArgs}. Required for
+   * deferred contracts: declare the steps whose effects the args read, or an explicit empty array
+   * if they only read pre-existing state.
+   */
   dependsOn?: string[];
 }
 
@@ -123,12 +130,42 @@ export interface ActionStep<C = Steps> {
   dependsOn?: string[];
 }
 
-export type StepSpec<C = Steps> = ContractStep<C> | ActionStep<C>;
+/**
+ * A step that provisions an address — any address, not just a sending account — with bridged Fee
+ * Juice: bridge `amount` from L1, then send a `FeeJuice.claim` tx from {@link from} crediting
+ * {@link recipient}. Used to fund contracts that pay for others (e.g. an FPC). Idempotent on the
+ * recipient's public balance, and resumable: the bridge claim persists (see ./state.ts) as soon as
+ * it exists on L1, so a crash between bridge and claim resumes instead of stranding the funds.
+ */
+export interface FundStep {
+  kind: "fund";
+  /** Recipient of the bridged Fee Juice, e.g. `(r) => r.contract("fpc")`. */
+  recipient: (resolve: Resolver) => AztecAddress;
+  /** Bridge + claim only when the recipient's public Fee Juice balance is below this (wei). */
+  threshold: bigint;
+  /**
+   * Amount to bridge (wei). On a network with a fee-asset faucet whose mint amount exceeds the L1
+   * funder's balance, the faucet's own mint amount is what arrives.
+   */
+  amount: bigint;
+  /** Account that sends (and pays for) the L2 claim tx, e.g. `(r) => r.account("admin")`. */
+  from: (resolve: Resolver) => AztecAddress;
+  /** L1 funder key signing the bridge tx; omit for the faucet + an ephemeral key (or anvil's dev key on local). */
+  l1FunderKey?: `0x${string}`;
+  /** L1 connection for the bridge; required on non-local networks, defaults to anvil on local. */
+  l1RpcUrl?: string;
+  l1ChainId?: number;
+  /** Steps that must complete first (e.g. the contract being funded). */
+  dependsOn?: string[];
+}
+
+export type StepSpec<C = Steps> = ContractStep<C> | ActionStep<C> | FundStep;
 /**
  * A steps map: alias → step. The element generic is `any` so the alias isn't self-referential
  * (`Steps → StepSpec<Steps> → …`); a concrete spec's `C` is inferred at the {@link runDeployment}
  * call site, which is what types `ctx.instance`.
  */
+// VENDORED delta: eslint disable for this repo's no-explicit-any rule.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type Steps = Record<string, StepSpec<any>>;
 
@@ -157,30 +194,42 @@ export interface Ctx<C = Steps> extends Resolver {
    * this run", e.g. a mint gated on a fresh token: `done: (ctx) => !ctx.ran("goCoin")`.
    */
   ran(id: string): Promise<boolean>;
-  wallet: EmbeddedWallet;
+  wallet: Wallet;
   node: AztecNode;
 }
 
+/** The full declarative input to {@link runDeployment}: target, accounts, steps, fees, and hooks. */
 export interface DeploymentSpec<C extends Steps = Steps> {
-  network: NetworkName;
-  nodeUrl: string;
+  /**
+   * Aztec node JSON-RPC URL; one of this or {@link node} is required. When {@link node} is also
+   * provided, only used to reach the node's debug API for local time-warping while a bridge settles.
+   */
+  nodeUrl?: string;
+  /**
+   * An already-connected node to deploy against — e.g. an in-process `AztecNodeService` from a test
+   * fixture. Takes precedence over {@link nodeUrl}; pass {@link nodeUrl} too if you bridge with the
+   * `fee-juice` policy against an in-process local node (the warp path needs its debug API URL).
+   */
+  node?: AztecNode;
+  /**
+   * Whether the target is a local (anvil) network. Local uses the deterministic sandbox defaults:
+   * sponsored fees, no real proofs, warp-based L1→L2 message advancement, and anvil's dev funder.
+   * Everything else (default) uses fee-juice, real proofs, and polling; L1 details for bridging must
+   * be supplied on the fee-juice {@link FeePolicy}.
+   */
+  local?: boolean;
+  /** Human label for logs + reporter; defaults to `local`/`network` based on {@link local}. */
+  label?: string;
   /** Default salt for account + contract derivation; each can override. Defaults to Fr(0). */
   salt?: Fr;
   /** Directory for the resume-state file. Defaults to `<cwd>/.deploy-state`. */
   stateDir?: string;
   accounts: Record<string, AccountSpec>;
   steps: C;
-  /** Default fee policy; per-account {@link AccountSpec.fees} overrides it. Defaults to {@link networkFeeDefaults}. */
+  /** Default fee policy; per-account {@link AccountSpec.fees} overrides it. Defaults per {@link local}. */
   fees?: FeePolicy;
   /** Where lifecycle events go. Defaults to {@link consoleReporter} (stderr). `{}` silences them. */
   reporter?: DeployReporter;
   /** Hook to write app artifacts (e.g. a frontend manifest) from resolved state; runs after execution. */
   output?: (ctx: Ctx<C>) => void | Promise<void>;
-}
-
-/** A bridge claim, persisted to resume a top-up that bridged on L1 but didn't claim on L2. */
-export interface StoredClaim {
-  claimAmount: string;
-  claimSecret: string;
-  messageLeafIndex: string;
 }
