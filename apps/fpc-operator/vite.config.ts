@@ -29,10 +29,6 @@ export default defineConfig(({ mode }) => {
           import.meta.dirname,
           "../../packages/common/src/ui/index.ts",
         ),
-        "@aztec-kit/common/bridging": resolve(
-          import.meta.dirname,
-          "../../packages/common/src/bridging/index.ts",
-        ),
         "@aztec-kit/common/fees": resolve(
           import.meta.dirname,
           "../../packages/common/src/fees/index.ts",
