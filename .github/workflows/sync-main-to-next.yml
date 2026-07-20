@@ -1,0 +1,172 @@
+name: Sync main → next
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Keeps `next` (public nightly line) up to date with `main` (stable) without
+# manual PR mirroring. On every push to `main` this merges `main` INTO `next`
+# on a rolling branch and opens/updates a single PR against `next`.
+#
+#   - A normal `git merge main` preserves ALL of next's commits — non-conflicting
+#     fixes from main are simply added on top. next's work is never reverted.
+#   - Clean merge  → PR is directly mergeable (CI gates it; a human clicks merge;
+#                    `next` and its production deploy are never touched unreviewed).
+#   - Conflict     → the PR is flagged `needs-manual-merge` with a placeholder
+#                    commit + resolution instructions. Nothing is auto-resolved,
+#                    so no fix from main is ever silently dropped.
+#
+# AUTH: uses the org GitHub App (GH_APP_ID / GH_APP_PRIVATE_KEY) rather than the
+# default GITHUB_TOKEN, because branch pushes / PRs made with GITHUB_TOKEN do NOT
+# trigger the CI workflow (GitHub's recursion guard) — and CI gating the sync PR
+# is the whole point. This requires the App installation on aztec-labs-eng/aztec-kit
+# to grant `contents: write` and `pull-requests: write`. If the App isn't
+# installed here with those permissions, swap the token step for a PAT secret
+# (e.g. `token: ${{ secrets.SYNC_PAT }}`) that has repo scope.
+# ─────────────────────────────────────────────────────────────────────────────
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# Serialize; if main gets several quick pushes, the latest run produces the
+# correct final state and older ones are cancelled (force-with-lease guards races).
+concurrency:
+  group: sync-main-to-next
+  cancel-in-progress: true
+
+# Writes go through the App token below, not GITHUB_TOKEN.
+permissions:
+  contents: read
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Mint GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@d72941d797fd3113feb6b93fd0dec494b13a2547 # v1
+        with:
+          app-id: ${{ vars.GH_APP_ID }}
+          private-key: ${{ secrets.GH_APP_PRIVATE_KEY }}
+          # owner/repositories omitted → defaults to this repo. Needs the App
+          # installation here to grant contents:write + pull-requests:write.
+
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          fetch-depth: 0
+          # Persist the App identity so `git push` uses it (→ the PR triggers CI).
+          token: ${{ steps.app-token.outputs.token }}
+
+      - name: Merge main into next and open/update PR
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          SYNC_BRANCH: chore/sync-main-into-next
+          LABEL: needs-manual-merge
+        run: |
+          set -euo pipefail
+
+          git config user.name  "aztec-kit-sync-bot"
+          git config user.email "aztec-kit-sync-bot@users.noreply.github.com"
+
+          git fetch --prune origin main next
+
+          # Idempotent: ensure the conflict label exists before we try to apply it.
+          gh label create "$LABEL" --color "B60205" \
+            --description "main→next sync has conflicts; resolve locally" 2>/dev/null || true
+
+          find_pr() {
+            gh pr list --head "$SYNC_BRANCH" --base next --state open \
+              --json number --jq '.[0].number // empty'
+          }
+
+          # Close a stale sync PR (and delete its branch) when there's nothing to sync.
+          cleanup_stale() {
+            local pr; pr="$(find_pr)"
+            if [ -n "$pr" ]; then
+              gh pr close "$pr" \
+                --comment "\`next\` now contains all of \`main\` — closing stale sync PR." \
+                --delete-branch || true
+            else
+              git push origin --delete "$SYNC_BRANCH" 2>/dev/null || true
+            fi
+          }
+
+          # ── Nothing on main that next lacks? ──────────────────────────────
+          if [ "$(git rev-list --count origin/next..origin/main)" -eq 0 ]; then
+            echo "next already contains all of main — nothing to sync."
+            cleanup_stale
+            exit 0
+          fi
+
+          git checkout -B "$SYNC_BRANCH" origin/next
+
+          if git merge --no-edit origin/main; then
+            # ── Clean merge ────────────────────────────────────────────────
+            # A new merge commit exists, but it may carry no content delta vs
+            # next (e.g. main's commits already landed via cherry-pick). Skip
+            # opening a no-op PR in that case.
+            if git diff --quiet "origin/next..HEAD"; then
+              echo "merge introduced no content changes — nothing to sync."
+              cleanup_stale
+              exit 0
+            fi
+
+            git push --force-with-lease origin "$SYNC_BRANCH"
+
+            BODY="$(cat <<EOF
+          Automated sync of \`main\` into \`next\`.
+
+          \`main\` merged cleanly on top of \`next\` — all of next's changes are preserved and main's changes are layered on top. Once CI is green, merge to bring \`next\` up to date.
+
+          <sub>Opened by the **Sync main → next** workflow on every push to \`main\`. It refreshes automatically on the next push.</sub>
+          EOF
+            )"
+            TITLE="chore: sync main → next"
+
+            pr="$(find_pr)"
+            if [ -n "$pr" ]; then
+              gh pr edit "$pr" --title "$TITLE" --body "$BODY"
+              gh pr edit "$pr" --remove-label "$LABEL" 2>/dev/null || true
+            else
+              gh pr create --base next --head "$SYNC_BRANCH" --title "$TITLE" --body "$BODY"
+            fi
+          else
+            # ── Conflict: flag for manual resolution ───────────────────────
+            CONFLICTS="$(git diff --name-only --diff-filter=U | sed 's/^/- `/;s/$/`/')"
+            git merge --abort
+
+            # Placeholder commit (NOT conflict markers) so the PR has a diff to
+            # anchor to. The human's resolved merge replaces it on force-push.
+            git commit --allow-empty -m "chore: sync main → next (manual merge required)"
+            git push --force-with-lease origin "$SYNC_BRANCH"
+
+            BODY="$(cat <<EOF
+          ⚠️ **\`main\` cannot be merged into \`next\` automatically — manual resolution required.**
+
+          Nothing was auto-resolved, so no change from \`main\` has been silently dropped.
+
+          **Conflicting files:**
+          $CONFLICTS
+
+          **Resolve locally:**
+          \`\`\`bash
+          git fetch origin
+          git checkout -B $SYNC_BRANCH origin/next
+          git merge origin/main   # resolve conflicts, keeping next's changes where intended
+          git push --force-with-lease origin $SYNC_BRANCH
+          \`\`\`
+
+          Pushing the resolved merge replaces the placeholder commit, re-runs CI, and makes this PR mergeable.
+
+          <sub>Opened by the **Sync main → next** workflow.</sub>
+          EOF
+            )"
+            TITLE="chore: sync main → next (needs manual merge)"
+
+            pr="$(find_pr)"
+            if [ -n "$pr" ]; then
+              gh pr edit "$pr" --title "$TITLE" --body "$BODY" --add-label "$LABEL"
+            else
+              gh pr create --base next --head "$SYNC_BRANCH" --title "$TITLE" --body "$BODY" --label "$LABEL"
+            fi
+          fi
