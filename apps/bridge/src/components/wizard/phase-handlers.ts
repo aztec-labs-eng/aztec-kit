@@ -4,6 +4,7 @@
  * Each returns a cleanup function (or undefined).
  */
 
+import type { EIP1193Provider } from "viem";
 import { pollMessageReadiness, waitForAztecTx, resumePendingBridge } from "../../services";
 import { txProgress } from "@aztec-kit/embedded-wallet";
 import { PHASE_COLOR_MINING } from "./constants";
@@ -13,7 +14,9 @@ type Dispatch = (action: BridgeAction) => void;
 
 interface OrchestratorContext {
   dispatch: Dispatch;
-  activeNetwork: { l1ChainId: number; aztecNodeUrl: string; apiKey?: string };
+  activeNetwork: { l1ChainId: number; l1RpcUrl: string; aztecNodeUrl: string; apiKey?: string };
+  /** Selected L1 wallet provider — read via ref so late reconnects are picked up */
+  providerRef: { current: EIP1193Provider | null };
   walletReadyRef: { current: boolean };
   feeJuiceBalanceRef: { current: string | null };
   walletReady: boolean;
@@ -28,7 +31,12 @@ export function handleL1Pending(
   cancelled: { current: boolean },
 ): undefined {
   const { pendingBridge } = bridge;
-  resumePendingBridge(ctx.activeNetwork.l1ChainId, pendingBridge)
+  resumePendingBridge({
+    chainId: ctx.activeNetwork.l1ChainId,
+    l1RpcUrl: ctx.activeNetwork.l1RpcUrl,
+    pending: pendingBridge,
+    provider: ctx.providerRef.current,
+  })
     .then((allCredentials) => {
       if (cancelled.current) return;
       ctx.dispatch({ type: "L1_CONFIRMED", allCredentials });

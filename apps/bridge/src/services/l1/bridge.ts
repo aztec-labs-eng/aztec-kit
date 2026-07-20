@@ -1,9 +1,9 @@
-import { createPublicClient, custom, type Hex } from "viem";
+import type { EIP1193Provider, Hex } from "viem";
 import { BRIDGE_CONTRACT_ABI, getBridgeAddress } from "@aztec-kit/contracts-ethereum";
 import type { L1Addresses, BridgeStep, PendingBridge, ClaimCredentials } from "../types";
 import {
   getL1Clients,
-  getChain,
+  getL1PublicClient,
   toHex64,
   generateClaimSecret,
   extractAllDepositEvents,
@@ -20,6 +20,8 @@ interface BridgeRecipient {
 }
 
 interface ExecuteBridgeParams {
+  /** EIP-1193 provider of the wallet the user selected */
+  provider: EIP1193Provider;
   chainId: number;
   addresses: L1Addresses;
   recipients: BridgeRecipient[];
@@ -33,10 +35,10 @@ interface ExecuteBridgeParams {
  * Both `bridgeFeeJuice` and `bridgeMultiple` delegate to this function.
  */
 async function executeBridge(params: ExecuteBridgeParams): Promise<ClaimCredentials[]> {
-  const { chainId, addresses, recipients, mint, onStep, onPending } = params;
+  const { provider, chainId, addresses, recipients, mint, onStep, onPending } = params;
   const isSingle = recipients.length === 1;
 
-  const { publicClient, walletClient, account, chain } = await getL1Clients(chainId);
+  const { publicClient, walletClient, account, chain } = await getL1Clients(provider, chainId);
   const totalAmount = recipients.reduce((sum, r) => sum + r.amount, 0n);
 
   // Generate claim secrets for each recipient
@@ -188,7 +190,7 @@ async function executeBridge(params: ExecuteBridgeParams): Promise<ClaimCredenti
  * Bridges fee juice to a single Aztec recipient in one L1 transaction.
  */
 export async function bridgeFeeJuice(params: {
-  l1RpcUrl: string;
+  provider: EIP1193Provider;
   chainId: number;
   addresses: L1Addresses;
   aztecRecipient: string;
@@ -198,6 +200,7 @@ export async function bridgeFeeJuice(params: {
   onPending?: (pending: PendingBridge) => void;
 }): Promise<ClaimCredentials> {
   const [result] = await executeBridge({
+    provider: params.provider,
     chainId: params.chainId,
     addresses: params.addresses,
     recipients: [{ address: params.aztecRecipient, amount: params.amount }],
@@ -212,7 +215,7 @@ export async function bridgeFeeJuice(params: {
  * Bridges fee juice to N Aztec recipients in a single L1 transaction.
  */
 export async function bridgeMultiple(params: {
-  l1RpcUrl: string;
+  provider: EIP1193Provider;
   chainId: number;
   addresses: L1Addresses;
   recipients: Array<{ address: string; amount: bigint }>;
@@ -221,6 +224,7 @@ export async function bridgeMultiple(params: {
   onPending?: (pending: PendingBridge) => void;
 }): Promise<ClaimCredentials[]> {
   return executeBridge({
+    provider: params.provider,
     chainId: params.chainId,
     addresses: params.addresses,
     recipients: params.recipients,
@@ -235,17 +239,18 @@ export async function bridgeMultiple(params: {
 /**
  * Resumes a pending L1 bridge by waiting for the tx receipt and extracting credentials.
  * Used when the user refreshes while waiting for L1 confirmation.
+ *
+ * Reads through the selected wallet's provider when available, otherwise the
+ * configured RPC — a resume must not depend on the wallet being reconnected.
  */
-export async function resumePendingBridge(
-  chainId: number,
-  pending: PendingBridge,
-): Promise<ClaimCredentials[]> {
-  const chain = getChain(chainId);
-  if (!window.ethereum) throw new Error("No EVM wallet found");
-  const publicClient = createPublicClient({
-    chain,
-    transport: custom(window.ethereum),
-  });
+export async function resumePendingBridge(params: {
+  chainId: number;
+  l1RpcUrl: string;
+  pending: PendingBridge;
+  provider?: EIP1193Provider | null;
+}): Promise<ClaimCredentials[]> {
+  const { chainId, l1RpcUrl, pending, provider } = params;
+  const publicClient = getL1PublicClient(l1RpcUrl, chainId, provider);
 
   const receipt = await publicClient.waitForTransactionReceipt({
     hash: pending.l1TxHash as Hex,
