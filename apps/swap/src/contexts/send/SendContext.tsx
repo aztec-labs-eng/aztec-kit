@@ -5,7 +5,7 @@
 
 import { createContext, useContext, type ReactNode, useCallback } from "react";
 import { AztecAddress } from "@aztec/aztec.js/addresses";
-import { useSendReducer, type SendState, type SendPhase } from "./reducer";
+import { useSendReducer, type SendState, type SendPhase, type DeliveryMode } from "./reducer";
 import { useContracts } from "../contracts";
 import { useWallet } from "../wallet";
 import { useNetwork } from "../network";
@@ -14,11 +14,13 @@ import { addSentTransfer } from "../../services/sentHistoryService";
 
 interface SendContextType extends SendState {
   setToken: (token: "gc" | "gcp") => void;
+  setDeliveryMode: (mode: DeliveryMode) => void;
   setRecipientAddress: (address: string) => void;
   setAmount: (amount: string) => void;
   startSend: () => void;
   generatingLink: () => void;
   linkReady: (link: string) => void;
+  sendComplete: () => void;
   sendError: (error: string) => void;
   dismissError: () => void;
   reset: () => void;
@@ -42,7 +44,7 @@ interface SendProviderProps {
 
 export function SendProvider({ children }: SendProviderProps) {
   const [state, actions] = useSendReducer();
-  const { sendOffchain, isLoadingContracts } = useContracts();
+  const { sendOffchain, sendOnchain, isLoadingContracts } = useContracts();
   const { currentAddress } = useWallet();
   const { activeNetwork } = useNetwork();
 
@@ -65,8 +67,25 @@ export function SendProvider({ children }: SendProviderProps) {
       const recipient = AztecAddress.fromStringUnsafe(state.recipientAddress);
       const amount = BigInt(Math.round(parseFloat(state.amount)));
       const tokenKey = state.token === "gc" ? ("goCoin" as const) : ("goCoinPremium" as const);
-      const contractAddress = activeNetwork.contracts[tokenKey];
 
+      // On-chain path: constrained delivery, no claim link — the recipient
+      // discovers the note by scanning (see executeTransferOnchain).
+      if (state.deliveryMode === "onchain") {
+        const { receipt } = await sendOnchain(tokenKey, recipient, amount);
+        actions.sendComplete();
+        addSentTransfer(currentAddress.toString(), {
+          id: receipt.txHash.toString(),
+          token: state.token,
+          amount: state.amount,
+          recipient: state.recipientAddress,
+          link: "",
+          createdAt: Date.now(),
+          status: "confirmed",
+        });
+        return;
+      }
+
+      const contractAddress = activeNetwork.contracts[tokenKey];
       const { receipt, offchainMessages } = await sendOffchain(tokenKey, recipient, amount);
 
       actions.generatingLink();
@@ -107,19 +126,23 @@ export function SendProvider({ children }: SendProviderProps) {
     state.recipientAddress,
     state.amount,
     state.token,
+    state.deliveryMode,
     activeNetwork,
     sendOffchain,
+    sendOnchain,
     actions,
   ]);
 
   const value: SendContextType = {
     ...state,
     setToken: actions.setToken,
+    setDeliveryMode: actions.setDeliveryMode,
     setRecipientAddress: actions.setRecipientAddress,
     setAmount: actions.setAmount,
     startSend: actions.startSend,
     generatingLink: actions.generatingLink,
     linkReady: actions.linkReady,
+    sendComplete: actions.sendComplete,
     sendError: actions.sendError,
     dismissError: actions.dismissError,
     reset: actions.reset,

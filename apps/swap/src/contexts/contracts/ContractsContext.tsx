@@ -36,6 +36,11 @@ interface ContractsContextType {
     recipient: AztecAddress,
     amount: bigint,
   ) => Promise<{ receipt: TxReceipt; offchainMessages: OffchainMessage[] }>;
+  sendOnchain: (
+    tokenKey: "goCoin" | "goCoinPremium",
+    recipient: AztecAddress,
+    amount: bigint,
+  ) => Promise<{ receipt: TxReceipt }>;
   claimOffchainTransfer: (
     tokenKey: "goCoin" | "goCoinPremium",
     message: {
@@ -297,6 +302,35 @@ export function ContractsProvider({ children }: ContractsProviderProps) {
     [wallet, activeNetwork, currentAddress, state.contracts],
   );
 
+  // Execute on-chain private transfer (constrained delivery, no link)
+  const sendOnchain = useCallback(
+    async (tokenKey: "goCoin" | "goCoinPremium", recipient: AztecAddress, amount: bigint) => {
+      if (
+        !wallet ||
+        !currentAddress ||
+        !state.contracts.goCoin ||
+        !state.contracts.goCoinPremium ||
+        !state.contracts.amm
+      ) {
+        throw new Error("Contracts not initialized");
+      }
+      return contractService.executeTransferOnchain(
+        activeNetwork,
+        {
+          goCoin: state.contracts.goCoin,
+          goCoinPremium: state.contracts.goCoinPremium,
+          amm: state.contracts.amm,
+          fpc: state.contracts.fpc,
+        },
+        tokenKey,
+        currentAddress,
+        recipient,
+        amount,
+      );
+    },
+    [wallet, activeNetwork, currentAddress, state.contracts],
+  );
+
   // Claim an offchain transfer via offchain_receive
   const claimOffchainTransfer = useCallback(
     async (
@@ -353,6 +387,7 @@ export function ContractsProvider({ children }: ContractsProviderProps) {
     simulateOnboardingQueries,
     drip,
     sendOffchain,
+    sendOnchain,
     claimOffchainTransfer,
   };
 

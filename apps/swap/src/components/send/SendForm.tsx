@@ -11,10 +11,12 @@ interface SendFormProps {
 export function SendForm({ balance, onRequestFaucet, faucetBusy }: SendFormProps) {
   const {
     token,
+    deliveryMode,
     recipientAddress,
     amount,
     phase,
     setToken,
+    setDeliveryMode,
     setRecipientAddress,
     setAmount,
     canSend,
@@ -23,6 +25,11 @@ export function SendForm({ balance, onRequestFaucet, faucetBusy }: SendFormProps
   const isSending = phase === "sending" || phase === "generating_link";
   const currentBalance = token === "gc" ? balance.gc : balance.gcp;
   const selectedTokenIsEmpty = currentBalance === 0n;
+  const submitLabel = isSending
+    ? "Sending..."
+    : deliveryMode === "onchain"
+      ? "Send"
+      : "Send & Generate Link";
 
   return (
     <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
@@ -40,6 +47,27 @@ export function SendForm({ balance, onRequestFaucet, faucetBusy }: SendFormProps
         >
           <ToggleButton value="gc">GoCoin</ToggleButton>
           <ToggleButton value="gcp">GoCoinPremium</ToggleButton>
+        </ToggleButtonGroup>
+      </Box>
+      <Box>
+        <Typography variant="caption" color="text.secondary" sx={{ mb: 0.5, display: "block" }}>
+          Delivery
+        </Typography>
+        <ToggleButtonGroup
+          value={deliveryMode}
+          exclusive
+          onChange={(_, v) => v && setDeliveryMode(v)}
+          size="small"
+          fullWidth
+          disabled={isSending}
+          data-testid="send-delivery-mode"
+        >
+          <ToggleButton value="offchain" data-testid="send-delivery-offchain">
+            Off-chain link
+          </ToggleButton>
+          <ToggleButton value="onchain" data-testid="send-delivery-onchain">
+            On-chain private channel
+          </ToggleButton>
         </ToggleButtonGroup>
       </Box>
       <TextField
@@ -99,7 +127,7 @@ export function SendForm({ balance, onRequestFaucet, faucetBusy }: SendFormProps
         data-testid="send-submit"
         sx={{ mt: 1, fontWeight: "bold" }}
       >
-        {isSending ? "Sending..." : "Send & Generate Link"}
+        {submitLabel}
       </Button>
     </Box>
   );

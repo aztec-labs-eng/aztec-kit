@@ -71,9 +71,11 @@ export function SentHistory({ senderAddress }: SentHistoryProps) {
             <Typography variant="caption" color="text.secondary">
               {timeAgo(transfer.createdAt)}
             </Typography>
-            <IconButton size="small" color="primary" onClick={() => handleCopy(transfer.link)}>
-              <ContentCopyIcon fontSize="small" />
-            </IconButton>
+            {transfer.link && (
+              <IconButton size="small" color="primary" onClick={() => handleCopy(transfer.link)}>
+                <ContentCopyIcon fontSize="small" />
+              </IconButton>
+            )}
           </Box>
         </Box>
       ))}

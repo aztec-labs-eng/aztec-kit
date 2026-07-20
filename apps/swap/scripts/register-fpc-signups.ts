@@ -129,6 +129,13 @@ const SIGNUPS: SignupSpec[] = [
     contractAlias: ["goCoin", "goCoinPremium"],
     sampleArgs: ({ admin }) => [admin.toString(), admin.toString(), 10n, 0n],
   },
+  {
+    // On-chain (constrained encrypted-log) delivery send path.
+    artifact: TokenContractArtifact,
+    functionName: "transfer_in_private",
+    contractAlias: ["goCoin", "goCoinPremium"],
+    sampleArgs: ({ admin }) => [admin.toString(), admin.toString(), 10n, 0n],
+  },
 ];
 
 async function main() {
