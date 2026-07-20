@@ -7,6 +7,15 @@ export type {
   MessageStatus,
 } from "./types";
 
+// L1 wallet discovery (EIP-6963)
+export {
+  subscribeWallets,
+  getWalletsSnapshot,
+  LEGACY_WALLET_RDNS,
+  type EIP6963ProviderDetail,
+  type EIP6963ProviderInfo,
+} from "./l1/discovery";
+
 // L1 wallet
 export {
   switchChain,
