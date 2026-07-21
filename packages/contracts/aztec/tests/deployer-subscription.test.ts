@@ -108,9 +108,11 @@ describe("Account deployment subscription", () => {
       .getFunctionCall();
 
     await fpc.helpers.subscribe({
+      node: ctx.node,
       call: sponsoredCall,
       configIndex: PRODUCTION_INDEX,
       userAddress: subscribedAccountManager.address,
+      maxUsers: 1,
       gasLimits,
       hasPublicCall,
     });

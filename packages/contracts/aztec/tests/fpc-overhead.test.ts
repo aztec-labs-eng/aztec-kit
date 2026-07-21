@@ -5,9 +5,10 @@
  * SubscriptionFPC, comparing standalone vs sponsored execution for public
  * and private functions.
  *
- * Subscribe is more expensive than sponsor because it pops a SlotNote
- * (from FPC storage) and creates a SubscriptionNote (in user storage),
- * while sponsor pops and re-inserts a SubscriptionNote (in user storage).
+ * Subscribe is (equal or) more expensive than sponsor: it privately reads
+ * the config's PublicImmutable, emits the seat-ticket nullifier, and creates
+ * a SubscriptionNote (in user storage), while sponsor pops and re-inserts a
+ * SubscriptionNote (in user storage).
  *
  * The max_fee must cover the more expensive subscribe call. The difference
  * (subscribe_overhead - sponsor_overhead) is the "subscribe boost".
@@ -183,7 +184,7 @@ describe("FPC gas overhead", () => {
       // Measure subscribe
       const noirCall = await buildNoirFunctionCall(sampleCall);
       const { gasUsed } = await adminFpc.methods
-        .subscribe(noirCall, PUBLIC_INDEX, ctx.admin)
+        .subscribe(noirCall, PUBLIC_INDEX, ctx.admin, 0)
         .with({ extraHashedArgs: await buildExtraHashedArgs(sampleCall) })
         .simulate({
           from: NO_FROM,
@@ -198,7 +199,7 @@ describe("FPC gas overhead", () => {
       // gas the subscribe path takes); no need to add overhead through
       // `fpc.helpers.subscribe`.
       await adminFpc.methods
-        .subscribe(noirCall, PUBLIC_INDEX, ctx.admin)
+        .subscribe(noirCall, PUBLIC_INDEX, ctx.admin, 0)
         .with({ extraHashedArgs: await buildExtraHashedArgs(sampleCall) })
         .send({
           from: NO_FROM,
@@ -321,7 +322,7 @@ describe("FPC gas overhead", () => {
 
       const noirCall = await buildNoirFunctionCall(sampleCall);
       const { gasUsed } = await adminFpc.methods
-        .subscribe(noirCall, PRIVATE_INDEX, ctx.admin)
+        .subscribe(noirCall, PRIVATE_INDEX, ctx.admin, 0)
         .with({
           authWitnesses: [authwit],
           extraHashedArgs: await buildExtraHashedArgs(sampleCall),
@@ -349,7 +350,7 @@ describe("FPC gas overhead", () => {
       });
       const subNoirCall = await buildNoirFunctionCall(subCall);
       const { receipt: subscribeReceipt } = await adminFpc.methods
-        .subscribe(subNoirCall, PRIVATE_INDEX, ctx.admin)
+        .subscribe(subNoirCall, PRIVATE_INDEX, ctx.admin, 0)
         .with({
           authWitnesses: [subAuthwit],
           extraHashedArgs: await buildExtraHashedArgs(subCall),
@@ -498,23 +499,26 @@ describe("FPC gas overhead", () => {
     console.log("subscribe private: ", JSON.stringify(subscribePrivateEffects));
     console.log("sponsor private:   ", JSON.stringify(sponsorPrivateEffects));
 
-    // sign_up is FPC-only: 1 SlotNote (+ its message log), the per-config
-    // uniqueness nullifier, and the tx-hash nullifier every tx has.
+    // sign_up is now a public admin tx: it writes the config's
+    // PublicImmutable, emitting only its initialization nullifier (plus the
+    // tx-hash nullifier every tx has). No notes, no private logs, no SSTORE
+    // side effects surface in tx *effects*.
     expect(signUpEffects).toEqual({
-      noteHashes: 1,
+      noteHashes: 0,
       nullifiers: 2,
-      privateLogs: 1,
-      logFieldLengths: [16],
+      privateLogs: 0,
+      logFieldLengths: [],
     });
 
     // The FPC's own footprint on top of the sponsored fn (steady-state
     // baseline: same transfer, delivery chains already established):
-    // subscribe adds the SlotNote re-insert + SubscriptionNote (2 note
-    // hashes + 2 message logs), the SlotNote pop nullifier, and — as of
+    // subscribe now adds only the SubscriptionNote (1 note hash + 1 message
+    // log), the seat-ticket nullifier (the private config read pushes a
+    // nullifier *existence request*, not an emitted nullifier), and — as of
     // v5.0.0 — one extra protocol nullifier per sponsored call.
-    expect(subscribePrivateEffects.noteHashes - steadyTransferEffects.noteHashes).toBe(2);
+    expect(subscribePrivateEffects.noteHashes - steadyTransferEffects.noteHashes).toBe(1);
     expect(subscribePrivateEffects.nullifiers - steadyTransferEffects.nullifiers).toBe(2);
-    expect(subscribePrivateEffects.privateLogs - steadyTransferEffects.privateLogs).toBe(2);
+    expect(subscribePrivateEffects.privateLogs - steadyTransferEffects.privateLogs).toBe(1);
 
     // sponsor adds the SubscriptionNote pop + decremented re-insert
     // (1 note hash + 1 message log + 1 nullifier) plus the same extra
