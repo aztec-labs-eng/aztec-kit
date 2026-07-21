@@ -24,7 +24,6 @@ import { formatUnits } from "viem";
 import type { SubscriptionFPCContract as SubscriptionFPC } from "@aztec-kit/contracts-aztec/artifacts/SubscriptionFPC";
 import {
   getSignedUpApps,
-  getStoredFPC,
   computeConfigId,
   queryAvailableSeats,
   type SignedUpApp,
@@ -146,10 +145,8 @@ export function AppList({ fpc, fpcAddress }: AppListProps) {
   }, [apps.length]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const buildSubscriptionConfig = (app: SignedUpApp) => {
-    const stored = getStoredFPC();
     return {
       fpcAddress,
-      fpcSecretKey: stored?.secretKey ?? "",
       configIndex: app.configIndex,
       gasLimits: app.gasLimits,
       hasPublicCall: app.hasPublicCall,

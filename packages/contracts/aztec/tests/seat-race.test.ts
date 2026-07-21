@@ -72,7 +72,7 @@ describe("Seat race conditions", () => {
     const wallet = await EmbeddedWallet.create(ctx.node, { ephemeral: true });
     wallet.setMinFeePadding(TEST_FEE_PADDING);
     await wallet.createECDSARAccount(secret, salt, SIGNING_PRIVATE_KEY);
-    await wallet.registerContract(ctx.fpcInstance, SubscriptionFPC.artifact, ctx.fpcSecretKey);
+    await wallet.registerContract(ctx.fpcInstance, SubscriptionFPC.artifact);
     await wallet.registerContract(tokenInstance, TokenContractArtifact);
     await wallet.registerSender(ctx.admin, "admin");
     return { address, wallet };

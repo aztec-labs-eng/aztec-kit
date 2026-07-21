@@ -46,7 +46,7 @@ describe("Token transfer subscription (multi-use)", () => {
 
     userWallet = ctx.userWallet;
 
-    await userWallet.registerContract(ctx.fpcInstance, SubscriptionFPC.artifact, ctx.fpcSecretKey);
+    await userWallet.registerContract(ctx.fpcInstance, SubscriptionFPC.artifact);
     await userWallet.registerContract(tokenInstance, TokenContractArtifact);
 
     const userSecret = await Fr.random();

@@ -37,8 +37,6 @@ export interface SubscriptionFunctionConfig {
 export interface SubscriptionFPCConfig {
   /** Address of the SubscriptionFPC contract */
   address: string;
-  /** Secret key for registering the FPC in PXE (needed to decrypt slot notes) */
-  secretKey: string;
   /** Map of contractAddress → { functionSelector → per-function config } */
   functions: Record<string, Record<string, SubscriptionFunctionConfig>>;
 }

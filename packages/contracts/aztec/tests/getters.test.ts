@@ -153,7 +153,7 @@ describe("FPC getters", () => {
   it("decrements slots and creates subscription after subscribe", async () => {
     // Subscribe with the user created (and calibrated for) in beforeAll
     const userWallet = ctx.userWallet;
-    await userWallet.registerContract(ctx.fpcInstance, SubscriptionFPC.artifact, ctx.fpcSecretKey);
+    await userWallet.registerContract(ctx.fpcInstance, SubscriptionFPC.artifact);
 
     const tokenInstance = await ctx.node.getContract(token.address);
     await userWallet.registerContract(tokenInstance!, TokenContractArtifact);

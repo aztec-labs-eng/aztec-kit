@@ -144,12 +144,11 @@ export async function registerSwapContracts(
       if (!instance) {
         throw new Error(`Subscription FPC at ${subFPC.address} not found on-chain`);
       }
-      const secretKey = Fr.fromString(subFPC.secretKey);
       const { SubscriptionFPCContractArtifact } =
         await import("@aztec-kit/contracts-aztec/artifacts/SubscriptionFPC");
       registrationBatch.push({
         name: "registerContract",
-        args: [instance, SubscriptionFPCContractArtifact, secretKey],
+        args: [instance, SubscriptionFPCContractArtifact, undefined],
       });
     }
   }
@@ -223,7 +222,6 @@ export async function registerDripContracts(
   const subFPCMetadata = metadataResults[1];
   if (!subFPCMetadata.result.instance) {
     const fpcAddress = AztecAddressClass.fromStringUnsafe(subFPC.address);
-    const secretKey = Fr.fromString(subFPC.secretKey);
     const instance = await node.getContract(fpcAddress);
     if (!instance) {
       throw new Error(`Subscription FPC at ${subFPC.address} not found on-chain`);
@@ -232,7 +230,7 @@ export async function registerDripContracts(
       await import("@aztec-kit/contracts-aztec/artifacts/SubscriptionFPC");
     registrationBatch.push({
       name: "registerContract",
-      args: [instance, SubscriptionFPCContractArtifact, secretKey],
+      args: [instance, SubscriptionFPCContractArtifact, undefined],
     });
   }
 

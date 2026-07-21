@@ -9,12 +9,10 @@ import {
   SubscriptionFPCContractArtifact,
 } from "@aztec-kit/contracts-aztec/artifacts/SubscriptionFPC";
 import { countAvailableSeats } from "@aztec-kit/contracts-aztec/seat-picker";
-import { deriveKeys } from "@aztec/aztec.js/keys";
 
 // ── localStorage keys ────────────────────────────────────────────────
 
 const FPC_ADDRESS_KEY = "gofpc_fpc_address";
-const FPC_SECRET_KEY = "gofpc_fpc_secret";
 const FPC_SALT_KEY = "gofpc_fpc_salt";
 const FPC_DEPLOYED_KEY = "gofpc_fpc_deployed";
 const SIGNED_UP_APPS_KEY = "gofpc_fpc_apps";
@@ -23,7 +21,6 @@ const SIGNED_UP_APPS_KEY = "gofpc_fpc_apps";
 
 export interface StoredFPC {
   address: string;
-  secretKey: string;
   salt: string;
   deployed: boolean;
 }
@@ -31,12 +28,10 @@ export interface StoredFPC {
 export function getStoredFPC(): StoredFPC | null {
   try {
     const address = localStorage.getItem(FPC_ADDRESS_KEY);
-    const secretKey = localStorage.getItem(FPC_SECRET_KEY);
     const salt = localStorage.getItem(FPC_SALT_KEY);
-    if (address && secretKey && salt)
+    if (address && salt)
       return {
         address,
-        secretKey,
         salt,
         deployed: localStorage.getItem(FPC_DEPLOYED_KEY) === "true",
       };
@@ -46,9 +41,8 @@ export function getStoredFPC(): StoredFPC | null {
   return null;
 }
 
-function storeFPC(address: string, secretKey: string, salt: string) {
+function storeFPC(address: string, salt: string) {
   localStorage.setItem(FPC_ADDRESS_KEY, address);
-  localStorage.setItem(FPC_SECRET_KEY, secretKey);
   localStorage.setItem(FPC_SALT_KEY, salt);
 }
 
@@ -103,14 +97,12 @@ export function addSignedUpApp(app: SignedUpApp) {
 
 export function restoreFPC(data: StoredFPC): void {
   localStorage.setItem(FPC_ADDRESS_KEY, data.address);
-  localStorage.setItem(FPC_SECRET_KEY, data.secretKey);
   localStorage.setItem(FPC_SALT_KEY, data.salt);
   localStorage.setItem(FPC_DEPLOYED_KEY, data.deployed ? "true" : "false");
 }
 
 export function clearFPC(): void {
   localStorage.removeItem(FPC_ADDRESS_KEY);
-  localStorage.removeItem(FPC_SECRET_KEY);
   localStorage.removeItem(FPC_SALT_KEY);
   localStorage.removeItem(FPC_DEPLOYED_KEY);
   localStorage.removeItem(SIGNED_UP_APPS_KEY);
@@ -130,49 +122,44 @@ export async function computeConfigId(
 
 /**
  * Pre-computes the FPC address without deploying. The address is deterministic
- * from the secret key and admin address, so it can be funded before deployment.
- * Stores the FPC keys in localStorage for later deployment.
+ * from the admin address and salt, so it can be funded before deployment.
+ * Stores the FPC salt in localStorage for later deployment. The FPC owns no
+ * notes, so it deploys with default contract keys.
  */
 export async function prepareFPC(
   wallet: EmbeddedWallet,
   adminAddress: AztecAddress,
-): Promise<{ fpcAddress: AztecAddress; secretKey: Fr }> {
+): Promise<{ fpcAddress: AztecAddress }> {
   const stored = getStoredFPC();
   if (stored) {
     // Re-register on reload (PXE state doesn't persist across browser sessions)
     const fpcAddress = AztecAddress.fromStringUnsafe(stored.address);
-    const secretKey = Fr.fromString(stored.secretKey);
     const salt = Fr.fromString(stored.salt);
     const meta = await wallet.getContractMetadata(fpcAddress);
     if (!meta.instance) {
-      const { publicKeys } = await deriveKeys(secretKey);
       const deployment = SubscriptionFPCContract.deploy(wallet, adminAddress, {
         salt,
-        publicKeys,
         deployer: adminAddress,
       });
       const instance = await deployment.getInstance();
-      await wallet.registerContract(instance, SubscriptionFPCContractArtifact, secretKey);
+      await wallet.registerContract(instance, SubscriptionFPCContractArtifact);
     }
-    return { fpcAddress, secretKey };
+    return { fpcAddress };
   }
 
-  const secretKey = Fr.random();
   const salt = Fr.random();
-  const { publicKeys } = await deriveKeys(secretKey);
 
   const deployment = SubscriptionFPCContract.deploy(wallet, adminAddress, {
     salt,
-    publicKeys,
     deployer: adminAddress,
   });
   const instance = await deployment.getInstance();
 
-  await wallet.registerContract(instance, SubscriptionFPCContractArtifact, secretKey);
+  await wallet.registerContract(instance, SubscriptionFPCContractArtifact);
 
-  storeFPC(instance.address.toString(), secretKey.toString(), salt.toString());
+  storeFPC(instance.address.toString(), salt.toString());
 
-  return { fpcAddress: instance.address, secretKey };
+  return { fpcAddress: instance.address };
 }
 
 /**
@@ -186,13 +173,10 @@ export async function deployFPC(
   const stored = getStoredFPC();
   if (!stored) throw new Error("Call prepareFPC first");
 
-  const secretKey = Fr.fromString(stored.secretKey);
   const salt = Fr.fromString(stored.salt);
-  const { publicKeys } = await deriveKeys(secretKey);
 
   const deployment = SubscriptionFPCContract.deploy(wallet, adminAddress, {
     salt,
-    publicKeys,
     deployer: adminAddress,
   });
   // getInstance caches, so passing the salt here ensures the same address
@@ -212,7 +196,6 @@ export async function loadExistingFPC(
   stored: StoredFPC,
 ): Promise<SubscriptionFPCContract> {
   const address = AztecAddress.fromStringUnsafe(stored.address);
-  const secretKey = Fr.fromString(stored.secretKey);
 
   // Check if already registered locally in PXE
   const metadata = await wallet.getContractMetadata(address);
@@ -224,7 +207,7 @@ export async function loadExistingFPC(
         `FPC contract at ${address.toString()} not found on-chain. It may need to be redeployed.`,
       );
     }
-    await wallet.registerContract(instance, SubscriptionFPCContractArtifact, secretKey);
+    await wallet.registerContract(instance, SubscriptionFPCContractArtifact);
   }
 
   return SubscriptionFPCContract.at(address, wallet);

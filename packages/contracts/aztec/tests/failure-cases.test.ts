@@ -42,7 +42,7 @@ describe("Failure cases", () => {
     token = rawToken;
 
     userWallet = ctx.userWallet;
-    await userWallet.registerContract(ctx.fpcInstance, SubscriptionFPC.artifact, ctx.fpcSecretKey);
+    await userWallet.registerContract(ctx.fpcInstance, SubscriptionFPC.artifact);
     await userWallet.registerContract(tokenInstance, TokenContractArtifact);
 
     const userSecret = await Fr.random();
@@ -151,11 +151,7 @@ describe("Failure cases", () => {
       ephemeral: true,
     });
     grieferWallet.setMinFeePadding(TEST_FEE_PADDING);
-    await grieferWallet.registerContract(
-      ctx.fpcInstance,
-      SubscriptionFPC.artifact,
-      ctx.fpcSecretKey,
-    );
+    await grieferWallet.registerContract(ctx.fpcInstance, SubscriptionFPC.artifact);
     await grieferWallet.registerContract(
       (await ctx.node.getContract(token.address))!,
       TokenContractArtifact,
@@ -222,11 +218,7 @@ describe("Failure cases", () => {
     const TIGHT_INDEX = FAILURE_INDEX + 1;
 
     const tightUserWallet = ctx.userWallet;
-    await tightUserWallet.registerContract(
-      ctx.fpcInstance,
-      SubscriptionFPC.artifact,
-      ctx.fpcSecretKey,
-    );
+    await tightUserWallet.registerContract(ctx.fpcInstance, SubscriptionFPC.artifact);
     await tightUserWallet.registerContract(
       (await ctx.node.getContract(token.address))!,
       TokenContractArtifact,

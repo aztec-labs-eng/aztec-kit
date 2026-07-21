@@ -40,7 +40,7 @@ describe("Account deployment subscription", () => {
 
     await ctx.wallet.registerContract(deployerInstance, EcdsaAccountDeployerContract.artifact);
     await userWallet.registerContract(deployerInstance, EcdsaAccountDeployerContract.artifact);
-    await userWallet.registerContract(ctx.fpcInstance, SubscriptionFPC.artifact, ctx.fpcSecretKey);
+    await userWallet.registerContract(ctx.fpcInstance, SubscriptionFPC.artifact);
     subscribedAccountManager = await userWallet.createECDSARAccount(
       await Fr.random(),
       await Fr.random(),

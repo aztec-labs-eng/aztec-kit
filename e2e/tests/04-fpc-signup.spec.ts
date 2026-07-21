@@ -429,7 +429,6 @@ test.describe.serial("fpc signs up sponsored apps", () => {
     const swapConfig = JSON.parse(await readFile(SWAP_LOCAL_JSON, "utf-8"));
     swapConfig.subscriptionFPC = {
       address: fpc.fpcAddress,
-      secretKey: fpc.fpcSecretKey,
       functions: {
         [swap.pop]: {
           [popSelector.toString()]: {
