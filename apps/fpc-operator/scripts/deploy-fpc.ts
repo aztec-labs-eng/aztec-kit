@@ -83,8 +83,6 @@ async function main() {
     fees: forcePaymentMode(paymentMode),
 
     steps: {
-      // SubscriptionFPC(admin). It owns no notes, so it deploys with default
-      // contract keys — no `secret` needed.
       fpc: {
         kind: "contract",
         contract: SubscriptionFPCContract,
