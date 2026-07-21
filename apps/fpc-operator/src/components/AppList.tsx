@@ -26,7 +26,7 @@ import {
   getSignedUpApps,
   getStoredFPC,
   computeConfigId,
-  queryAvailableSlots,
+  queryAvailableSeats,
   type SignedUpApp,
 } from "../services/fpcService";
 import { FeePricingService } from "../services/fee-pricing";
@@ -62,7 +62,7 @@ function formatUsd(val: number | null): string {
 }
 
 export function AppList({ fpc, fpcAddress }: AppListProps) {
-  const { rollupAddress, l1ChainId, l1RpcUrl } = useWallet();
+  const { node, rollupAddress, l1ChainId, l1RpcUrl } = useWallet();
   const [apps, setApps] = useState<SignedUpApp[]>([]);
   const [slotInfo, setSlotInfo] = useState<Record<string, SlotInfo>>({});
   const [usdInfo, setUsdInfo] = useState<Record<string, UsdInfo>>({});
@@ -105,7 +105,7 @@ export function AppList({ fpc, fpcAddress }: AppListProps) {
   }, [apps, pricingService]);
 
   const refreshSlots = useCallback(async () => {
-    if (apps.length === 0) return;
+    if (apps.length === 0 || !node) return;
 
     const loading: Record<string, SlotInfo> = {};
     for (const app of apps) {
@@ -121,7 +121,7 @@ export function AppList({ fpc, fpcAddress }: AppListProps) {
           FunctionSelector.fromString(app.functionSelector),
           app.configIndex,
         );
-        const available = await queryAvailableSlots(fpc, configId);
+        const available = await queryAvailableSeats(node, fpc.address, configId, app.maxUsers);
         return {
           key: `${app.appAddress}:${app.functionSelector}:${app.configIndex}`,
           available,
@@ -139,7 +139,7 @@ export function AppList({ fpc, fpcAddress }: AppListProps) {
       }
     }
     setSlotInfo(updated);
-  }, [apps, fpc]);
+  }, [apps, fpc, node]);
 
   useEffect(() => {
     if (apps.length > 0) refreshSlots();

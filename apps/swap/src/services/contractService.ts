@@ -22,6 +22,7 @@ import type { TokenContract } from "@aztec/noir-contracts.js/Token";
 import type { AMMContract } from "@aztec-kit/contracts-aztec/artifacts/AMM";
 import type { ProofOfPasswordContract } from "@aztec-kit/contracts-aztec/artifacts/ProofOfPassword";
 import { SubscriptionFPC } from "@aztec-kit/contracts-aztec/subscription-fpc";
+import { countAvailableSeats } from "@aztec-kit/contracts-aztec/seat-picker";
 import { BigDecimal } from "../utils/bigDecimal";
 import type { NetworkConfig } from "../config/networks";
 import type { OnboardingResult } from "../contexts/onboarding/reducer";
@@ -382,6 +383,7 @@ function markSubscribed(fpcAddress: string, configIndex: number, userAddress: st
  * Uses subscribe on first call, sponsor on subsequent calls.
  */
 export async function executeSponsoredSwap(
+  node: AztecNode,
   network: NetworkConfig,
   amm: SwapContracts["amm"],
   goCoin: SwapContracts["goCoin"],
@@ -414,7 +416,7 @@ export async function executeSponsoredSwap(
       `No subscription config found for AMM ${amm.address.toString()} selector ${call.selector.toString()}`,
     );
   }
-  const { configIndex, gasLimits, hasPublicCall } = fnConfig;
+  const { configIndex, gasLimits, hasPublicCall, maxUsers } = fnConfig;
 
   const subscribed = hasSubscription(subFPC.address, configIndex, userAddress.toString());
 
@@ -428,10 +430,14 @@ export async function executeSponsoredSwap(
     });
     return receipt;
   } else {
+    // A free seat is picked automatically. A same-block seat collision would
+    // surface as a duplicate-nullifier tx failure; the user can retry.
     const { receipt } = await fpc.helpers.subscribe({
+      node,
       call,
       configIndex,
       userAddress,
+      maxUsers,
       gasLimits,
       hasPublicCall,
     });
@@ -482,6 +488,7 @@ export interface SubscriptionStatus {
  * Returns the status kind based on available slots and user subscription state.
  */
 export async function querySubscriptionStatus(
+  node: AztecNode,
   network: NetworkConfig,
   amm: SwapContracts["amm"],
   userAddress: AztecAddress,
@@ -505,14 +512,18 @@ export async function querySubscriptionStatus(
     new Fr(configIndex),
   ]);
 
-  // SlotNote is owned by the FPC — must simulate from fpc.address
-  // SubscriptionNote is owned by the user — must simulate from userAddress
-  const [{ result: slotsResult }, { result: subInfoResult }] = await Promise.all([
-    fpc.methods.count_available_slots(configId).simulate({ from: fpc.address }),
+  // Available seats come from a node scan of the seat-ticket nullifiers;
+  // SubscriptionNote is owned by the user — simulate from userAddress.
+  const [availableSlots, { result: subInfoResult }] = await Promise.all([
+    countAvailableSeats({
+      node,
+      fpcAddress: fpc.address,
+      configId,
+      maxUsers: fnConfig.maxUsers,
+    }),
     fpc.methods.get_subscription_info(userAddress, configId).simulate({ from: userAddress }),
   ]);
 
-  const availableSlots = Number(slotsResult);
   const [hasSubscription, remainingUses] = subInfoResult as [boolean, number];
 
   const remainingUsesNum = Number(remainingUses);
@@ -554,6 +565,7 @@ export function parseSwapError(error: unknown): string {
  * Uses subscription FPC when configured, falls back to Aztec's sponsored FPC.
  */
 export async function executeDrip(
+  node: AztecNode,
   wallet: Wallet,
   network: NetworkConfig,
   pop: ProofOfPasswordContract,
@@ -573,15 +585,17 @@ export async function executeDrip(
       `No subscription config found for ${pop.address.toString()} selector ${call.selector.toString()}`,
     );
   }
-  const { configIndex, gasLimits, hasPublicCall } = fnConfig;
+  const { configIndex, gasLimits, hasPublicCall, maxUsers } = fnConfig;
 
   const accounts = await wallet.getAccounts();
   const userAddress = accounts[0]?.item ?? recipient;
 
   const { receipt } = await fpc.helpers.subscribe({
+    node,
     call,
     configIndex,
     userAddress,
+    maxUsers,
     gasLimits,
     hasPublicCall,
   });
@@ -594,6 +608,7 @@ export async function executeDrip(
  * change note, and returns the recipient's offchain messages for link encoding.
  */
 export async function executeTransferOffchain(
+  node: AztecNode,
   network: NetworkConfig,
   contracts: SwapContracts,
   tokenKey: "goCoin" | "goCoinPremium",
@@ -621,7 +636,7 @@ export async function executeTransferOffchain(
       `No subscription config found for token ${token.address.toString()} selector ${call.selector.toString()}`,
     );
   }
-  const { configIndex, gasLimits, hasPublicCall } = fnConfig;
+  const { configIndex, gasLimits, hasPublicCall, maxUsers } = fnConfig;
 
   const subscribed = hasSubscription(subFPC.address, configIndex, fromAddress.toString());
 
@@ -636,9 +651,11 @@ export async function executeTransferOffchain(
     });
   } else {
     txResult = await fpc.helpers.subscribe({
+      node,
       call,
       configIndex,
       userAddress: fromAddress,
+      maxUsers,
       gasLimits,
       hasPublicCall,
     });

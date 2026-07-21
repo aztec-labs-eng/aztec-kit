@@ -8,6 +8,7 @@ import {
   SubscriptionFPCContract,
   SubscriptionFPCContractArtifact,
 } from "@aztec-kit/contracts-aztec/artifacts/SubscriptionFPC";
+import { countAvailableSeats } from "@aztec-kit/contracts-aztec/seat-picker";
 import { deriveKeys } from "@aztec/aztec.js/keys";
 
 // ── localStorage keys ────────────────────────────────────────────────
@@ -271,19 +272,18 @@ export async function signUpApp(
   });
 }
 
-// ── Query slot availability ──────────────────────────────────────────
+// ── Query seat availability ──────────────────────────────────────────
 
-export async function queryAvailableSlots(
-  fpc: SubscriptionFPCContract,
+export async function queryAvailableSeats(
+  node: AztecNode,
+  fpcAddress: AztecAddress,
   configId: Fr,
+  maxUsers: number,
 ): Promise<number> {
   try {
-    const { result } = await fpc.methods
-      .count_available_slots(configId)
-      .simulate({ from: fpc.address });
-    return Number(result);
+    return await countAvailableSeats({ node, fpcAddress, configId, maxUsers });
   } catch (err) {
-    console.error("queryAvailableSlots failed:", err);
+    console.error("queryAvailableSeats failed:", err);
     return -1;
   }
 }

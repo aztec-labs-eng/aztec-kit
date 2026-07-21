@@ -26,6 +26,12 @@ export interface SubscriptionFunctionConfig {
   configIndex: number;
   gasLimits: { daGas: number; l2Gas: number };
   hasPublicCall: boolean;
+  /**
+   * Seat capacity for this config (`max_users` at sign_up). The client picks a
+   * free seat (`0 <= seat < maxUsers`) when subscribing, so it needs to know
+   * the range. Written by `register-fpc-signups`.
+   */
+  maxUsers: number;
 }
 
 export interface SubscriptionFPCConfig {

@@ -159,8 +159,8 @@ async function main() {
   const fpcInstance = await node.getContract(fpcAddress);
   if (!fpcInstance) throw new Error(`FPC ${fpcAddress.toString()} not found on-chain`);
   // The FPC's contract key secret is published by deploy-fpc (it's public by
-  // design — the FPC holds notes for its slot tracking and the PXE needs its
-  // keys to decode those notes during simulation).
+  // design). Registering it keeps the FPC fully known to the PXE for
+  // calibration/subscribe simulations.
   const fpcSecret = Fr.fromString(requireEnv("FPC_SECRET"));
   await wallet.registerContract(fpcInstance, SubscriptionFPCContractArtifact, fpcSecret);
 
@@ -180,6 +180,7 @@ async function main() {
         configIndex: number;
         gasLimits: { daGas: number; l2Gas: number };
         hasPublicCall: boolean;
+        maxUsers: number;
       }
     >
   > = {};
@@ -190,11 +191,11 @@ async function main() {
   const backupApps: SignedUpApp[] = [];
 
   // Pick the config index for this run. `config_id = hash(app, selector,
-  // configIndex)` keys the (private) slot and subscription sets, and `sign_up`
-  // only ever *appends* a slot while emitting a per-config uniqueness nullifier
-  // — so re-running it at a config_id we've already used now reverts on-chain
-  // (duplicate nullifier). We must therefore advance the index on every re-run
-  // against the same FPC. The last index lives in the swap network config's
+  // configIndex)` keys the config's PublicImmutable, and `sign_up` initializes
+  // it exactly once — re-running at a config_id we've already used reverts
+  // on-chain on the duplicate initialization nullifier. We must therefore
+  // advance the index on every re-run against the same FPC. The last index
+  // lives in the swap network config's
   // `subscriptionFPC` block, which `deploy.ts` now preserves across redeploys
   // (it used to wipe it, which is why the index never advanced). A brand-new
   // FPC (different address or secret) starts at 0.
@@ -241,12 +242,9 @@ async function main() {
       .send({
         from: admin,
         fee: { paymentMethod },
-        // `sign_up` reads the FPC's own slot-tracking notes during simulation
-        // (via the handshake registry's `get_app_siloed_secrets`), so the PXE
-        // needs the FPC's key in scope — the same scope `calibrate` already
-        // uses. Without it, nightly fails with "Key validation request denied:
-        // no scoped account has a key with hash …".
-        additionalScopes: [fpcAddress],
+        // `sign_up` is now a public admin tx that writes the config's
+        // PublicImmutable — it reads no private notes, so no extra FPC scope
+        // is needed during simulation.
         // Upstream `EmbeddedWallet.sendTx`'s "default to PROPOSED" is a dead
         // mutation; `waitForTx` falls back to CHECKPOINTED otherwise. Pin
         // explicitly so scripts don't block on L1 publication.
@@ -263,6 +261,8 @@ async function main() {
       configIndex: targetConfigIndex,
       gasLimits,
       hasPublicCall,
+      // The runtime client needs the seat capacity to pick a free seat.
+      maxUsers: signup.maxUsers,
     };
 
     backupApps.push({

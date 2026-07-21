@@ -77,7 +77,9 @@ async function siloedSeatNullifiers(
   seats: number[],
 ): Promise<Fr[]> {
   return Promise.all(
-    seats.map(async (seat) => siloNullifier(fpcAddress, await computeSeatNullifier(configId, seat))),
+    seats.map(async (seat) =>
+      siloNullifier(fpcAddress, await computeSeatNullifier(configId, seat)),
+    ),
   );
 }
 
