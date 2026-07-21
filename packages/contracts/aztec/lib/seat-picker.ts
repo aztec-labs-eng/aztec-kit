@@ -53,6 +53,21 @@ export async function computeSeatNullifier(configId: Fr, seat: number): Promise<
   return poseidon2HashWithSeparator([configId, new Fr(seat)], SEAT_NULLIFIER_SEPARATOR);
 }
 
+/**
+ * Rejects a `maxUsers` that isn't a positive integer. This must be loud:
+ * `undefined`/`NaN` slip past `<=` comparisons and, worse, make
+ * `randomDistinctSeats` loop forever (`Math.random() * undefined` is `NaN`,
+ * which a `Set` dedupes, so the sample never fills) — in a browser that
+ * freezes the main thread with no error at all.
+ */
+function assertValidMaxUsers(maxUsers: number): void {
+  if (!Number.isInteger(maxUsers) || maxUsers <= 0) {
+    throw new Error(
+      `maxUsers must be a positive integer, got ${maxUsers} — is the network config's subscriptionFPC entry missing the maxUsers field?`,
+    );
+  }
+}
+
 function range(count: number): number[] {
   return Array.from({ length: count }, (_, i) => i);
 }
@@ -130,7 +145,7 @@ export async function findFreeSeat(params: {
   maxUsers: number;
 }): Promise<number> {
   const { node, fpcAddress, configId, maxUsers } = params;
-  if (maxUsers <= 0) throw new Error("maxUsers must be greater than zero");
+  assertValidMaxUsers(maxUsers);
 
   const scanAll = async (): Promise<number> => {
     const all = range(maxUsers);
@@ -166,6 +181,7 @@ export async function countAvailableSeats(params: {
   maxUsers: number;
 }): Promise<number> {
   const { node, fpcAddress, configId, maxUsers } = params;
+  assertValidMaxUsers(maxUsers);
   const taken = await takenSeats(node, fpcAddress, configId, range(maxUsers));
   return maxUsers - taken.length;
 }

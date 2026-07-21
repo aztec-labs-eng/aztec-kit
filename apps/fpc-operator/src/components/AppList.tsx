@@ -222,6 +222,7 @@ export function AppList({ fpc, fpcAddress }: AppListProps) {
                   data-gas-da={app.gasLimits.daGas}
                   data-gas-l2={app.gasLimits.l2Gas}
                   data-has-public-call={String(app.hasPublicCall)}
+                  data-max-users={app.maxUsers}
                 >
                   <TableCell sx={{ fontFamily: "monospace", fontSize: "0.75rem" }}>
                     {shortAddress(app.appAddress)}
