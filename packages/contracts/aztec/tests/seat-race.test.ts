@@ -1,9 +1,7 @@
 /**
- * Seat-nullifier race-condition tests — the point of the seat redesign.
+ * Seat-nullifier race-condition tests.
  *
- * The old contract decremented a single shared SlotNote per config, so
- * concurrent subscribers all nullified the same note and only the first
- * landed. The new design gives each subscriber a distinct "seat"
+ * Seat-nullifier gives each subscriber a distinct "seat"
  * (`0 <= seat < max_users`) claimed via a per-seat nullifier, so distinct
  * seats never contend. This suite proves:
  *   a. distinct seats don't race (two users, seats 0 & 1, proven+sent before
