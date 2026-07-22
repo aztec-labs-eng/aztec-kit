@@ -1,4 +1,7 @@
 import type { AztecAddress } from "@aztec/aztec.js/addresses";
+import type { AztecNode } from "@aztec/aztec.js/node";
+import { poseidon2Hash } from "@aztec/foundation/crypto/poseidon";
+import { Fr } from "@aztec/aztec.js/fields";
 import {
   FunctionType,
   type AztecAddressLike,
@@ -6,6 +9,7 @@ import {
   type FunctionCall,
 } from "@aztec/aztec.js/abi";
 import type { Wallet } from "@aztec/aztec.js/wallet";
+import { findFreeSeat } from "./seat-picker.js";
 import type { AuthWitness } from "@aztec/stdlib/auth-witness";
 import { Gas } from "@aztec/stdlib/gas";
 import type { EmbeddedWallet } from "@aztec/wallets/embedded";
@@ -33,10 +37,11 @@ import type { DeployInstantiationOptions } from "@aztec/aztec.js/contracts";
 
 /**
  * Overhead the FPC adds on top of the sponsored function's gas.
- * `subscribe` is the cold path (notes + nullifiers for slot + subscription);
- * `sponsor` reuses the existing subscription so it's cheaper. Both vary
- * further based on whether the tx contains a public phase — the FPC's own
- * private note ops get repriced at AVM rates in that case.
+ * `subscribe` is the cold path (a private config read, the seat-ticket
+ * nullifier, and the new SubscriptionNote); `sponsor` reuses the existing
+ * subscription so it's cheaper. Both vary further based on whether the tx
+ * contains a public phase — the FPC's own private ops get repriced at AVM
+ * rates in that case.
  *
  * `hasPublicCall` reflects the **whole tx**'s pricing regime, not just the
  * sponsored fn's top-level type: a private-typed fn that enqueues a public
@@ -214,16 +219,30 @@ export async function buildExtraHashedArgs(call: FunctionCall): Promise<HashedVa
  * equivalent measurement of the function with `msg_sender == FPC` (so any
  * authwit consumption is accounted for). The helper adds the `subscribe`-
  * path FPC overhead on top.
+ *
+ * `subscribe` claims a per-user "seat" (`0 <= seat < maxUsers`) by emitting
+ * the seat's ticket nullifier. When `seat` is omitted, the helper picks a
+ * free one via {@link findFreeSeat} against `node`. Because seat selection is
+ * a client-side race, two subscribers that pick the same free seat in the
+ * same block collide: exactly one lands and the other's tx fails with a
+ * duplicate-nullifier error. Callers may retry with a fresh pick — this
+ * helper does NOT auto-retry.
  */
 export async function subscribeAndCall(params: {
   /** SubscriptionFPC contract instance (connected to the user's wallet) */
   fpc: SubscriptionFPCContract;
+  /** Aztec node used to probe which seats are taken (seat picking) */
+  node: AztecNode;
   /** The FunctionCall to sponsor (from .getFunctionCall()) */
   call: FunctionCall;
   /** The config index for the sponsored app */
   configIndex: number;
   /** The subscribing user's address */
   userAddress: AztecAddress;
+  /** Seat capacity for this config (from calibration/network config) */
+  maxUsers: number;
+  /** Explicit seat override. When omitted, a free seat is picked automatically. */
+  seat?: number;
   /** Sponsored fn's gas under FPC dispatch (no subscribe/sponsor overhead) */
   gasLimits: { daGas: number; l2Gas: number };
   /** Whether the sponsored call has a public phase (from calibration) */
@@ -235,9 +254,12 @@ export async function subscribeAndCall(params: {
 }) {
   const {
     fpc,
+    node,
     call,
     configIndex,
     userAddress,
+    maxUsers,
+    seat,
     gasLimits,
     hasPublicCall,
     authWitnesses = [],
@@ -250,8 +272,16 @@ export async function subscribeAndCall(params: {
 
   const noirCall = await buildNoirFunctionCall(call);
 
+  const configId = await poseidon2Hash([
+    call.to.toField(),
+    call.selector.toField(),
+    new Fr(configIndex),
+  ]);
+  const chosenSeat =
+    seat ?? (await findFreeSeat({ node, fpcAddress: fpc.address, configId, maxUsers }));
+
   return fpc.methods
-    .subscribe(noirCall, configIndex, userAddress)
+    .subscribe(noirCall, configIndex, userAddress, chosenSeat)
     .with({
       authWitnesses,
       extraHashedArgs: await buildExtraHashedArgs(call),
@@ -396,12 +426,16 @@ export class SubscriptionFPC {
         }),
 
       /**
-       * Subscribes and sends a sponsored call through the FPC.
+       * Subscribes and sends a sponsored call through the FPC. Picks a free
+       * seat via the node unless `seat` is given.
        */
       subscribe: (params: {
+        node: AztecNode;
         call: FunctionCall;
         configIndex: number;
         userAddress: AztecAddress;
+        maxUsers: number;
+        seat?: number;
         gasLimits: { daGas: number; l2Gas: number };
         hasPublicCall: boolean;
         authWitnesses?: AuthWitness[];

@@ -26,7 +26,6 @@ export function App() {
   const { wallet, address, node } = useWallet();
   const [fpc, setFpc] = useState<SubscriptionFPCContract | null>(null);
   const [fpcAddress, setFpcAddress] = useState<string | null>(null);
-  const storedFpcData = getStoredFPC();
 
   const handleSetupComplete = useCallback(
     async (addr: string) => {
@@ -123,18 +122,6 @@ export function App() {
                   variant="outlined"
                   icon={<ContentCopyIcon sx={{ fontSize: 14 }} />}
                   onClick={() => navigator.clipboard.writeText(fpcAddress)}
-                />
-              </Tooltip>
-            )}
-            {storedFpcData?.secretKey && (
-              <Tooltip title="Copy FPC secret key">
-                <Chip
-                  label={`FPC Secret: ${shortAddress(storedFpcData.secretKey)}`}
-                  size="small"
-                  color="warning"
-                  variant="outlined"
-                  icon={<ContentCopyIcon sx={{ fontSize: 14 }} />}
-                  onClick={() => navigator.clipboard.writeText(storedFpcData.secretKey)}
                 />
               </Tooltip>
             )}

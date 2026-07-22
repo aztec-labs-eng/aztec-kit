@@ -70,11 +70,9 @@ export function createGoSwapCapabilities(network: NetworkConfig): AppCapabilitie
       contract: ammAddress,
       function: "swap_tokens_for_exact_tokens_from",
     });
-    // Utility queries on the FPC: subscription status and available slots
-    utilitySimulationPatterns.push(
-      { contract: fpcAddress, function: "count_available_slots" },
-      { contract: fpcAddress, function: "get_subscription_info" },
-    );
+    // Utility queries on the FPC: subscription status. (Available-seat counts
+    // now come from a node nullifier-tree scan, not a contract simulation.)
+    utilitySimulationPatterns.push({ contract: fpcAddress, function: "get_subscription_info" });
   }
 
   return {

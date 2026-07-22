@@ -20,7 +20,6 @@ export const BACKUP_VERSION = 2;
 /** Mirror of `StoredFPC` from the fpc-operator app. */
 export interface StoredFPC {
   address: string;
-  secretKey: string;
   salt: string;
   deployed: boolean;
 }

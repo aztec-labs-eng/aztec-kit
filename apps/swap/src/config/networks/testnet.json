@@ -15,49 +15,52 @@
   "deployer": {
     "address": "0x00ec002a897c76e67130502c17250fe525459974cd5f938b5d1550d11452230a"
   },
-  "deployedAt": "2026-07-15T16:45:13.226Z",
+  "deployedAt": "2026-07-21T15:06:08.689Z",
   "subscriptionFPC": {
-    "address": "0x1a04a0698c038a66dedbe4ed0312623295d994ed1a48ba09276ca5d2572a47ef",
-    "secretKey": "0x000000000000000000000000000000000000000000000000000000000000002c",
+    "address": "0x29212ad147a2a99c6d235b35fb3c461bf82ca740793d312ce25846eb55e886c7",
     "functions": {
       "0x1b45f2a1279fee921895c763de7b507b6abbcdf3440e617c9429a3460ebd4384": {
         "0xa539bd29": {
-          "configIndex": 3,
+          "configIndex": 0,
           "gasLimits": {
             "daGas": 992,
             "l2Gas": 721172
           },
-          "hasPublicCall": true
+          "hasPublicCall": true,
+          "maxUsers": 100
         }
       },
       "0x14cac9a6a28721d5b54fe7604cbe128e1c4f086573857f94d7bfb12d26e56857": {
         "0xfd228669": {
-          "configIndex": 3,
+          "configIndex": 0,
           "gasLimits": {
             "daGas": 3648,
             "l2Gas": 1118752
           },
-          "hasPublicCall": true
+          "hasPublicCall": true,
+          "maxUsers": 100
         }
       },
       "0x0faf2a22a09726dfb08b915e3587a67961bd494e81ce7940556c5bb5d0014f2e": {
         "0xb27dc0cb": {
-          "configIndex": 3,
+          "configIndex": 0,
           "gasLimits": {
             "daGas": 352,
             "l2Gas": 522400
           },
-          "hasPublicCall": false
+          "hasPublicCall": false,
+          "maxUsers": 100
         }
       },
       "0x1355cdf005b679eb6ab83bba395fcb4f420fab96ef4e28f55ed02ec31ddf9fc6": {
         "0xb27dc0cb": {
-          "configIndex": 3,
+          "configIndex": 0,
           "gasLimits": {
             "daGas": 352,
             "l2Gas": 522400
           },
-          "hasPublicCall": false
+          "hasPublicCall": false,
+          "maxUsers": 100
         }
       }
     }

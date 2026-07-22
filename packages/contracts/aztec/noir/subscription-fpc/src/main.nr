@@ -18,12 +18,21 @@ contract SubscriptionFPC {
         protocol::{
             abis::{function_selector::FunctionSelector, gas_settings::GasSettings},
             address::AztecAddress,
-            hash::poseidon2_hash,
-            traits::{Packable, ToField},
+            hash::{poseidon2_hash, poseidon2_hash_with_separator},
+            traits::{Deserialize, Packable, Serialize, ToField},
         },
-        state_vars::{Owned, PrivateSet, PublicImmutable},
+        state_vars::{Map, Owned, PrivateSet, PublicImmutable},
         utils::comparison::Comparator,
     };
+
+    /// Domain separator for the per-seat "ticket" nullifiers emitted on
+    /// subscription. Picked to be clearly app-specific (ASCII "SEAT") and
+    /// verified not to collide with any aztec-nr `DOM_SEP__*` protocol
+    /// constant. Nullifiers are siloed by contract address before they hit
+    /// the tree, so this only needs to stay distinct from other separators
+    /// used *within this contract* (notably PublicImmutable's own
+    /// initialization-nullifier separator).
+    global SEAT_NULLIFIER_SEPARATOR: u32 = 1397047636;
 
     /// Asserts that the transaction's max possible fee is within the FPC's allowance (`max_fee`).
     ///
@@ -44,6 +53,20 @@ contract SubscriptionFPC {
         assert(max_possible_fee <= max_fee, "Gas settings exceed subscription max_fee");
     }
 
+    /// Computes the inner (unsiloed) seat-ticket nullifier for a
+    /// `(config_id, seat)` pair. The protocol silos this by the FPC's
+    /// contract address before inserting it into the nullifier tree, so no
+    /// other contract can ever emit a colliding value. Grabbing a seat is
+    /// therefore just emitting this nullifier: the protocol's own
+    /// duplicate-nullifier rejection enforces at most one claim per seat, and
+    /// with `seat < max_users` at most `max_users` distinct seats can ever
+    /// exist for a config — the entire capacity mechanism, with no shared
+    /// mutable state on the signup path.
+    #[contract_library_method]
+    fn compute_seat_nullifier_inner(config_id: Field, seat: u32) -> Field {
+        poseidon2_hash_with_separator([config_id, seat as Field], SEAT_NULLIFIER_SEPARATOR)
+    }
+
     #[derive(Packable, Eq)]
     #[note]
     struct SubscriptionNote {
@@ -52,19 +75,22 @@ contract SubscriptionFPC {
         config_id: Field,
     }
 
-    #[derive(Packable, Eq)]
-    #[note]
-    struct SlotNote {
-        config_id: Field,
+    /// Public, immutable per-config sponsorship parameters. Written once by
+    /// `sign_up` (public) and read privately during `subscribe`. Keyed by
+    /// `config_id = poseidon2([app, selector, current_index])` in the
+    /// `configs` map, one `PublicImmutable` per config.
+    #[derive(Deserialize, Eq, Packable, Serialize)]
+    pub struct Config {
         max_fee: u128,
         max_uses: u32,
-        users: u32,
+        max_users: u32,
     }
+
     #[storage]
     struct Storage<Context> {
         admin: PublicImmutable<AztecAddress, Context>,
         subscriptions: Owned<PrivateSet<SubscriptionNote, Context>, Context>,
-        slots: Owned<PrivateSet<SlotNote, Context>, Context>,
+        configs: Map<Field, PublicImmutable<Config, Context>, Context>,
     }
 
     #[initializer]
@@ -73,7 +99,17 @@ contract SubscriptionFPC {
         self.storage.admin.initialize(admin);
     }
 
-    #[external("private")]
+    /// Registers a sponsored `(app, selector, current_index)` config. Public
+    /// so it can write `PublicImmutable` config state (private functions
+    /// cannot initialize public storage). Admin-gated: the admin is a
+    /// `PublicImmutable<AztecAddress>` readable in public.
+    ///
+    /// `PublicImmutable::initialize` emits a per-config initialization
+    /// nullifier, so re-running `sign_up` at a `config_id` that already
+    /// exists reverts on the duplicate nullifier — this replaces the manual
+    /// uniqueness nullifier the old slot-note design pushed by hand, and
+    /// guarantees exactly one config per `config_id`.
+    #[external("public")]
     fn sign_up(
         app: AztecAddress,
         selector: FunctionSelector,
@@ -86,23 +122,16 @@ contract SubscriptionFPC {
             self.msg_sender() == self.storage.admin.read(),
             "Only the admin can add sponsored apps",
         );
+        assert(max_users > 0, "max_users must be greater than zero");
+        assert(max_uses > 0, "max_uses must be greater than zero");
+
         let config_id = poseidon2_hash([
             app.to_field(),
             selector.to_field(),
             current_index.to_field(),
         ]);
 
-        // Enforce one sign-up per (app, selector, configIndex). `sign_up` only
-        // *appends* slots, so re-running it at a config_id that already has
-        // slots silently stacks a second, differently priced SlotNote
-        self.context.push_nullifier_unsafe(poseidon2_hash([config_id]));
-
-        self
-            .storage
-            .slots
-            .at(self.address)
-            .insert(SlotNote { config_id, max_uses, max_fee, users: max_users })
-            .deliver(MessageDelivery::onchain_unconstrained().with_sender(self.address));
+        self.storage.configs.at(config_id).initialize(Config { max_fee, max_uses, max_users });
     }
 
     #[external("private")]
@@ -229,7 +258,7 @@ contract SubscriptionFPC {
 
     #[external("private")]
     #[allow_phase_change]
-    fn subscribe(call: FunctionCall, current_index: u32, user: AztecAddress) {
+    fn subscribe(call: FunctionCall, current_index: u32, user: AztecAddress, seat: u32) {
         // Assert we're at the top of the stack
         assert(
             self.context.maybe_msg_sender() == Option::none(),
@@ -242,34 +271,24 @@ contract SubscriptionFPC {
             current_index.to_field(),
         ]);
 
-        let options = NoteGetterOptions::new().set_limit(1).select(
-            SlotNote::properties().config_id,
-            Comparator.EQ,
-            config_id,
-        );
-        let slots = self.storage.slots.at(self.address).pop_notes(options);
-        assert(
-            slots.len() > 0,
-            "No subscription slots available for this function. The operator must call sign_up first.",
-        );
-        let slot = slots.get(0);
-        if slot.users > 0 {
-            self
-                .storage
-                .slots
-                .at(self.address)
-                .insert(
-                    SlotNote {
-                        users: slot.users - 1,
-                        max_uses: slot.max_uses,
-                        max_fee: slot.max_fee,
-                        config_id,
-                    },
-                )
-                .deliver(MessageDelivery::onchain_unconstrained().with_sender(self.address))
-        }
+        // Private read of the config's public state. This proves the config
+        // was initialized (via `sign_up`) against the tx's anchor block, and
+        // yields its value with zero side effects — no shared mutable state,
+        // so concurrent subscribers never contend here. It also replaces the
+        // old "operator must call sign_up first" check: reading an
+        // uninitialized `PublicImmutable` reverts.
+        let config = self.storage.configs.at(config_id).read();
 
-        assert_fee_within_max(self.context.gas_settings(), slot.max_fee);
+        assert(seat < config.max_users, "Seat out of range");
+
+        // Claim the seat by emitting its ticket nullifier. Emitted here
+        // (before `end_setup`) so it's non-revertible, matching the old
+        // slot-pop nullifier's placement/semantics. Two subscribers racing
+        // for the same seat produce the same nullifier, so at most one lands;
+        // distinct seats never collide.
+        self.context.push_nullifier_unsafe(compute_seat_nullifier_inner(config_id, seat));
+
+        assert_fee_within_max(self.context.gas_settings(), config.max_fee);
 
         // We are convinced, sponsor the fee and end setup
         self.context.set_as_fee_payer();
@@ -279,24 +298,27 @@ contract SubscriptionFPC {
             .storage
             .subscriptions
             .at(user)
-            .insert(SubscriptionNote { uses: slot.max_uses - 1, max_fee: slot.max_fee, config_id })
+            .insert(SubscriptionNote { uses: config.max_uses - 1, max_fee: config.max_fee, config_id })
             .deliver(MessageDelivery::onchain_unconstrained().with_sender(user));
 
         // We allow calling the sponsored function in the same tx as the subscription
         self.internal._call_sponsored_fn(call);
     }
 
+    /// Reads a config's sponsorship parameters. Used by clients/tests to
+    /// discover `max_users` (for seat picking) and other config values.
+    /// Reverts if the config was never signed up.
     #[external("utility")]
-    unconstrained fn count_available_slots(config_id: Field) -> u32 {
-        let options = NoteViewerOptions::new()
-            .select(SlotNote::properties().config_id, Comparator.EQ, config_id)
-            .set_limit(1);
-        let notes = self.storage.slots.at(self.address).view_notes(options);
-        if notes.len() > 0 {
-            notes.get_unchecked(0).users
-        } else {
-            0
-        }
+    unconstrained fn get_config(config_id: Field) -> pub Config {
+        self.storage.configs.at(config_id).read()
+    }
+
+    /// Returns the INNER (unsiloed) seat-ticket nullifier for a
+    /// `(config_id, seat)` pair, via the same library method `subscribe`
+    /// uses. Lets clients/tests pin TS↔Noir hash parity before siloing.
+    #[external("utility")]
+    unconstrained fn compute_seat_nullifier(config_id: Field, seat: u32) -> Field {
+        compute_seat_nullifier_inner(config_id, seat)
     }
 
     #[external("utility")]
