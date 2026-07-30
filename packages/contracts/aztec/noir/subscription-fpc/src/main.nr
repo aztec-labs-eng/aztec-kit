@@ -46,7 +46,7 @@ contract SubscriptionFPC {
 
     #[derive(Packable, Eq)]
     #[note]
-    struct SubscriptionNote {
+    pub struct SubscriptionNote {
         uses: u32,
         max_fee: u128,
         config_id: Field,
@@ -54,7 +54,7 @@ contract SubscriptionFPC {
 
     #[derive(Packable, Eq)]
     #[note]
-    struct SlotNote {
+    pub struct SlotNote {
         config_id: Field,
         max_fee: u128,
         max_uses: u32,
