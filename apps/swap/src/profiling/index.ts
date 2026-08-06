@@ -93,10 +93,37 @@ function collectMethods(target: any): string[] {
   return [...seen];
 }
 
+/**
+ * Whether reading each of `methods` twice yields the same function.
+ *
+ * A Proxy that synthesizes methods in its `get` trap answers with a fresh
+ * function on every read while forwarding writes to the object underneath —
+ * PXE's caching node wrapper (`withCache`) is one, handing back either a
+ * per-read `value.bind(target)` or its own caching closure. Wrapping such an
+ * object installs our wrapper *below* the trap, and the trap's closure then
+ * calls straight back into it: unbounded recursion, which surfaces as
+ * "Maximum call stack size exceeded" on the first node read. If we can't
+ * observe our own writes we don't own the methods, so we leave them alone.
+ */
+function hasStableMethods(target: any, methods: string[]): boolean {
+  return methods.every((name) => {
+    try {
+      return target[name] === target[name];
+    } catch {
+      return false;
+    }
+  });
+}
+
 function wrapAllMethods(target: any, category: Category, profiler: Profiler): () => void {
   const restores: (() => void)[] = [];
   const methods = collectMethods(target);
   const wrappedNames: string[] = [];
+
+  if (!hasStableMethods(target, methods)) {
+    console.info(`[profiler] skipped ${category}: proxy-synthesized methods, not safe to wrap`);
+    return () => {};
+  }
 
   for (const name of methods) {
     const original = target[name];
