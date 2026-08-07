@@ -6,7 +6,7 @@ const CHAIN_MAP: Record<number, { chain: Chain; defaultRpc: string }> = {
   1: { chain: mainnet, defaultRpc: "https://eth.llamarpc.com" },
   11155111: {
     chain: sepolia,
-    defaultRpc: "https://sepolia.drpc.org",
+    defaultRpc: "https://ethereum-sepolia-rpc.publicnode.com",
   },
 };
 
