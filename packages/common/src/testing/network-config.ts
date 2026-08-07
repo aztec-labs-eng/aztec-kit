@@ -25,7 +25,7 @@ export function apiKeyForNetwork(network: NetworkName): string | undefined {
 /** L1 parameters the bridging scripts need. Keep in sync with the rollup. */
 export const L1_DEFAULTS: Record<NetworkName, { l1RpcUrl: string; l1ChainId: number }> = {
   local: { l1RpcUrl: "http://localhost:8545", l1ChainId: 31337 },
-  testnet: { l1RpcUrl: "https://sepolia.drpc.org", l1ChainId: 11155111 },
+  testnet: { l1RpcUrl: "https://ethereum-sepolia-rpc.publicnode.com", l1ChainId: 11155111 },
 };
 
 /**

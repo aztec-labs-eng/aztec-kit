@@ -86,7 +86,7 @@ export const ANVIL_DEV_KEY: Hex =
 export type ChainName = "sepolia" | "mainnet" | "anvil";
 
 const CHAINS: Record<ChainName, { chain: Chain; defaultRpc: string }> = {
-  sepolia: { chain: sepolia, defaultRpc: "https://sepolia.drpc.org" },
+  sepolia: { chain: sepolia, defaultRpc: "https://ethereum-sepolia-rpc.publicnode.com" },
   mainnet: { chain: mainnet, defaultRpc: "https://eth.drpc.org" },
   anvil: { chain: foundry, defaultRpc: "http://localhost:8545" },
 };
