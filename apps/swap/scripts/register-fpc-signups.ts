@@ -271,8 +271,10 @@ async function main() {
     });
   }
 
+  // Both fields are set here, so the previous spread of the existing block could only
+  // carry strays forward — including, historically, the FPC's key secret. Written out
+  // explicitly so this file never accumulates anything the app doesn't read.
   config.subscriptionFPC = {
-    ...(config.subscriptionFPC ?? {}),
     address: fpcAddress.toString(),
     functions,
   };
