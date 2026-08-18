@@ -12,6 +12,14 @@ name: Deploy to Vercel
 #   FPC_PROJECT_ID     / FPC_PROJECT_ID_NEXT
 #   SWAP_PROJECT_ID    / SWAP_PROJECT_ID_NEXT
 #
+# The Aztec node sits behind the rpc2 API gateway, which 403s unauthenticated
+# calls. Its key is the repo secret TESTNET_API_KEY, exposed to the app builds
+# as `VITE_TESTNET_API_KEY` and substituted into config/networks/testnet.json
+# at build time (see apps/*/src/config/networks/index.ts). One secret covers
+# both the main and next project sets — the gateway key is per-network, not
+# per-branch. A missing secret builds a keyless bundle that 403s at runtime
+# rather than failing the build, so set it before relying on a deploy.
+#
 # Production domains (next.<app>.aztec-labs.com) are configured on the *-next
 # Vercel projects, so prod-slot deploys auto-alias — no manual `vercel alias
 # set` step.
@@ -182,6 +190,8 @@ jobs:
         run: rm -f apps/*/src/config/networks/local.json
 
       - name: Build packages
+        env:
+          VITE_TESTNET_API_KEY: ${{ secrets.TESTNET_API_KEY }}
         run: yarn build
 
       - name: Install Vercel CLI
@@ -224,6 +234,7 @@ jobs:
         id: deploy-bridge
         env:
           VERCEL_PROJECT_ID: ${{ env.BRIDGE_PROJECT_ID_RESOLVED }}
+          VITE_TESTNET_API_KEY: ${{ secrets.TESTNET_API_KEY }}
         run: |
           if [ "$VERCEL_ENV_SLOT" = "production" ]; then
             vercel build --prod --token=${{ secrets.VERCEL_TOKEN }} --cwd apps/bridge
@@ -245,6 +256,7 @@ jobs:
         env:
           VERCEL_PROJECT_ID: ${{ env.FPC_PROJECT_ID_RESOLVED }}
           VITE_BRIDGE_URL: ${{ vars.VITE_BRIDGE_URL }}
+          VITE_TESTNET_API_KEY: ${{ secrets.TESTNET_API_KEY }}
         run: |
           if [ "$VERCEL_ENV_SLOT" = "production" ]; then
             vercel build --prod --token=${{ secrets.VERCEL_TOKEN }} --cwd apps/fpc-operator
@@ -266,6 +278,7 @@ jobs:
         env:
           VERCEL_PROJECT_ID: ${{ env.SWAP_PROJECT_ID_RESOLVED }}
           VITE_WEB_WALLET_URL: ${{ vars.VITE_WEB_WALLET_URL }}
+          VITE_TESTNET_API_KEY: ${{ secrets.TESTNET_API_KEY }}
         run: |
           if [ "$VERCEL_ENV_SLOT" = "production" ]; then
             vercel build --prod --token=${{ secrets.VERCEL_TOKEN }} --cwd apps/swap

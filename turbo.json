@@ -3,6 +3,7 @@
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
+      "env": ["VITE_TESTNET_API_KEY"],
       "outputs": [
         "dist/**",
         "noir/artifacts/**",
