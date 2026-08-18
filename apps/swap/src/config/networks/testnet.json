@@ -16,9 +16,9 @@
   "deployer": {
     "address": "0x09183bb97d93078117b315c3b2688106b96440bede2c6896c0520c1973148bce"
   },
-  "deployedAt": "2026-08-07T11:41:45.178Z",
+  "deployedAt": "2026-08-18T08:06:34.339Z",
   "subscriptionFPC": {
-    "address": "0x2666f1eda63de78627bb966c22506173017c35e3f88c265ce4e34a5f14b82e44",
+    "address": "0x24033bc2c8aa5b3e35db7bd7520df4e9de457c5afe1d6ac369adc3f8f7a9caf2",
     "secretKey": "0x000000000000000000000000000000000000000000000000000000000000002c",
     "functions": {
       "0x0ec02ad939d9619cd6df1858b209842b1beea3363d70a894637324044fff4519": {
@@ -28,7 +28,8 @@
             "daGas": 992,
             "l2Gas": 721172
           },
-          "hasPublicCall": true
+          "hasPublicCall": true,
+          "maxUsers": 100
         }
       },
       "0x28d5bdca8a5a85491cad7fafed39bec8ec1fd024c1e9c5be1fd6005cf590d394": {
@@ -38,7 +39,8 @@
             "daGas": 3648,
             "l2Gas": 1118752
           },
-          "hasPublicCall": true
+          "hasPublicCall": true,
+          "maxUsers": 100
         }
       },
       "0x1e2837da6cf4b0edd865f05ae263a9be0baaf2a8436fda86d7cdc62c2b51c4b4": {
@@ -48,7 +50,8 @@
             "daGas": 352,
             "l2Gas": 522400
           },
-          "hasPublicCall": false
+          "hasPublicCall": false,
+          "maxUsers": 100
         }
       },
       "0x008e634a9d368244a6f3b803f0926c503539871a9ed4ab6389589496bd1552ea": {
@@ -58,7 +61,8 @@
             "daGas": 352,
             "l2Gas": 522400
           },
-          "hasPublicCall": false
+          "hasPublicCall": false,
+          "maxUsers": 100
         }
       }
     }
