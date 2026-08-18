@@ -211,7 +211,11 @@ class DeploymentRun<C extends Steps> {
     const node = spec.node ?? createAztecNodeClient(spec.nodeUrl!);
     const wallet = await EmbeddedWallet.create(node, {
       ephemeral: true,
-      pxeConfig: { ...getPXEConfig(), proverEnabled: !(spec.local ?? false) },
+      pxeConfig: {
+        ...getPXEConfig(),
+        proverEnabled: !(spec.local ?? false),
+        concurrentContractSyncEnabled: true,
+      },
     });
     const run = new DeploymentRun(spec, node, wallet);
     await run.resolveAccounts();

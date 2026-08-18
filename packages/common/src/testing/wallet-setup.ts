@@ -60,7 +60,7 @@ export async function setupWallet(
   const proverEnabled = network !== "local";
   const wallet = await EmbeddedWallet.create(node, {
     ephemeral: true,
-    pxeConfig: { ...getPXEConfig(), proverEnabled },
+    pxeConfig: { ...getPXEConfig(), proverEnabled, concurrentContractSyncEnabled: true },
   });
 
   const sponsoredFPC = await getSponsoredFPCContract();
