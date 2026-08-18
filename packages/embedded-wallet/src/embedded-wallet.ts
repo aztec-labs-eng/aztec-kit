@@ -146,13 +146,18 @@ export type EmbeddedWalletExtraOptions = {
    * API key for nodes behind an auth gateway. Only used when `create` is
    * given a node URL string — when passed a pre-built `AztecNode` the key
    * must already be baked into that client's fetch. Injected as the
-   * `X-Aztec-API-Key` header on every JSON-RPC request.
+   * the gateway's API-key header on every JSON-RPC request.
    */
   apiKey?: string;
 };
 
-/** Header the API-gateway-fronted nodes require for auth. */
-const AZTEC_API_KEY_HEADER = "X-Aztec-API-Key";
+/**
+ * Header the API-gateway-fronted nodes require for auth. Deliberately duplicated from
+ * `@aztec-kit/common`'s `AZTEC_API_KEY_HEADER` rather than imported: this package's tsconfig
+ * has no `allowImportingTsExtensions`, and common's `./node` entry point is `.ts` source.
+ * Keep the two in sync — changing the gateway's header means changing both.
+ */
+const AZTEC_API_KEY_HEADER = "x-api-key";
 
 export class EmbeddedWallet extends EmbeddedWalletBase {
   /**

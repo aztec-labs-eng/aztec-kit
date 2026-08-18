@@ -7,7 +7,7 @@ import { useNetwork } from "../contexts/network";
 import { useOnboarding } from "../contexts/onboarding";
 
 export function useSubscriptionStatus(swapPhase: string, dripPhase: string): SubscriptionStatus {
-  const { currentAddress } = useWallet();
+  const { currentAddress, node } = useWallet();
   const { getAmm, getFpc } = useContracts();
   const { activeNetwork } = useNetwork();
   const { status: onboardingStatus } = useOnboarding();
@@ -26,7 +26,7 @@ export function useSubscriptionStatus(swapPhase: string, dripPhase: string): Sub
   const fetchStatus = useCallback(async () => {
     const amm = getAmm();
     const fpc = getFpc();
-    if (!currentAddress || !amm || !isOnboarded) return;
+    if (!currentAddress || !node || !amm || !isOnboarded) return;
     if (!activeNetwork.subscriptionFPC) {
       setStatus({ kind: "no_fpc" });
       return;
@@ -34,14 +34,14 @@ export function useSubscriptionStatus(swapPhase: string, dripPhase: string): Sub
     if (isFetchingRef.current) return;
     isFetchingRef.current = true;
     try {
-      const result = await querySubscriptionStatus(activeNetwork, amm, currentAddress, fpc);
+      const result = await querySubscriptionStatus(node, activeNetwork, amm, currentAddress, fpc);
       setStatus(result);
     } catch {
       // Leave previous status on transient error to avoid flicker
     } finally {
       isFetchingRef.current = false;
     }
-  }, [currentAddress, activeNetwork, getAmm, getFpc, isOnboarded]);
+  }, [currentAddress, node, activeNetwork, getAmm, getFpc, isOnboarded]);
 
   // Fetch after onboarding completes
   useEffect(() => {

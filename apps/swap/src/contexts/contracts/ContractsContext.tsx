@@ -154,6 +154,7 @@ export function ContractsProvider({ children }: ContractsProviderProps) {
     async (amountOut: number, amountInMax: number): Promise<TxReceipt> => {
       if (
         !wallet ||
+        !node ||
         !currentAddress ||
         !state.contracts.amm ||
         !state.contracts.goCoin ||
@@ -164,6 +165,7 @@ export function ContractsProvider({ children }: ContractsProviderProps) {
       }
 
       return contractService.executeSponsoredSwap(
+        node,
         activeNetwork,
         state.contracts.amm,
         state.contracts.goCoin,
@@ -174,7 +176,7 @@ export function ContractsProvider({ children }: ContractsProviderProps) {
         amountInMax,
       );
     },
-    [wallet, currentAddress, activeNetwork, state.contracts],
+    [wallet, node, currentAddress, activeNetwork, state.contracts],
   );
 
   // Execute unsponsored swap (user pays own gas)
@@ -257,6 +259,7 @@ export function ContractsProvider({ children }: ContractsProviderProps) {
       }
 
       return contractService.executeDrip(
+        node,
         wallet,
         activeNetwork,
         state.contracts.pop,
@@ -265,7 +268,7 @@ export function ContractsProvider({ children }: ContractsProviderProps) {
         recipient,
       );
     },
-    [wallet, activeNetwork, state.contracts.pop, state.contracts.fpc],
+    [wallet, node, activeNetwork, state.contracts.pop, state.contracts.fpc],
   );
 
   // Execute offchain transfer (send with link)
@@ -273,6 +276,7 @@ export function ContractsProvider({ children }: ContractsProviderProps) {
     async (tokenKey: "goCoin" | "goCoinPremium", recipient: AztecAddress, amount: bigint) => {
       if (
         !wallet ||
+        !node ||
         !currentAddress ||
         !state.contracts.goCoin ||
         !state.contracts.goCoinPremium ||
@@ -281,6 +285,7 @@ export function ContractsProvider({ children }: ContractsProviderProps) {
         throw new Error("Contracts not initialized");
       }
       return contractService.executeTransferOffchain(
+        node,
         activeNetwork,
         {
           goCoin: state.contracts.goCoin,
@@ -294,7 +299,7 @@ export function ContractsProvider({ children }: ContractsProviderProps) {
         amount,
       );
     },
-    [wallet, activeNetwork, currentAddress, state.contracts],
+    [wallet, node, activeNetwork, currentAddress, state.contracts],
   );
 
   // Claim an offchain transfer via offchain_receive

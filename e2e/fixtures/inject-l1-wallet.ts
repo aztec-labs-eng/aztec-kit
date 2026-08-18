@@ -3,10 +3,14 @@ import { createWalletClient, http, hexToBigInt, type Hex, type Chain } from "vie
 import { privateKeyToAccount } from "viem/accounts";
 
 /**
- * Injects a synthetic `window.ethereum` (EIP-1193) provider backed by a
- * viem WalletClient that runs *in Node*. Browser-side calls cross over
- * via `page.exposeBinding` — that way we don't need to resolve `viem`
- * inside the page, which would require vite's bundler.
+ * Injects a synthetic EIP-1193 provider backed by a viem WalletClient that
+ * runs *in Node*. Browser-side calls cross over via `page.exposeBinding` —
+ * that way we don't need to resolve `viem` inside the page, which would
+ * require vite's bundler.
+ *
+ * The provider announces itself via EIP-6963 (`eip6963:announceProvider`),
+ * which is how the apps discover wallets, and is also assigned to
+ * `window.ethereum` for legacy-fallback coverage.
  *
  * Must be called before `page.goto(...)`.
  */
@@ -155,6 +159,31 @@ export async function injectL1Wallet(page: Page, opts: InjectL1WalletOpts): Prom
         writable: true,
         configurable: true,
       });
+
+      // ── EIP-6963 announcement ──────────────────────────────────────
+      const info = Object.freeze({
+        uuid: "e2e00000-0000-4000-8000-000000000001",
+        name: "E2E Test Wallet",
+        icon: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="3" fill="%23667"/><circle cx="17" cy="12" r="1.6" fill="%23fff"/></svg>',
+        rdns: "test.e2e.wallet",
+      });
+      const announce = () =>
+        window.dispatchEvent(
+          new CustomEvent("eip6963:announceProvider", {
+            detail: Object.freeze({ info, provider: ethereum }),
+          }),
+        );
+      window.addEventListener("eip6963:requestProvider", announce);
+      announce();
+
+      // Mark this wallet as the bridge app's last-connected one so it
+      // silently reconnects on load — the pre-EIP-6963 behavior specs rely
+      // on ("step 1 auto-advances"). Must match WalletContext's STORAGE_KEY.
+      try {
+        localStorage.setItem("gobridge:l1-wallet-rdns", "test.e2e.wallet");
+      } catch {
+        /* ignore — cross-origin frame */
+      }
     },
     { rpcUrl: opts.rpcUrl, chainId: opts.chainId },
   );

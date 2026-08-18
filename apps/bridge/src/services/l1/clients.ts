@@ -3,6 +3,7 @@ import {
   createWalletClient,
   custom,
   http,
+  type EIP1193Provider,
   type Hex,
   formatUnits,
   type Chain,
@@ -56,26 +57,30 @@ export const viemReadContract = (client: any, params: any) => client.readContrac
 // ── Client factories ─────────────────────────────────────────────────
 
 /**
- * Creates a public client that reads through the user's wallet provider (e.g. MetaMask)
- * if available, falling back to the configured RPC URL.
+ * Creates a public client that reads through the selected wallet's provider
+ * if given, falling back to the configured RPC URL.
  */
-export function getL1PublicClient(l1RpcUrl: string, chainId: number) {
+export function getL1PublicClient(
+  l1RpcUrl: string,
+  chainId: number,
+  provider?: EIP1193Provider | null,
+) {
   const chain = getChain(chainId);
-  if (window.ethereum) {
-    return createPublicClient({ chain, transport: custom(window.ethereum) });
+  if (provider) {
+    return createPublicClient({ chain, transport: custom(provider) });
   }
   return createPublicClient({ chain, transport: http(l1RpcUrl) });
 }
 
 /**
- * Returns a { publicClient, walletClient, account, chain } bundle for L1 write operations.
- * Throws if no EVM wallet is available or no account is connected.
+ * Returns a { publicClient, walletClient, account, chain } bundle for L1 write
+ * operations, bound to the selected wallet's provider.
+ * Throws if no account is connected.
  */
-export async function getL1Clients(chainId: number) {
-  if (!window.ethereum) throw new Error("No EVM wallet found");
+export async function getL1Clients(provider: EIP1193Provider, chainId: number) {
   const chain = getChain(chainId);
-  const publicClient = createPublicClient({ chain, transport: custom(window.ethereum) });
-  const walletClient = createWalletClient({ chain, transport: custom(window.ethereum) });
+  const publicClient = createPublicClient({ chain, transport: custom(provider) });
+  const walletClient = createWalletClient({ chain, transport: custom(provider) });
   const [account] = await walletClient.requestAddresses();
   if (!account) throw new Error("No account connected");
   return { publicClient, walletClient, account, chain };
@@ -88,8 +93,9 @@ export async function getFeeJuiceBalance(
   chainId: number,
   tokenAddress: Hex,
   account: Hex,
+  provider?: EIP1193Provider | null,
 ): Promise<{ balance: bigint; formatted: string; decimals: number }> {
-  const client = getL1PublicClient(l1RpcUrl, chainId);
+  const client = getL1PublicClient(l1RpcUrl, chainId, provider);
   const [balance, decimals] = await Promise.all([
     viemReadContract(client, {
       address: tokenAddress,
@@ -110,8 +116,9 @@ export async function getMintAmount(
   l1RpcUrl: string,
   chainId: number,
   handlerAddress: Hex,
+  provider?: EIP1193Provider | null,
 ): Promise<bigint> {
-  const client = getL1PublicClient(l1RpcUrl, chainId);
+  const client = getL1PublicClient(l1RpcUrl, chainId, provider);
   return viemReadContract(client, {
     address: handlerAddress,
     abi: handlerReadAbi,

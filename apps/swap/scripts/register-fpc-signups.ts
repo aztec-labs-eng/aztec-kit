@@ -7,12 +7,9 @@
  *   --network <network>
  *   FPC_ADDRESS      — hex AztecAddress of the deployed FPC (from fpc-operator/deploy-fpc)
  *   FPC_ADMIN_SECRET — FPC admin secret (signup txs must be sent by the FPC deployer)
- *   FPC_SECRET       — the contract key secret the FPC was deployed with, so the
- *                      PXE can derive its public keys for note encoding during
- *                      calibration simulations. Published by deploy-fpc on stdout.
  *
  * Side outputs:
- *   Writes `subscriptionFPC.{address, secretKey, functions}` into the
+ *   Writes `subscriptionFPC.{address, functions}` into the
  *   committed swap network config (`src/config/networks/<network>.json`).
  *   `functions` maps `contractAddress → { functionSelector → configIndex }`.
  *
@@ -155,14 +152,12 @@ async function main() {
   const swapAdmin = AztecAddress.fromStringUnsafe(config.deployer.address);
   await wallet.registerSender(swapAdmin, "swap-admin");
 
-  // Register the FPC contract so we can simulate subscribe() against it.
+  // Register the FPC contract so we can simulate subscribe() against it. The
+  // FPC owns no notes, so it registers with default contract keys and needs no
+  // secret.
   const fpcInstance = await node.getContract(fpcAddress);
   if (!fpcInstance) throw new Error(`FPC ${fpcAddress.toString()} not found on-chain`);
-  // The FPC's contract key secret is published by deploy-fpc (it's public by
-  // design — the FPC holds notes for its slot tracking and the PXE needs its
-  // keys to decode those notes during simulation).
-  const fpcSecret = Fr.fromString(requireEnv("FPC_SECRET"));
-  await wallet.registerContract(fpcInstance, SubscriptionFPCContractArtifact, fpcSecret);
+  await wallet.registerContract(fpcInstance, SubscriptionFPCContractArtifact);
 
   const fpc = new SubscriptionFPC(SubscriptionFPCContract.at(fpcAddress, wallet));
 
@@ -180,6 +175,7 @@ async function main() {
         configIndex: number;
         gasLimits: { daGas: number; l2Gas: number };
         hasPublicCall: boolean;
+        maxUsers: number;
       }
     >
   > = {};
@@ -190,18 +186,16 @@ async function main() {
   const backupApps: SignedUpApp[] = [];
 
   // Pick the config index for this run. `config_id = hash(app, selector,
-  // configIndex)` keys the (private) slot and subscription sets, and `sign_up`
-  // only ever *appends* a slot while emitting a per-config uniqueness nullifier
-  // — so re-running it at a config_id we've already used now reverts on-chain
-  // (duplicate nullifier). We must therefore advance the index on every re-run
-  // against the same FPC. The last index lives in the swap network config's
+  // configIndex)` keys the config's PublicImmutable, and `sign_up` initializes
+  // it exactly once — re-running at a config_id we've already used reverts
+  // on-chain on the duplicate initialization nullifier. We must therefore
+  // advance the index on every re-run against the same FPC. The last index
+  // lives in the swap network config's
   // `subscriptionFPC` block, which `deploy.ts` now preserves across redeploys
   // (it used to wipe it, which is why the index never advanced). A brand-new
-  // FPC (different address or secret) starts at 0.
+  // FPC (different address) starts at 0.
   const existingFpc = config.subscriptionFPC;
-  const reusingSameFpc =
-    existingFpc?.address === fpcAddress.toString() &&
-    existingFpc?.secretKey === fpcSecret.toString();
+  const reusingSameFpc = existingFpc?.address === fpcAddress.toString();
   const existingIndices: number[] =
     reusingSameFpc && existingFpc?.functions
       ? Object.values(
@@ -211,7 +205,7 @@ async function main() {
   const targetConfigIndex = existingIndices.length > 0 ? Math.max(...existingIndices) + 1 : 0;
   if (targetConfigIndex > 0) {
     console.error(
-      `Existing signup on FPC ${fpcAddress.toString()} (same address + secret) — ` +
+      `Existing signup on FPC ${fpcAddress.toString()} (same address) — ` +
         `bumping config index ${Math.max(...existingIndices)} → ${targetConfigIndex} to a fresh config_id.`,
     );
   }
@@ -241,12 +235,9 @@ async function main() {
       .send({
         from: admin,
         fee: { paymentMethod },
-        // `sign_up` reads the FPC's own slot-tracking notes during simulation
-        // (via the handshake registry's `get_app_siloed_secrets`), so the PXE
-        // needs the FPC's key in scope — the same scope `calibrate` already
-        // uses. Without it, nightly fails with "Key validation request denied:
-        // no scoped account has a key with hash …".
-        additionalScopes: [fpcAddress],
+        // `sign_up` is now a public admin tx that writes the config's
+        // PublicImmutable — it reads no private notes, so no extra FPC scope
+        // is needed during simulation.
         // Upstream `EmbeddedWallet.sendTx`'s "default to PROPOSED" is a dead
         // mutation; `waitForTx` falls back to CHECKPOINTED otherwise. Pin
         // explicitly so scripts don't block on L1 publication.
@@ -263,6 +254,8 @@ async function main() {
       configIndex: targetConfigIndex,
       gasLimits,
       hasPublicCall,
+      // The runtime client needs the seat capacity to pick a free seat.
+      maxUsers: signup.maxUsers,
     };
 
     backupApps.push({
@@ -278,10 +271,11 @@ async function main() {
     });
   }
 
+  // Both fields are set here, so the previous spread of the existing block could only
+  // carry strays forward — including, historically, the FPC's key secret. Written out
+  // explicitly so this file never accumulates anything the app doesn't read.
   config.subscriptionFPC = {
-    ...(config.subscriptionFPC ?? {}),
     address: fpcAddress.toString(),
-    secretKey: fpcSecret.toString(),
     functions,
   };
   fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
@@ -300,7 +294,6 @@ async function main() {
     },
     fpc: {
       address: fpcAddress.toString(),
-      secretKey: fpcSecret.toString(),
       salt: fpcSalt.toString(),
       deployed: true,
     },

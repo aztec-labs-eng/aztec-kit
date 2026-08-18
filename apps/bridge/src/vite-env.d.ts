@@ -1,18 +1,16 @@
 /// <reference types="vite/client" />
 
-interface Window {
-  ethereum?: {
-    request: (args: { method: string; params?: unknown[] }) => Promise<unknown>;
-    on: (event: string, callback: (...args: unknown[]) => void) => void;
-    removeListener: (event: string, callback: (...args: unknown[]) => void) => void;
-    isMetaMask?: boolean;
-  };
-}
+// NOTE: deliberately no ambient `Window.ethereum` declaration. Wallets are
+// discovered via EIP-6963 (see services/l1/discovery.ts, the only module
+// allowed to touch `window.ethereum` as a legacy fallback); everything else
+// receives an explicit EIP1193Provider.
 
 interface ImportMetaEnv {
   readonly VITE_CUSTOM_AZTEC_NODE_URL?: string;
   readonly VITE_CUSTOM_L1_RPC_URL?: string;
   readonly VITE_CUSTOM_L1_CHAIN_ID?: string;
+  /** Key for the rpc2 gateway; substituted into config/networks/testnet.json. */
+  readonly VITE_TESTNET_API_KEY?: string;
 }
 
 /** The app's `@aztec/aztec.js` version, injected at build time by `aztecVitePlugin`. */
