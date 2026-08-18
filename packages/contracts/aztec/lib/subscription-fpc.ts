@@ -146,7 +146,7 @@ export async function calibrateSponsoredApp(params: {
     from: NO_FROM,
     sendMessagesAs: sendMessagesAs ?? adminAddress,
     fee: { gasSettings: {} },
-    additionalScopes: [adminAddress, fpcAddress, ...additionalScopes],
+    additionalScopes: [adminAddress, ...additionalScopes],
     skipTxValidation: true,
     skipFeeEnforcement: true,
   });
@@ -289,7 +289,7 @@ export async function subscribeAndCall(params: {
     .send({
       from: NO_FROM,
       sendMessagesAs: sendMessagesAs ?? userAddress,
-      additionalScopes: [userAddress, fpc.address],
+      additionalScopes: [userAddress],
       fee: {
         gasSettings: {
           gasLimits: totalGasLimits,
@@ -352,7 +352,7 @@ export async function sendSponsoredCall(params: {
     .send({
       from: NO_FROM,
       sendMessagesAs: sendMessagesAs ?? userAddress,
-      additionalScopes: [userAddress, fpc.address],
+      additionalScopes: [userAddress],
       fee: {
         gasSettings: {
           gasLimits: totalGasLimits,
