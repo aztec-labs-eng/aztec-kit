@@ -5,6 +5,7 @@
  *
  * Scope:
  *   - every workspace package.json under apps/, packages/, e2e/
+ *   - `.aztecrc` (the Aztec CLI toolchain pin)
  *   - every Nargo.toml under packages/contracts/aztec/noir/
  *
  * Usage:
@@ -104,7 +105,7 @@ function findNargoTomlFiles(dir) {
 }
 
 function updatePackageJsonFiles(version) {
-  log(COLORS.yellow, "[1/5] Updating workspace package.json files...");
+  log(COLORS.yellow, "[1/6] Updating workspace package.json files...");
 
   const packageJsons = findWorkspacePackageJsons();
   let changed = 0;
@@ -122,8 +123,33 @@ function updatePackageJsonFiles(version) {
   log(COLORS.green, `✓ Updated ${changed} package.json file(s)\n`);
 }
 
+/**
+ * Pins the Aztec CLI toolchain to the same version as the npm packages.
+ *
+ * `aztec-up install` (see {@link installAztecCLI}) only moves the global
+ * `~/.aztec/current` symlink; the repo-local pin the version manager actually
+ * reads is this file, so without writing it the CLI keeps resolving whatever
+ * version was last recorded here while the workspace builds against another.
+ * Written bare (no `v`) and without a trailing newline, which is the format
+ * the version manager writes.
+ */
+function updateAztecRc(version) {
+  log(COLORS.yellow, "[2/6] Updating .aztecrc...");
+
+  const rcPath = resolve(ROOT, ".aztecrc");
+  const current = isFile(rcPath) ? readFileSync(rcPath, "utf-8").trim() : undefined;
+
+  if (current === version) {
+    log(COLORS.green, `✓ .aztecrc already at ${version}\n`);
+    return;
+  }
+
+  writeFileSync(rcPath, version, "utf-8");
+  log(COLORS.green, `  ✓ .aztecrc (${current ?? "absent"} → ${version})\n`);
+}
+
 function updateNargoToml(version) {
-  log(COLORS.yellow, "[2/5] Updating Nargo.toml files...");
+  log(COLORS.yellow, "[3/6] Updating Nargo.toml files...");
 
   const contractsDir = resolve(ROOT, "packages/contracts/aztec/noir");
   const nargoFiles = findNargoTomlFiles(contractsDir);
@@ -155,13 +181,13 @@ function updateNargoToml(version) {
 }
 
 function installDependencies() {
-  log(COLORS.yellow, "[3/5] Running yarn install...");
+  log(COLORS.yellow, "[4/6] Running yarn install...");
   exec("yarn install");
   log(COLORS.green, "✓ Dependencies installed\n");
 }
 
 function installAztecCLI(version) {
-  log(COLORS.yellow, `[4/5] Installing Aztec CLI version ${version}...`);
+  log(COLORS.yellow, `[5/6] Installing Aztec CLI version ${version}...`);
 
   try {
     const current = exec("aztec --version", { silent: true }).trim();
@@ -205,7 +231,7 @@ function installAztecCLI(version) {
 }
 
 function compileContracts() {
-  log(COLORS.yellow, "[5/5] Building @aztec-kit/contracts-aztec (compile + codegen)...");
+  log(COLORS.yellow, "[6/6] Building @aztec-kit/contracts-aztec (compile + codegen)...");
   exec("yarn workspace @aztec-kit/contracts-aztec build");
   log(COLORS.green, "✓ Contracts compiled\n");
 }
@@ -302,17 +328,18 @@ async function main() {
   }
 
   updatePackageJsonFiles(version);
+  updateAztecRc(version);
   updateNargoToml(version);
   installDependencies();
 
   if (skipAztecUp) {
-    log(COLORS.yellow, "[4/5] Skipping Aztec CLI installation (--skip-aztec-up)\n");
+    log(COLORS.yellow, "[5/6] Skipping Aztec CLI installation (--skip-aztec-up)\n");
   } else {
     installAztecCLI(version);
   }
 
   if (skipCompile) {
-    log(COLORS.yellow, "[5/5] Skipping contract compile (--skip-compile)\n");
+    log(COLORS.yellow, "[6/6] Skipping contract compile (--skip-compile)\n");
   } else {
     compileContracts();
   }
