@@ -409,17 +409,19 @@ test.describe.serial("fpc signs up sponsored apps", () => {
     const readGasInfo = async (appAddress: string, selector: string) => {
       const row = page.getByTestId(`app-list-row-${appAddress}-${selector}`);
       await expect(row).toBeVisible({ timeout: 30_000 });
-      const [daGas, l2Gas, hasPublicCallStr] = await Promise.all([
+      const [daGas, l2Gas, hasPublicCallStr, maxUsersStr] = await Promise.all([
         row.getAttribute("data-gas-da"),
         row.getAttribute("data-gas-l2"),
         row.getAttribute("data-has-public-call"),
+        row.getAttribute("data-max-users"),
       ]);
-      if (daGas == null || l2Gas == null || hasPublicCallStr == null) {
+      if (daGas == null || l2Gas == null || hasPublicCallStr == null || maxUsersStr == null) {
         throw new Error(`Missing gas data attrs on row ${appAddress}:${selector}`);
       }
       return {
         gasLimits: { daGas: Number(daGas), l2Gas: Number(l2Gas) },
         hasPublicCall: hasPublicCallStr === "true",
+        maxUsers: Number(maxUsersStr),
       };
     };
     const popInfo = await readGasInfo(swap.pop, popSelector.toString());
@@ -429,13 +431,13 @@ test.describe.serial("fpc signs up sponsored apps", () => {
     const swapConfig = JSON.parse(await readFile(SWAP_LOCAL_JSON, "utf-8"));
     swapConfig.subscriptionFPC = {
       address: fpc.fpcAddress,
-      secretKey: fpc.fpcSecretKey,
       functions: {
         [swap.pop]: {
           [popSelector.toString()]: {
             configIndex: 0,
             gasLimits: popInfo.gasLimits,
             hasPublicCall: popInfo.hasPublicCall,
+            maxUsers: popInfo.maxUsers,
           },
         },
         [swap.amm]: {
@@ -443,6 +445,7 @@ test.describe.serial("fpc signs up sponsored apps", () => {
             configIndex: 0,
             gasLimits: ammInfo.gasLimits,
             hasPublicCall: ammInfo.hasPublicCall,
+            maxUsers: ammInfo.maxUsers,
           },
         },
         [swap.goCoin]: {
@@ -450,6 +453,7 @@ test.describe.serial("fpc signs up sponsored apps", () => {
             configIndex: 0,
             gasLimits: tokenInfo.gasLimits,
             hasPublicCall: tokenInfo.hasPublicCall,
+            maxUsers: tokenInfo.maxUsers,
           },
         },
       },

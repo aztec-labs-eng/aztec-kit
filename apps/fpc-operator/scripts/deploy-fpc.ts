@@ -7,14 +7,10 @@
  *   FPC_ADMIN_SECRET — FPC admin secret. The admin is an initializerless account (no
  *                      account-deploy tx); it deploys + owns the FPC. Random if unset; the
  *                      generated secret + admin address are printed back on stdout.
- *   FPC_SECRET       — the FPC's own key secret (it owns private notes for slot tracking).
- *                      The framework derives the deploy public keys from it. Random if unset;
- *                      printed back on stdout.
  *   SALT             — universal contract/account salt (default 0).
  *
  * Stdout (so callers can `eval $(... | grep ^export)`):
  *   export FPC_ADDRESS=0x…
- *   export FPC_SECRET=0x…
  *   export FPC_SALT=0x…
  *
  * Side output: apps/fpc-operator/backups/<network>.fpc-admin.json (git-ignored), in the
@@ -57,8 +53,6 @@ async function main() {
   // The FPC admin is an initializerless account (no account-deploy step); deploying the FPC from
   // it establishes it. Generate the secret if unset and echo it back for the orchestrator.
   const fpcAdminSecret = loadOrCreateSecret("FPC_ADMIN_SECRET");
-  // The FPC's own key secret (used so the FPC can own the private notes that track its slots).
-  const fpcSecret = loadOrCreateSecret("FPC_SECRET");
   const fpcSalt = getSalt();
 
   await runNetworkDeployment({
@@ -68,15 +62,12 @@ async function main() {
     fees: forcePaymentMode(paymentMode),
 
     steps: {
-      // SubscriptionFPC(admin). It owns notes, so it carries its own `secret` — the framework
-      // derives its deploy public keys from it (the address depends on it) and registers it.
       fpc: {
         kind: "contract",
         contract: SubscriptionFPCContract,
         deployer: (resolve) => resolve.account("admin"),
         initializerArgs: (resolve) => [resolve.account("admin")],
         salt: fpcSalt,
-        secret: fpcSecret.secretKey,
         mode: "publish",
       },
 
@@ -110,7 +101,6 @@ async function main() {
         },
         fpc: {
           address: fpcAddress.toString(),
-          secretKey: fpcSecret.secretKey.toString(),
           salt: fpcSalt.toString(),
           deployed: true,
         },
@@ -122,7 +112,6 @@ async function main() {
       }
       console.log(`export FPC_ADMIN_ADDRESS=${admin.toString()}`);
       console.log(`export FPC_ADDRESS=${fpcAddress.toString()}`);
-      console.log(`export FPC_SECRET=${fpcSecret.secretKey.toString()}`);
       console.log(`export FPC_SALT=${fpcSalt.toString()}`);
     },
   });

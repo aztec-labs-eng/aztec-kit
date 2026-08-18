@@ -79,4 +79,3 @@ console.error("\n=== Done ===");
 console.log(`Swap admin: ${env.SWAP_ADMIN_ADDRESS ?? "?"}`);
 console.log(`FPC admin:  ${env.FPC_ADMIN_ADDRESS ?? "?"}`);
 console.log(`FPC:        ${env.FPC_ADDRESS ?? "?"}`);
-console.log(`FPC secret: ${env.FPC_SECRET ?? "?"}`);

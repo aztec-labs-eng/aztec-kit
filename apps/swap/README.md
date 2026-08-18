@@ -27,13 +27,13 @@ All run with `yarn workspace @aztec-kit/swap <name>` (or `cd apps/swap && yarn <
 
 ## Env vars
 
-| Var                                             | Used by                          | Meaning                                                                          |
-| ----------------------------------------------- | -------------------------------- | -------------------------------------------------------------------------------- |
-| `SWAP_ADMIN_SECRET`                             | all scripts                      | Deterministic admin key. Generated + printed as an `export` line if unset.       |
-| `SALT`                                          | all scripts                      | Contract address salt. Default `Fr(0)`. Change to deploy to a different address. |
-| `PASSWORD`                                      | `deploy`, `register-fpc-signups` | Seeds the ProofOfPassword contract. Default `"potato"`.                          |
-| `MINT_TO`                                       | `deploy`, `mint`                 | Comma-separated addresses to mint initial balances to.                           |
-| `FPC_ADDRESS`, `FPC_ADMIN_SECRET`, `FPC_SECRET` | `register-fpc-signups`           | FPC identity; set by `fpc-operator`'s `deploy-fpc`.                              |
+| Var                               | Used by                          | Meaning                                                                          |
+| --------------------------------- | -------------------------------- | -------------------------------------------------------------------------------- |
+| `SWAP_ADMIN_SECRET`               | all scripts                      | Deterministic admin key. Generated + printed as an `export` line if unset.       |
+| `SALT`                            | all scripts                      | Contract address salt. Default `Fr(0)`. Change to deploy to a different address. |
+| `PASSWORD`                        | `deploy`, `register-fpc-signups` | Seeds the ProofOfPassword contract. Default `"potato"`.                          |
+| `MINT_TO`                         | `deploy`, `mint`                 | Comma-separated addresses to mint initial balances to.                           |
+| `FPC_ADDRESS`, `FPC_ADMIN_SECRET` | `register-fpc-signups`           | FPC identity; set by `fpc-operator`'s `deploy-fpc`.                              |
 
 ## Config
 

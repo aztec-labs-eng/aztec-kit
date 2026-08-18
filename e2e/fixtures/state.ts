@@ -56,7 +56,6 @@ export interface FpcState {
   fpcAddress: string;
   fpcAdminAddress: string;
   fpcAdminSecretKey: string;
-  fpcSecretKey: string;
   signedUp?: {
     [functionKey: string]: {
       contractAddress: string;

@@ -7,13 +7,15 @@
  *   "batch"     — wallet already funded (embedded or external): bridge only user recipients
  */
 
-import { formatUnits, parseUnits } from "viem";
+import { formatUnits, parseUnits, type EIP1193Provider } from "viem";
 import { bridgeFeeJuice, bridgeMultiple, type L1Addresses } from "../../services";
 import type { AztecAddress } from "@aztec/stdlib/aztec-address";
 import { EPHEMERAL_CLAIM_GAS_FJ } from "./constants";
 import type { BridgeStep, BridgeAction, ClaimKind } from "./types";
 
 interface HandleBridgeParams {
+  /** EIP-1193 provider of the connected L1 wallet */
+  provider: EIP1193Provider;
   l1Addresses: L1Addresses & { l1ChainId: number };
   recipients: Array<{ address: string; amount: string }>;
   balance: { balance: bigint; formatted: string; decimals: number } | null;
@@ -23,7 +25,6 @@ interface HandleBridgeParams {
   /** The embedded wallet's address — used as gas payer in bootstrap mode */
   claimerAddress: AztecAddress | null;
   mintAmountValue: bigint | null;
-  activeNetwork: { l1RpcUrl: string };
   onStep: (step: BridgeStep, label?: string) => void;
   dispatch: (action: BridgeAction) => void;
   setError: (error: string | null) => void;
@@ -32,6 +33,7 @@ interface HandleBridgeParams {
 
 export async function handleBridge(params: HandleBridgeParams): Promise<void> {
   const {
+    provider,
     l1Addresses,
     recipients,
     balance,
@@ -39,7 +41,6 @@ export async function handleBridge(params: HandleBridgeParams): Promise<void> {
     claimKind,
     claimerAddress,
     mintAmountValue,
-    activeNetwork,
     onStep,
     dispatch,
     setError,
@@ -113,7 +114,7 @@ export async function handleBridge(params: HandleBridgeParams): Promise<void> {
     let allCredentials;
     if (allBridgeRecipients.length === 1) {
       const result = await bridgeFeeJuice({
-        l1RpcUrl: activeNetwork.l1RpcUrl,
+        provider,
         chainId: l1Addresses.l1ChainId,
         addresses: l1Addresses,
         aztecRecipient: allBridgeRecipients[0].address,
@@ -125,7 +126,7 @@ export async function handleBridge(params: HandleBridgeParams): Promise<void> {
       allCredentials = [result];
     } else {
       allCredentials = await bridgeMultiple({
-        l1RpcUrl: activeNetwork.l1RpcUrl,
+        provider,
         chainId: l1Addresses.l1ChainId,
         addresses: l1Addresses,
         recipients: allBridgeRecipients,

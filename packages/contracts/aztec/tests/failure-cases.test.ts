@@ -42,7 +42,7 @@ describe("Failure cases", () => {
     token = rawToken;
 
     userWallet = ctx.userWallet;
-    await userWallet.registerContract(ctx.fpcInstance, SubscriptionFPC.artifact, ctx.fpcSecretKey);
+    await userWallet.registerContract(ctx.fpcInstance, SubscriptionFPC.artifact);
     await userWallet.registerContract(tokenInstance, TokenContractArtifact);
 
     const userSecret = await Fr.random();
@@ -110,9 +110,11 @@ describe("Failure cases", () => {
 
     const fpc = ctx.fpc.withWallet(userWallet);
     await fpc.helpers.subscribe({
+      node: ctx.node,
       call: subscribeCall,
       configIndex: FAILURE_INDEX,
       userAddress,
+      maxUsers: 1,
       authWitnesses: [subscribeAuthWit],
       gasLimits,
       hasPublicCall,
@@ -144,16 +146,12 @@ describe("Failure cases", () => {
     ).rejects.toThrow();
   });
 
-  it("fails in simulation when no slots are available", async () => {
+  it("fails to subscribe when all seats are taken", async () => {
     const grieferWallet = await GrieferWallet.create(ctx.node, {
       ephemeral: true,
     });
     grieferWallet.setMinFeePadding(TEST_FEE_PADDING);
-    await grieferWallet.registerContract(
-      ctx.fpcInstance,
-      SubscriptionFPC.artifact,
-      ctx.fpcSecretKey,
-    );
+    await grieferWallet.registerContract(ctx.fpcInstance, SubscriptionFPC.artifact);
     await grieferWallet.registerContract(
       (await ctx.node.getContract(token.address))!,
       TokenContractArtifact,
@@ -181,11 +179,31 @@ describe("Failure cases", () => {
 
     const fpc = ctx.fpc.withWallet(grieferWallet);
 
+    // The only seat (max_users=1) was claimed by the beforeAll subscribe, so
+    // auto seat-picking finds none free and throws before any tx is built.
     await expect(
       fpc.helpers.subscribe({
+        node: ctx.node,
         call: griefCall,
         configIndex: FAILURE_INDEX,
         userAddress: grieferAddress,
+        maxUsers: 1,
+        authWitnesses: [griefAuthWit],
+        gasLimits,
+        hasPublicCall,
+      }),
+    ).rejects.toThrow(/seats for this config are taken/);
+
+    // Forcing the taken seat 0 instead reaches the node and fails there on the
+    // duplicate seat-ticket nullifier (GrieferWallet skips pre-simulation).
+    await expect(
+      fpc.helpers.subscribe({
+        node: ctx.node,
+        call: griefCall,
+        configIndex: FAILURE_INDEX,
+        userAddress: grieferAddress,
+        maxUsers: 1,
+        seat: 0,
         authWitnesses: [griefAuthWit],
         gasLimits,
         hasPublicCall,
@@ -200,11 +218,7 @@ describe("Failure cases", () => {
     const TIGHT_INDEX = FAILURE_INDEX + 1;
 
     const tightUserWallet = ctx.userWallet;
-    await tightUserWallet.registerContract(
-      ctx.fpcInstance,
-      SubscriptionFPC.artifact,
-      ctx.fpcSecretKey,
-    );
+    await tightUserWallet.registerContract(ctx.fpcInstance, SubscriptionFPC.artifact);
     await tightUserWallet.registerContract(
       (await ctx.node.getContract(token.address))!,
       TokenContractArtifact,
@@ -245,9 +259,11 @@ describe("Failure cases", () => {
 
     await expect(
       fpc.helpers.subscribe({
+        node: ctx.node,
         call: tightCall,
         configIndex: TIGHT_INDEX,
         userAddress: tightUserAddress,
+        maxUsers: 1,
         authWitnesses: [tightAuthWit],
         gasLimits,
         hasPublicCall,
@@ -256,10 +272,11 @@ describe("Failure cases", () => {
   });
 
   it("rejects a second sign_up at the same config_id", async () => {
-    // sign_up emits a per-config uniqueness nullifier so the admin can't
-    // stack a second, differently priced SlotNote on the same
-    // (app, selector, configIndex). A repeat sign_up must fail; a fresh
-    // config index must still succeed.
+    // sign_up now writes a per-config PublicImmutable, whose initialization
+    // emits an init nullifier. A repeat sign_up at the same
+    // (app, selector, configIndex) re-initializes the same config_id and
+    // reverts on the duplicate init nullifier. A fresh config index must
+    // still succeed.
     const UNIQ_INDEX = FAILURE_INDEX + 2;
     const MAX_FEE = 1_000_000_000_000_000_000n;
     const sample = await token.methods

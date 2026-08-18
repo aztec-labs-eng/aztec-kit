@@ -26,13 +26,17 @@ export interface SubscriptionFunctionConfig {
   configIndex: number;
   gasLimits: { daGas: number; l2Gas: number };
   hasPublicCall: boolean;
+  /**
+   * Seat capacity for this config (`max_users` at sign_up). The client picks a
+   * free seat (`0 <= seat < maxUsers`) when subscribing, so it needs to know
+   * the range. Written by `register-fpc-signups`.
+   */
+  maxUsers: number;
 }
 
 export interface SubscriptionFPCConfig {
   /** Address of the SubscriptionFPC contract */
   address: string;
-  /** Secret key for registering the FPC in PXE (needed to decrypt slot notes) */
-  secretKey: string;
   /** Map of contractAddress → { functionSelector → per-function config } */
   functions: Record<string, Record<string, SubscriptionFunctionConfig>>;
 }
