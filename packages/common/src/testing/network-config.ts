@@ -6,9 +6,14 @@
 export const VALID_NETWORKS = ["local", "testnet"] as const;
 export type NetworkName = (typeof VALID_NETWORKS)[number];
 
+/**
+ * Aztec node endpoint per network. `testnet` sits behind the rpc2 API
+ * gateway, which rejects unauthenticated calls with 403 — clients must send
+ * its key (see {@link apiKeyForNetwork}).
+ */
 export const NETWORK_URLS: Record<NetworkName, string> = {
   local: "http://localhost:8080",
-  testnet: "https://v5.testnet.rpc.aztec-labs.com",
+  testnet: "https://testnet-v5.rpc2.aztec-labs.com",
 };
 
 /**
