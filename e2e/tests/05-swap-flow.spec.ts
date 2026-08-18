@@ -21,12 +21,24 @@ import {
  *      Swap → fpc-admin sponsors the AMM swap_tokens_for_exact_tokens_from
  *      tx → wait for phase=success.
  *   4. Verify balances moved: GoCoin went down, GoCoinPremium went up.
+ *   5. Regression (FPC subscription cache): still in the same session, switch
+ *      to Send and do a sponsored GoCoin transfer. The swap in step 3 took the
+ *      *subscribe* path and recorded a local FPC-subscription hint for the AMM's
+ *      (app, selector). This send is a *different* (app, selector) that shares
+ *      the same FPC configIndex, and it's the first send of the session, so it
+ *      must subscribe too. If the hint is keyed too coarsely (omitting
+ *      app+selector) the swap's entry is mistaken for this send's: the send
+ *      takes the *sponsor* path against a config_id with no SubscriptionNote and
+ *      reverts on-chain ("No active subscription found"). The send reaching its
+ *      claim link is the guard. A fresh browser doing only a send never hits
+ *      this — the swap→send ordering in one session is the trigger.
  *
  * Assumes specs 01-04 ran (fpc.json + swap.json + local.json all present
  * with the subscriptionFPC section wired up).
  */
 
 const FROM_AMOUNT = "10";
+const SEND_AMOUNT = "1";
 
 async function openOnboarding(page: Page) {
   // Seed the active network BEFORE any script runs so the app picks local
@@ -51,7 +63,11 @@ async function openOnboarding(page: Page) {
 test.describe.serial("goswap end-user flow", () => {
   test.slow();
 
-  test("onboards with embedded wallet, drips, and swaps", async ({ page }) => {
+  test("onboards, drips, swaps, then sends (FPC subscription cache regression)", async ({
+    page,
+  }) => {
+    test.setTimeout(20 * 60_000); // drip + swap + send, each a client-side multi-proof tx
+
     const global = await readState<GlobalState>(STATE_FILES.global);
     const swap = await readState<SwapDeploymentState>(STATE_FILES.swapDeployment);
     console.log(`[e2e] target node=${global.nodeUrl}, goCoin=${swap.goCoin}`);
@@ -123,5 +139,39 @@ test.describe.serial("goswap end-user flow", () => {
       expect(fromAfter).toBeLessThan(fromBalanceBefore);
       expect(toAfter).toBeGreaterThan(toBalanceBefore);
     }).toPass({ timeout: 60_000 });
+
+    // ── 5. Regression: a send *after* a swap must not collide on the FPC cache ──
+    // This send shares the swap's configIndex but is a different (app, selector).
+    // With a too-coarse subscription-cache key it would reuse the swap's entry,
+    // take the sponsor() path against a config_id that has no note, and revert.
+    // Reaching the claim link proves the send subscribed correctly.
+    await page.getByRole("tab", { name: "Send" }).click();
+    // Wait for balances to hydrate — the amount adornment renders once they resolve.
+    await page.getByTestId("send-balance").waitFor({ timeout: 60_000 });
+
+    // Send to self: we only need the sponsored transfer tx to land; the claim link is
+    // never opened, so no second wallet is required.
+    const senderAddr = await page.getByTestId("wallet-chip").getAttribute("data-address");
+    expect(senderAddr).toMatch(/^0x[0-9a-fA-F]+$/);
+
+    await page.getByTestId("send-recipient-input").fill(senderAddr as string);
+    await page.getByTestId("send-amount-input").fill(SEND_AMOUNT);
+
+    const sendSubmit = page.getByTestId("send-submit");
+    await expect(sendSubmit).toBeEnabled({ timeout: 30_000 });
+    await sendSubmit.click();
+
+    // Race the claim link against the error alert so a buggy path fails fast
+    // with the app's real revert message instead of burning the full proof timeout.
+    const sendLink = page.getByTestId("send-link");
+    const sendError = page.getByTestId("send-error");
+    await Promise.race([
+      sendLink.waitFor({ timeout: 300_000 }), // the send is a multi-proof tx
+      sendError.waitFor({ state: "visible", timeout: 300_000 }).then(async () => {
+        throw new Error(`send after swap failed: ${await sendError.textContent()}`);
+      }),
+    ]);
+    const linkText = (await sendLink.textContent())?.trim();
+    expect(linkText).toMatch(/^https?:\/\/.+#\/claim\//);
   });
 });

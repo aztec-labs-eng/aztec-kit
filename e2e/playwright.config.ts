@@ -6,6 +6,8 @@ import { defineConfig, devices } from "@playwright/test";
  *   fpc-setup  →  bridge-fund  →  swap-deploy  →  fpc-signup  →  swap-flow
  *                                                             ↳  offchain-send-claim
  *
+ * - bridge-wallet-discovery (bridge UI, no deps) — EIP-6963 multi-wallet
+ *                                    discovery/selection; needs no aztec network.
  * - fpc-setup    (fpc-operator UI + bridge iframe) — creates fpc-admin + deploys FPC.
  * - bridge-fund  (bridge UI) — funds swap-admin with fee juice.
  * - swap-deploy  (node script) — runs swap-admin's deploy.ts with --payment feejuice.
@@ -81,6 +83,14 @@ export default defineConfig({
     launchOptions: slowMo ? { slowMo } : undefined,
   },
   projects: [
+    {
+      // Independent of the aztec network and of every other spec — only
+      // needs the bridge dev server. Covers EIP-6963 wallet discovery,
+      // picker selection, and reconnect in the bridge app.
+      name: "bridge-wallet-discovery",
+      testMatch: /00-bridge-wallet-discovery\.spec\.ts$/,
+      use: { ...desktopChrome, baseURL: "http://localhost:5173" },
+    },
     {
       name: "fpc-setup",
       testMatch: /01-fpc-setup\.spec\.ts$/,

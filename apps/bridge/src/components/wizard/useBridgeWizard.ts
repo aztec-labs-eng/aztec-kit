@@ -31,7 +31,7 @@ import type {
 // ── Hook ──────────────────────────────────────────────────────────────
 
 export function useBridgeWizard() {
-  const { account, connect, wrongChain } = useWallet();
+  const { account, connect, wrongChain, provider } = useWallet();
   const { activeNetwork } = useNetwork();
   const {
     status: aztecStatus,
@@ -143,9 +143,11 @@ export function useBridgeWizard() {
   // Refs for orchestrator callbacks (avoid stale closures)
   const walletReadyRef = useRef(walletReady);
   const feeJuiceBalanceRef = useRef(feeJuiceBalance);
+  const providerRef = useRef(provider);
   const lastCredentialsRef = useRef<ClaimCredentials[] | null>(null);
   walletReadyRef.current = walletReady;
   feeJuiceBalanceRef.current = feeJuiceBalance;
+  providerRef.current = provider;
 
   // ── Effect: Wallet status relay ───────────────────────────────────
   useEffect(() => {
@@ -163,6 +165,7 @@ export function useBridgeWizard() {
     const ctx = {
       dispatch,
       activeNetwork,
+      providerRef,
       walletReadyRef,
       feeJuiceBalanceRef,
       walletReady,
@@ -267,7 +270,12 @@ export function useBridgeWizard() {
         if (cancelled) return;
         setL1Addresses(addresses);
         if (addresses.feeAssetHandler)
-          getMintAmount(activeNetwork.l1RpcUrl, addresses.l1ChainId, addresses.feeAssetHandler)
+          getMintAmount(
+            activeNetwork.l1RpcUrl,
+            addresses.l1ChainId,
+            addresses.feeAssetHandler,
+            providerRef.current,
+          )
             .then((amt) => {
               if (!cancelled) setMintAmountValue(amt);
             })
@@ -299,13 +307,14 @@ export function useBridgeWizard() {
           l1Addresses.l1ChainId,
           l1Addresses.feeJuice,
           account,
+          provider,
         ),
       );
     } catch (e) {
       console.warn("[bridge] Failed to refresh L1 balance:", e);
       setBalance(null);
     }
-  }, [account, l1Addresses, activeNetwork]);
+  }, [account, l1Addresses, activeNetwork, provider]);
 
   useEffect(() => {
     refreshBalance();
@@ -369,8 +378,9 @@ export function useBridgeWizard() {
   }, []);
 
   const handleBridge = async () => {
-    if (!account || !l1Addresses) return;
+    if (!account || !l1Addresses || !provider) return;
     await executeBridgeAction({
+      provider,
       l1Addresses,
       recipients,
       balance,
@@ -378,7 +388,6 @@ export function useBridgeWizard() {
       claimKind,
       claimerAddress: aztecAddress,
       mintAmountValue,
-      activeNetwork,
       onStep: onBridgeStep,
       dispatch,
       setError,

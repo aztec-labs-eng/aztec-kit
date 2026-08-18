@@ -22,9 +22,11 @@ import type { TokenContract } from "@aztec/noir-contracts.js/Token";
 import type { AMMContract } from "@aztec-kit/contracts-aztec/artifacts/AMM";
 import type { ProofOfPasswordContract } from "@aztec-kit/contracts-aztec/artifacts/ProofOfPassword";
 import { SubscriptionFPC } from "@aztec-kit/contracts-aztec/subscription-fpc";
+import { countAvailableSeats } from "@aztec-kit/contracts-aztec/seat-picker";
 import { BigDecimal } from "../utils/bigDecimal";
 import type { NetworkConfig } from "../config/networks";
 import type { OnboardingResult } from "../contexts/onboarding/reducer";
+import { hasSubscription, markSubscribed } from "./subscriptionCache";
 
 /**
  * Contracts returned after swap registration
@@ -143,12 +145,11 @@ export async function registerSwapContracts(
       if (!instance) {
         throw new Error(`Subscription FPC at ${subFPC.address} not found on-chain`);
       }
-      const secretKey = Fr.fromString(subFPC.secretKey);
       const { SubscriptionFPCContractArtifact } =
         await import("@aztec-kit/contracts-aztec/artifacts/SubscriptionFPC");
       registrationBatch.push({
         name: "registerContract",
-        args: [instance, SubscriptionFPCContractArtifact, secretKey],
+        args: [instance, SubscriptionFPCContractArtifact, undefined],
       });
     }
   }
@@ -222,7 +223,6 @@ export async function registerDripContracts(
   const subFPCMetadata = metadataResults[1];
   if (!subFPCMetadata.result.instance) {
     const fpcAddress = AztecAddressClass.fromStringUnsafe(subFPC.address);
-    const secretKey = Fr.fromString(subFPC.secretKey);
     const instance = await node.getContract(fpcAddress);
     if (!instance) {
       throw new Error(`Subscription FPC at ${subFPC.address} not found on-chain`);
@@ -231,7 +231,7 @@ export async function registerDripContracts(
       await import("@aztec-kit/contracts-aztec/artifacts/SubscriptionFPC");
     registrationBatch.push({
       name: "registerContract",
-      args: [instance, SubscriptionFPCContractArtifact, secretKey],
+      args: [instance, SubscriptionFPCContractArtifact, undefined],
     });
   }
 
@@ -350,38 +350,51 @@ export async function executeSwap(
   return receipt;
 }
 
-// ── Subscription state tracking ─────────────────────────────────────
-
-const SUBSCRIPTION_KEY = "goswap_subscriptions";
-
-function subscriptionKey(fpcAddress: string, configIndex: number, userAddress: string): string {
-  return `${fpcAddress}:${configIndex}:${userAddress}`;
+async function subscriptionConfigId(
+  appAddress: AztecAddress,
+  selector: FunctionSelector,
+  configIndex: number,
+): Promise<Fr> {
+  return poseidon2Hash([appAddress.toField(), selector.toField(), new Fr(configIndex)]);
 }
 
-function hasSubscription(fpcAddress: string, configIndex: number, userAddress: string): boolean {
-  try {
-    const subs = JSON.parse(localStorage.getItem(SUBSCRIPTION_KEY) ?? "{}");
-    return !!subs[subscriptionKey(fpcAddress, configIndex, userAddress)];
-  } catch {
-    return false;
-  }
-}
+async function hasCachedOrOnChainSubscription(
+  fpc: SubscriptionFPC,
+  fpcAddress: string,
+  appAddress: AztecAddress,
+  selector: FunctionSelector,
+  configIndex: number,
+  userAddress: AztecAddress,
+): Promise<boolean> {
+  const app = appAddress.toString();
+  const selectorHex = selector.toString();
+  const user = userAddress.toString();
 
-function markSubscribed(fpcAddress: string, configIndex: number, userAddress: string) {
-  try {
-    const subs = JSON.parse(localStorage.getItem(SUBSCRIPTION_KEY) ?? "{}");
-    subs[subscriptionKey(fpcAddress, configIndex, userAddress)] = true;
-    localStorage.setItem(SUBSCRIPTION_KEY, JSON.stringify(subs));
-  } catch {
-    /* ignore */
+  if (hasSubscription(fpcAddress, app, selectorHex, configIndex, user)) {
+    return true;
   }
+
+  // The local cache is only a hint and may miss after key-shape changes.
+  // Check the FPC before spending a fresh subscription slot.
+  const configId = await subscriptionConfigId(appAddress, selector, configIndex);
+  const { result } = await fpc.methods
+    .get_subscription_info(userAddress, configId)
+    .simulate({ from: userAddress });
+  const [subscribed] = result as [boolean, bigint];
+
+  if (subscribed) {
+    markSubscribed(fpcAddress, app, selectorHex, configIndex, user);
+  }
+
+  return subscribed;
 }
 
 /**
  * Executes a sponsored swap through the SubscriptionFPC.
- * Uses subscribe on first call, sponsor on subsequent calls.
+ * Uses subscribe when no subscription exists, sponsor when cached or on-chain state shows one.
  */
 export async function executeSponsoredSwap(
+  node: AztecNode,
   network: NetworkConfig,
   amm: SwapContracts["amm"],
   goCoin: SwapContracts["goCoin"],
@@ -414,9 +427,16 @@ export async function executeSponsoredSwap(
       `No subscription config found for AMM ${amm.address.toString()} selector ${call.selector.toString()}`,
     );
   }
-  const { configIndex, gasLimits, hasPublicCall } = fnConfig;
+  const { configIndex, gasLimits, hasPublicCall, maxUsers } = fnConfig;
 
-  const subscribed = hasSubscription(subFPC.address, configIndex, userAddress.toString());
+  const subscribed = await hasCachedOrOnChainSubscription(
+    fpc,
+    subFPC.address,
+    amm.address,
+    call.selector,
+    configIndex,
+    userAddress,
+  );
 
   if (subscribed) {
     const { receipt } = await fpc.helpers.sponsor({
@@ -428,14 +448,24 @@ export async function executeSponsoredSwap(
     });
     return receipt;
   } else {
+    // A free seat is picked automatically. A same-block seat collision would
+    // surface as a duplicate-nullifier tx failure; the user can retry.
     const { receipt } = await fpc.helpers.subscribe({
+      node,
       call,
       configIndex,
       userAddress,
+      maxUsers,
       gasLimits,
       hasPublicCall,
     });
-    markSubscribed(subFPC.address, configIndex, userAddress.toString());
+    markSubscribed(
+      subFPC.address,
+      amm.address.toString(),
+      call.selector.toString(),
+      configIndex,
+      userAddress.toString(),
+    );
     return receipt;
   }
 }
@@ -482,6 +512,7 @@ export interface SubscriptionStatus {
  * Returns the status kind based on available slots and user subscription state.
  */
 export async function querySubscriptionStatus(
+  node: AztecNode,
   network: NetworkConfig,
   amm: SwapContracts["amm"],
   userAddress: AztecAddress,
@@ -499,20 +530,20 @@ export async function querySubscriptionStatus(
 
   // Compute config_id the same way the contract does: poseidon2Hash([app, selector, index])
   const selector = FunctionSelector.fromString(selectorHex);
-  const configId = await poseidon2Hash([
-    amm.address.toField(),
-    selector.toField(),
-    new Fr(configIndex),
-  ]);
+  const configId = await subscriptionConfigId(amm.address, selector, configIndex);
 
-  // SlotNote is owned by the FPC — must simulate from fpc.address
-  // SubscriptionNote is owned by the user — must simulate from userAddress
-  const [{ result: slotsResult }, { result: subInfoResult }] = await Promise.all([
-    fpc.methods.count_available_slots(configId).simulate({ from: fpc.address }),
+  // Available seats come from a node scan of the seat-ticket nullifiers;
+  // SubscriptionNote is owned by the user — simulate from userAddress.
+  const [availableSlots, { result: subInfoResult }] = await Promise.all([
+    countAvailableSeats({
+      node,
+      fpcAddress: fpc.address,
+      configId,
+      maxUsers: fnConfig.maxUsers,
+    }),
     fpc.methods.get_subscription_info(userAddress, configId).simulate({ from: userAddress }),
   ]);
 
-  const availableSlots = Number(slotsResult);
   const [hasSubscription, remainingUses] = subInfoResult as [boolean, number];
 
   const remainingUsesNum = Number(remainingUses);
@@ -554,6 +585,7 @@ export function parseSwapError(error: unknown): string {
  * Uses subscription FPC when configured, falls back to Aztec's sponsored FPC.
  */
 export async function executeDrip(
+  node: AztecNode,
   wallet: Wallet,
   network: NetworkConfig,
   pop: ProofOfPasswordContract,
@@ -573,15 +605,17 @@ export async function executeDrip(
       `No subscription config found for ${pop.address.toString()} selector ${call.selector.toString()}`,
     );
   }
-  const { configIndex, gasLimits, hasPublicCall } = fnConfig;
+  const { configIndex, gasLimits, hasPublicCall, maxUsers } = fnConfig;
 
   const accounts = await wallet.getAccounts();
   const userAddress = accounts[0]?.item ?? recipient;
 
   const { receipt } = await fpc.helpers.subscribe({
+    node,
     call,
     configIndex,
     userAddress,
+    maxUsers,
     gasLimits,
     hasPublicCall,
   });
@@ -594,6 +628,7 @@ export async function executeDrip(
  * change note, and returns the recipient's offchain messages for link encoding.
  */
 export async function executeTransferOffchain(
+  node: AztecNode,
   network: NetworkConfig,
   contracts: SwapContracts,
   tokenKey: "goCoin" | "goCoinPremium",
@@ -621,9 +656,16 @@ export async function executeTransferOffchain(
       `No subscription config found for token ${token.address.toString()} selector ${call.selector.toString()}`,
     );
   }
-  const { configIndex, gasLimits, hasPublicCall } = fnConfig;
+  const { configIndex, gasLimits, hasPublicCall, maxUsers } = fnConfig;
 
-  const subscribed = hasSubscription(subFPC.address, configIndex, fromAddress.toString());
+  const subscribed = await hasCachedOrOnChainSubscription(
+    fpc,
+    subFPC.address,
+    token.address,
+    call.selector,
+    configIndex,
+    fromAddress,
+  );
 
   let txResult: { receipt: TxReceipt; offchainMessages: OffchainMessage[] };
   if (subscribed) {
@@ -636,13 +678,21 @@ export async function executeTransferOffchain(
     });
   } else {
     txResult = await fpc.helpers.subscribe({
+      node,
       call,
       configIndex,
       userAddress: fromAddress,
+      maxUsers,
       gasLimits,
       hasPublicCall,
     });
-    markSubscribed(subFPC.address, configIndex, fromAddress.toString());
+    markSubscribed(
+      subFPC.address,
+      token.address.toString(),
+      call.selector.toString(),
+      configIndex,
+      fromAddress.toString(),
+    );
   }
 
   const { receipt, offchainMessages } = txResult;

@@ -12,7 +12,6 @@ import { getInitialTestAccountsData } from "@aztec/accounts/testing";
 import { createFundedInitializerlessAccounts } from "@aztec/wallets/testing";
 import type { AztecAddress } from "@aztec/aztec.js/addresses";
 import { Fr } from "@aztec/aztec.js/fields";
-import { deriveKeys } from "@aztec/aztec.js/keys";
 import { getContractInstanceFromInstantiationParams } from "@aztec/stdlib/contract";
 import { FeeJuiceContract } from "@aztec/aztec.js/protocol";
 import { publishContractClass, publishInstance } from "@aztec/aztec.js/deployment";
@@ -23,19 +22,6 @@ import {
 import { SubscriptionFPC } from "../lib/subscription-fpc.js";
 import { SubscriptionFPCContractArtifact } from "../noir/artifacts/SubscriptionFPC.js";
 import { setupLocalNetwork, TEST_FEE_PADDING } from "@aztec-kit/common/testing";
-
-/**
- * Fixed secret used for the SubscriptionFPC across all tests. Combined with
- * a random salt per-suite, this lets the fixture pre-compute the FPC's
- * address and include it in the genesis pre-funded set — so the deploy tx
- * and every sponsored call can pay for themselves without bridging.
- *
- * The salt randomises per `setupTestContext()` call so parallel suites
- * can't collide on the same deterministic address.
- */
-const FPC_SECRET_KEY = Fr.fromString(
-  "0x00000000000000000000000000000000000000000000000000000000deadbeef",
-);
 
 export interface TestContext {
   node: AztecNode;
@@ -52,7 +38,6 @@ async function deriveAdminAddress(): Promise<AztecAddress> {
 }
 
 async function computeFpcAddress(admin: AztecAddress, salt: Fr): Promise<AztecAddress> {
-  const { publicKeys } = await deriveKeys(FPC_SECRET_KEY);
   // `deployer` must match what the real deploy below passes — the contract
   // address derivation hashes it, so omitting it here pre-funds a different
   // address than the FPC that actually gets deployed.
@@ -61,7 +46,6 @@ async function computeFpcAddress(admin: AztecAddress, salt: Fr): Promise<AztecAd
     {
       constructorArgs: [admin],
       salt,
-      publicKeys,
       deployer: admin,
     },
   );
@@ -95,7 +79,6 @@ export class GrieferWallet extends EmbeddedWallet {
 export interface FPCTestContext extends TestContext {
   fpc: SubscriptionFPC;
   fpcInstance: ContractInstanceWithAddress;
-  fpcSecretKey: Fr;
   userWallet: EmbeddedWallet;
 }
 
@@ -159,15 +142,15 @@ export async function setupTestContext(): Promise<FPCTestContext> {
 
   const feeJuice = FeeJuiceContract.at(wallet);
 
-  // Deploy with the same (secret, salt) the genesis pre-fund used.
-  const { publicKeys } = await deriveKeys(FPC_SECRET_KEY);
+  // Deploy with the same salt the genesis pre-fund used. The FPC owns no
+  // notes, so it deploys with default contract keys and needs no secret at
+  // registration.
   const deployMethod = await SubscriptionFPC.deploy(wallet, admin, {
-    publicKeys,
     deployer: admin,
     salt: fpcSalt,
   });
   const instance = await deployMethod.getInstance();
-  await wallet.registerContract(instance, SubscriptionFPC.artifact, FPC_SECRET_KEY);
+  await wallet.registerContract(instance, SubscriptionFPC.artifact);
 
   const { contract: rawFpc } = await deployMethod.send({
     from: admin,
@@ -181,7 +164,6 @@ export async function setupTestContext(): Promise<FPCTestContext> {
     feeJuice,
     fpc,
     fpcInstance: instance,
-    fpcSecretKey: FPC_SECRET_KEY,
     userWallet: await createWallet(),
     stop: network.stop,
   };

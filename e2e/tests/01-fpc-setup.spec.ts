@@ -146,7 +146,7 @@ test.describe.serial("fpc-dashboard setup", () => {
 
     const backup = JSON.parse(await readFile(STATE_FILES.fpcBackup, "utf-8")) as {
       admin: { address: string; secretKey: string };
-      fpc: { address: string; secretKey: string } | null;
+      fpc: { address: string } | null;
     };
     if (!backup.fpc) throw new Error("Backup JSON has no fpc entry — deploy must have failed");
 
@@ -154,7 +154,6 @@ test.describe.serial("fpc-dashboard setup", () => {
       fpcAddress: backup.fpc.address,
       fpcAdminAddress: backup.admin.address,
       fpcAdminSecretKey: backup.admin.secretKey,
-      fpcSecretKey: backup.fpc.secretKey,
     };
     await writeState(STATE_FILES.fpc, fpc);
     console.log(`[e2e] wrote ${STATE_FILES.fpc} (fpc=${fpc.fpcAddress})`);

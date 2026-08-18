@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Chip, Box, Menu, MenuItem, ListItemIcon, ListItemText } from "@mui/material";
+import { Chip, Box, Menu, MenuItem, ListItemIcon, ListItemText, Avatar } from "@mui/material";
 import AccountBalanceWalletIcon from "@mui/icons-material/AccountBalanceWallet";
 import SwapHorizIcon from "@mui/icons-material/SwapHoriz";
 import LogoutIcon from "@mui/icons-material/Logout";
@@ -8,7 +8,8 @@ import { shortAddress } from "@aztec-kit/common/ui";
 import { useWallet } from "../contexts/WalletContext";
 
 export function WalletChip() {
-  const { account, isConnecting, wrongChain, connect, switchAccount, disconnect } = useWallet();
+  const { account, isConnecting, wrongChain, activeWallet, connect, switchAccount, disconnect } =
+    useWallet();
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
 
   const label = account
@@ -18,6 +19,18 @@ export function WalletChip() {
     : isConnecting
       ? "Connecting..."
       : "Connect Wallet";
+
+  const icon = wrongChain ? (
+    <WarningAmberIcon />
+  ) : account && activeWallet ? (
+    <Avatar
+      src={activeWallet.info.icon}
+      alt={activeWallet.info.name}
+      sx={{ width: 20, height: 20 }}
+    />
+  ) : (
+    <AccountBalanceWalletIcon />
+  );
 
   const handleClick = (e: React.MouseEvent<HTMLElement>) => {
     if (account) {
@@ -32,7 +45,7 @@ export function WalletChip() {
   return (
     <Box sx={{ position: "fixed", top: 16, right: 16, zIndex: 10 }}>
       <Chip
-        icon={wrongChain ? <WarningAmberIcon /> : <AccountBalanceWalletIcon />}
+        icon={icon}
         label={label}
         onClick={handleClick}
         color={account ? (wrongChain ? "warning" : "primary") : "default"}

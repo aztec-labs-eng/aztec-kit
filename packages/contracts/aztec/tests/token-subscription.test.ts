@@ -46,7 +46,7 @@ describe("Token transfer subscription (multi-use)", () => {
 
     userWallet = ctx.userWallet;
 
-    await userWallet.registerContract(ctx.fpcInstance, SubscriptionFPC.artifact, ctx.fpcSecretKey);
+    await userWallet.registerContract(ctx.fpcInstance, SubscriptionFPC.artifact);
     await userWallet.registerContract(tokenInstance, TokenContractArtifact);
 
     const userSecret = await Fr.random();
@@ -122,9 +122,11 @@ describe("Token transfer subscription (multi-use)", () => {
     });
 
     await fpc.helpers.subscribe({
+      node: ctx.node,
       call: sponsoredCall,
       configIndex: PRIVATE_INDEX,
       userAddress,
+      maxUsers: MAX_USERS,
       authWitnesses: [authWit],
       gasLimits: privateGasLimits,
       hasPublicCall: privateHasPublicCall,
@@ -242,9 +244,11 @@ describe("Public token transfer subscription", () => {
     const fpc = ctx.fpc.withWallet(ctx.wallet);
 
     await fpc.helpers.subscribe({
+      node: ctx.node,
       call: sampleCall,
       configIndex: PUBLIC_INDEX,
       userAddress: ctx.admin,
+      maxUsers: 1,
       gasLimits: publicGasLimits,
       hasPublicCall: publicHasPublicCall,
     });
