@@ -1,9 +1,9 @@
 /**
  * Façade over the deploy framework plus the kit's network glue.
  *
- * The implementation is vendored at `./deploy/` (see `./deploy/VENDORED.md`); on the first release
- * that ships `@aztec/aztec/deploy`, delete that directory and re-export from the published package
- * here instead — the glue below and every consumer stay untouched.
+ * The framework is upstream — `@aztec/aztec/deploy`, shipped since 5.2.0. It lived vendored under
+ * `./deploy/` until that subpath existed; this file is now the only place that names it, so a
+ * future move is still a one-file change.
  */
 import { join } from "node:path";
 
@@ -13,7 +13,7 @@ import {
   type DeploymentSpec,
   type FeePolicy,
   type Steps,
-} from "./deploy/index.ts";
+} from "@aztec/aztec/deploy";
 import {
   L1_DEFAULTS,
   NETWORK_URLS,
@@ -21,7 +21,7 @@ import {
   type NetworkName,
 } from "./testing/network-config.ts";
 
-export * from "./deploy/index.ts";
+export * from "@aztec/aztec/deploy";
 
 /**
  * Fills a fee policy's L1 fields from the kit's per-network defaults: RPC/chain id from
@@ -42,16 +42,19 @@ export function networkFeePolicy(network: NetworkName, base?: FeePolicy): FeePol
 /** {@link DeploymentSpec} with the kit's network name in place of the framework's target fields. */
 export interface NetworkDeploymentSpec<C extends Steps = Steps> extends Omit<
   DeploymentSpec<C>,
-  "local" | "label" | "node" | "nodeUrl"
+  "local" | "label" | "node"
 > {
   network: NetworkName;
-  /** Aztec node URL; defaults to the network's entry in {@link NETWORK_URLS}. */
-  nodeUrl?: string;
+  /**
+   * The node to deploy against — a JSON-RPC URL or a connected node. Defaults to the network's
+   * entry in {@link NETWORK_URLS}.
+   */
+  node?: DeploymentSpec<C>["node"];
 }
 
 /**
  * Runs a deployment against a named kit network: maps the network to the framework's target fields
- * (`local`/`label`/`nodeUrl`), scopes the resume state per network (`<stateDir>/<network>/`), and
+ * (`local`/`label`/`node`), scopes the resume state per network (`<stateDir>/<network>/`), and
  * fills network L1 defaults into every fee policy and fund step.
  */
 export function runNetworkDeployment<C extends Steps>(
@@ -75,7 +78,7 @@ export function runNetworkDeployment<C extends Steps>(
     ...rest,
     local: network === "local",
     label: network,
-    nodeUrl: spec.nodeUrl ?? NETWORK_URLS[network],
+    node: spec.node ?? NETWORK_URLS[network],
     stateDir: join(spec.stateDir ?? join(process.cwd(), ".deploy-state"), network),
     fees: networkFeePolicy(network, spec.fees),
     accounts: Object.fromEntries(

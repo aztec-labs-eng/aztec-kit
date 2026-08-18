@@ -301,7 +301,7 @@ export async function runSwapDeploy(opts: SwapDeployOptions): Promise<SwapDeploy
     addLiquidity: {
       kind: "action",
       from: (resolve) => resolve.account("admin"),
-      dependsOn: ["mintGoCoin", "mintGoCoinPremium", "setLiquidityMinter", "amm"],
+      dependsOn: ["mintGoCoin", "mintGoCoinPremium", "setLiquidityMinter", "amm", "goCoin"],
       call: (ctx) =>
         ctx
           .instance("amm")
@@ -340,7 +340,7 @@ export async function runSwapDeploy(opts: SwapDeployOptions): Promise<SwapDeploy
 
   await runNetworkDeployment({
     network,
-    nodeUrl,
+    node: nodeUrl,
     salt: getSalt(),
     stateDir: path.join(import.meta.dirname, "..", ".deploy-state"),
     accounts: { admin: { secret: secretKey } },
