@@ -6,14 +6,19 @@
 export const VALID_NETWORKS = ["local", "testnet"] as const;
 export type NetworkName = (typeof VALID_NETWORKS)[number];
 
+/**
+ * Aztec node endpoint per network. `testnet` sits behind the rpc2 API
+ * gateway, which rejects unauthenticated calls with 403 — clients must send
+ * its key (see {@link apiKeyForNetwork}).
+ */
 export const NETWORK_URLS: Record<NetworkName, string> = {
   local: "http://localhost:8080",
-  testnet: "https://v5.testnet.rpc.aztec-labs.com",
+  testnet: "https://testnet-v5.rpc2.aztec-labs.com",
 };
 
 /**
  * API key for the network's node, read from `<NETWORK>_API_KEY`. Any network
- * may be fronted by an API gateway requiring the `X-Aztec-API-Key` header;
+ * may be fronted by an API gateway requiring an API-key header;
  * only those with the env var set send a key. Injected at the node-client
  * layer via `createNode(url, apiKey)`. The browser apps resolve the same key
  * from their per-network config (`${VITE_<NETWORK>_API_KEY}`) at build time.
@@ -25,7 +30,7 @@ export function apiKeyForNetwork(network: NetworkName): string | undefined {
 /** L1 parameters the bridging scripts need. Keep in sync with the rollup. */
 export const L1_DEFAULTS: Record<NetworkName, { l1RpcUrl: string; l1ChainId: number }> = {
   local: { l1RpcUrl: "http://localhost:8545", l1ChainId: 31337 },
-  testnet: { l1RpcUrl: "https://sepolia.drpc.org", l1ChainId: 11155111 },
+  testnet: { l1RpcUrl: "https://ethereum-sepolia-rpc.publicnode.com", l1ChainId: 11155111 },
 };
 
 /**

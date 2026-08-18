@@ -93,10 +93,49 @@ function collectMethods(target: any): string[] {
   return [...seen];
 }
 
+/**
+ * Whether a write to `target` is observable through a subsequent read.
+ *
+ * A Proxy whose `get` trap synthesizes methods forwards writes to the object
+ * underneath while reads keep answering from the trap — PXE's caching node
+ * wrapper (`withCache`) is one, handing back either a closure from its
+ * `cachedReads` table or a per-read `value.bind(target)`. Patching methods on
+ * such an object installs our wrapper *below* the trap, and the trap's
+ * closure then calls straight back into it: unbounded recursion, surfacing as
+ * "Maximum call stack size exceeded" on the first node read.
+ *
+ * The hazard is write-opacity, not read-instability (the trap's `cachedReads`
+ * closures are identical on every read — the dangerous methods look stable),
+ * so probe it directly: write a function under a synthetic key and see if it
+ * reads back untouched. Any get trap that mediates function reads (bind,
+ * memoized or not) fails the probe. If we can't observe our own writes we
+ * don't own the methods, so we leave them alone. A frozen object fails too,
+ * which is equally correct: we can't patch it either way.
+ */
+function canObserveOwnWrites(target: any): boolean {
+  const key = "__profilerProbe";
+  const probe = () => {};
+  try {
+    target[key] = probe;
+    const observed = target[key] === probe;
+    delete target[key];
+    return observed;
+  } catch {
+    return false;
+  }
+}
+
 function wrapAllMethods(target: any, category: Category, profiler: Profiler): () => void {
   const restores: (() => void)[] = [];
   const methods = collectMethods(target);
   const wrappedNames: string[] = [];
+
+  if (!canObserveOwnWrites(target)) {
+    console.info(
+      `[profiler] skipped ${category}: writes not observable through reads, not safe to wrap in place`,
+    );
+    return () => {};
+  }
 
   for (const name of methods) {
     const original = target[name];
@@ -130,6 +169,49 @@ function wrapAllMethods(target: any, category: Category, profiler: Profiler): ()
     wrappedNames.slice(0, 10).join(", ") + (wrappedNames.length > 10 ? ", ..." : ""),
   );
   return () => restores.forEach((r) => r());
+}
+
+/** One facade per underlying object, so every property that holds the same
+ *  proxy (pxe.node, contractSyncService.node, synchronizer.node, …) is
+ *  swapped for the same facade and spans aren't attributed to clones. */
+const facades = new WeakMap<object, any>();
+
+/**
+ * A profiling layer *in front of* `target`, for objects whose methods we
+ * can't patch in place (see {@link canObserveOwnWrites}). Instead of writing
+ * through the foreign trap, callers' references are repointed at this facade
+ * (`root[key] = facade`), so every read lands here first and gets wrapped on
+ * the way out. Nothing on `target` is ever mutated, so its own trap logic —
+ * e.g. `withCache`'s hash-pinned read cache — keeps working untouched, and
+ * cache-served reads show up as (near-zero-duration) spans too, which the
+ * in-place wrapping of the raw node underneath can't see.
+ */
+function profilingFacade(target: any, category: Category, profiler: Profiler): any {
+  const existing = facades.get(target);
+  if (existing) return existing;
+  const facade = new Proxy(target, {
+    get(t, prop, receiver) {
+      const value = Reflect.get(t, prop, receiver);
+      if (
+        typeof value !== "function" ||
+        typeof prop !== "string" ||
+        SKIP.has(prop) ||
+        prop.startsWith("_")
+      ) {
+        return value;
+      }
+      const name = prop;
+      return function (this: any, ...args: any[]) {
+        if (!profiler.isRecording) return value.apply(t, args);
+        const boundArgs = args.map((a) =>
+          typeof a === "function" && !(a as any).__zoneBound ? bindCurrentZone(a) : a,
+        );
+        return profiler.runSpan(name, category, () => value.apply(t, boundArgs));
+      };
+    },
+  });
+  facades.set(target, facade);
+  return facade;
 }
 
 /** Detect queue-like objects whose `get`/`put`/`process` are worker-loop
@@ -335,7 +417,7 @@ class Profiler {
       } catch {
         continue;
       }
-      if (!value || typeof value !== "object" || alreadyWrapped.has(value)) continue;
+      if (!value || typeof value !== "object") continue;
 
       const methods = collectMethods(value);
       if (methods.length === 0) continue;
@@ -347,6 +429,29 @@ class Profiler {
         continue;
       }
 
+      // An object we can't patch in place (a get-trap Proxy like PXE's
+      // caching node wrapper) is profiled by repointing this reference at a
+      // facade instead. Runs per property site — several PXE services hold
+      // their own field for the same proxy, and each must be repointed — so
+      // it comes before the alreadyWrapped identity check.
+      if (!canObserveOwnWrites(value)) {
+        const facade = profilingFacade(value, "store", this);
+        try {
+          root[key] = facade;
+          this._cleanups.push(() => {
+            root[key] = value;
+          });
+          console.info(
+            `[profiler] facaded store .${key}: writes not observable, wrapped by reference`,
+          );
+        } catch (e) {
+          console.warn(`[profiler] Could not facade .${key}:`, e);
+        }
+        alreadyWrapped.add(value);
+        continue;
+      }
+
+      if (alreadyWrapped.has(value)) continue;
       alreadyWrapped.add(value);
       this._cleanups.push(wrapAllMethods(value, "store", this));
       this.instrumentInternals(value, alreadyWrapped, depth - 1);

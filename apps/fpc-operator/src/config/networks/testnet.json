@@ -1,7 +1,8 @@
 {
   "id": "testnet",
   "name": "Aztec Testnet (Sepolia)",
-  "aztecNodeUrl": "https://v5.testnet.rpc.aztec-labs.com",
-  "l1RpcUrl": "https://sepolia.drpc.org",
+  "aztecNodeUrl": "https://testnet-v5.rpc2.aztec-labs.com",
+  "apiKey": "${VITE_TESTNET_API_KEY}",
+  "l1RpcUrl": "https://ethereum-sepolia-rpc.publicnode.com",
   "l1ChainId": 11155111
 }

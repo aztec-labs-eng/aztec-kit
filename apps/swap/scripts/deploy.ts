@@ -151,7 +151,18 @@ function writeNetworkConfig(
       address: deploymentInfo.deployerAddress,
     },
     deployedAt: new Date().toISOString(),
-    ...(existing.subscriptionFPC ? { subscriptionFPC: existing.subscriptionFPC } : {}),
+    // Carry only the two fields anything consumes. An older revision wrote the FPC's
+    // key secret into this block, and copying it wholesale kept resurrecting the secret
+    // into a file that ships in the browser bundle. Picking explicitly means a stray
+    // secret dies on the next write instead of propagating forever.
+    ...(existing.subscriptionFPC
+      ? {
+          subscriptionFPC: {
+            address: existing.subscriptionFPC.address,
+            functions: existing.subscriptionFPC.functions,
+          },
+        }
+      : {}),
   };
 
   fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
@@ -301,7 +312,7 @@ export async function runSwapDeploy(opts: SwapDeployOptions): Promise<SwapDeploy
     addLiquidity: {
       kind: "action",
       from: (resolve) => resolve.account("admin"),
-      dependsOn: ["mintGoCoin", "mintGoCoinPremium", "setLiquidityMinter", "amm"],
+      dependsOn: ["mintGoCoin", "mintGoCoinPremium", "setLiquidityMinter", "amm", "goCoin"],
       call: (ctx) =>
         ctx
           .instance("amm")
@@ -340,7 +351,7 @@ export async function runSwapDeploy(opts: SwapDeployOptions): Promise<SwapDeploy
 
   await runNetworkDeployment({
     network,
-    nodeUrl,
+    node: nodeUrl,
     salt: getSalt(),
     stateDir: path.join(import.meta.dirname, "..", ".deploy-state"),
     accounts: { admin: { secret: secretKey } },

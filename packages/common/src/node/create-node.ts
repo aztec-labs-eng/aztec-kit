@@ -5,13 +5,18 @@ import { defaultFetch } from "@aztec/foundation/json-rpc/client";
  * Header that API-gateway-fronted nodes require for auth.
  * Sent on every JSON-RPC request when an API key is supplied.
  */
-export const AZTEC_API_KEY_HEADER = "X-Aztec-API-Key";
+/**
+ * Auth header the rpc2 gateway requires. It fronts the nodes with AWS API Gateway, whose
+ * key header is `x-api-key` — anything else comes back `403 {"message":"Forbidden"}`,
+ * indistinguishable from sending no key at all.
+ */
+export const AZTEC_API_KEY_HEADER = "x-api-key";
 
 /**
  * Create an Aztec node RPC client, optionally authenticating with an API key.
  *
  * Networks behind an API gateway require the key; it's injected as the
- * `X-Aztec-API-Key` header on every request by wrapping the JSON-RPC client's
+ * the gateway's API-key header on every request by wrapping the JSON-RPC client's
  * fetch. Public nodes pass no key and behave as before.
  *
  * This is the single entry point for node-client creation across the repo
