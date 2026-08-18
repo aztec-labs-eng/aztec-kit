@@ -82,13 +82,9 @@ export function AztecWalletProvider({ children }: { children: ReactNode }) {
     const proverEnabled = import.meta.env.VITE_DISABLE_PROVER !== "1";
     const storeBackend =
       import.meta.env.VITE_WALLET_STORE === "indexeddb" ? "indexeddb" : "sqlite-opfs";
-    // `concurrentContractSyncEnabled` opts into PXE's experimental predictive contract
-    // syncing (new in the 5.3.0 nightly): it speculatively syncs the contracts it expects
-    // a job to reach next, concurrently with the one it was asked for, so repeated flows
-    // sync faster. Off upstream; a wrong guess costs some wasted node requests.
     return EmbeddedWallet.create(node, {
       inspect: import.meta.env.DEV,
-      pxe: { proverEnabled, concurrentContractSyncEnabled: true },
+      pxe: { proverEnabled },
       storeBackend,
     });
   }, [activeNetwork]);
