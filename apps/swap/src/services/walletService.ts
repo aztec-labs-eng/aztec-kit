@@ -67,9 +67,13 @@ export async function createEmbeddedWallet(
 
   let wallet: EmbeddedWallet;
   try {
+    // `concurrentContractSyncEnabled` opts into PXE's experimental predictive contract
+    // syncing (new in the 5.3.0 nightly): it speculatively syncs the contracts it expects
+    // a job to reach next, concurrently with the one it was asked for, so repeated flows
+    // sync faster. Off upstream; a wrong guess costs some wasted node requests.
     wallet = await EmbeddedWallet.create(node, {
       inspect: import.meta.env.DEV,
-      pxe: { proverEnabled },
+      pxe: { proverEnabled, concurrentContractSyncEnabled: true },
       storeBackend,
       getEncryptionKey,
     });

@@ -18,7 +18,7 @@ export async function getPublicFeeJuiceBalance(nodeUrl: string, address: string)
   const node = createAztecNodeClient(nodeUrl);
   const wallet = await EmbeddedWallet.create(node, {
     ephemeral: true,
-    pxeConfig: { ...getPXEConfig(), proverEnabled: false, concurrentContractSyncEnabled: true },
+    pxeConfig: { ...getPXEConfig(), proverEnabled: false },
   });
 
   const [initial] = await getInitialTestAccountsData();

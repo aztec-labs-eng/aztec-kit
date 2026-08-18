@@ -171,9 +171,6 @@ export class EmbeddedWallet extends EmbeddedWalletBase {
    * Overrides `EmbeddedWalletBase.create` with our defaults:
    *   - `proverEnabled: true` by default (we want proving on against local-network);
    *     caller can opt out by passing `pxe: { proverEnabled: false }`.
-   *   - `concurrentContractSyncEnabled: true` by default (experimental predictive
-   *     contract syncing); caller can opt out via
-   *     `pxe: { concurrentContractSyncEnabled: false }`.
    *   - When not `ephemeral`, default `pxe.store` and `walletDb.store` to
    *     `AztecSQLiteOPFSStore` instances scoped by rollup address. A caller may still
    *     inject their own stores and they win.
@@ -216,12 +213,7 @@ export class EmbeddedWallet extends EmbeddedWalletBase {
     // Prover on by default; caller can opt out by passing `pxe: { proverEnabled: false }`
     // (e.g. apps do this under VITE_DISABLE_PROVER=1 for e2e CI where proving
     // starves the node's event loop).
-    //
-    // `concurrentContractSyncEnabled` opts into PXE's experimental predictive contract
-    // syncing: it speculatively syncs the contracts it expects a job to touch next,
-    // concurrently with the one it was asked for, so repeated flows sync faster. Upstream
-    // default is off; we turn it on for the kit's wallets.
-    const pxeOptions = { proverEnabled: true, concurrentContractSyncEnabled: true, ...rest.pxe };
+    const pxeOptions = { proverEnabled: true, ...rest.pxe };
 
     let finalOptions: EmbeddedWalletOptions;
     let pxeStore: AztecAsyncKVStore | undefined;
