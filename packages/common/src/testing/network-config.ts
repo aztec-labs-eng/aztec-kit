@@ -18,7 +18,7 @@ export const NETWORK_URLS: Record<NetworkName, string> = {
 
 /**
  * API key for the network's node, read from `<NETWORK>_API_KEY`. Any network
- * may be fronted by an API gateway requiring the `X-Aztec-API-Key` header;
+ * may be fronted by an API gateway requiring an API-key header;
  * only those with the env var set send a key. Injected at the node-client
  * layer via `createNode(url, apiKey)`. The browser apps resolve the same key
  * from their per-network config (`${VITE_<NETWORK>_API_KEY}`) at build time.

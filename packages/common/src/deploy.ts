@@ -14,7 +14,9 @@ import {
   type FeePolicy,
   type Steps,
 } from "@aztec/aztec/deploy";
+import { createNode } from "./node/create-node.ts";
 import {
+  apiKeyForNetwork,
   L1_DEFAULTS,
   NETWORK_URLS,
   resolveL1Funder,
@@ -74,11 +76,18 @@ export function runNetworkDeployment<C extends Steps>(
         : step,
     ]),
   ) as C;
+  // Handed a URL, the framework builds its own node client — and that client sends no API
+  // key, so it 403s against a gateway-fronted network. Give it a connected node instead
+  // whenever a key is configured. Without one we keep passing the URL through: the runner
+  // exposes the debug API (local time-warping during a bridge) only when it was given one.
+  const target = spec.node ?? NETWORK_URLS[network];
+  const apiKey = apiKeyForNetwork(network);
+
   return runDeployment({
     ...rest,
     local: network === "local",
     label: network,
-    node: spec.node ?? NETWORK_URLS[network],
+    node: typeof target === "string" && apiKey ? createNode(target, apiKey) : target,
     stateDir: join(spec.stateDir ?? join(process.cwd(), ".deploy-state"), network),
     fees: networkFeePolicy(network, spec.fees),
     accounts: Object.fromEntries(
