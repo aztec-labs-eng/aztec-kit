@@ -106,10 +106,14 @@ describe("executeSponsoredSwap", () => {
       },
     };
 
+    // Only forwarded to the subscribe path, which this test does not take.
+    const node = {};
+
     expect(hasSubscription(FPC, AMM, SELECTOR, CONFIG_INDEX, USER)).toBe(false);
 
     await expect(
       executeSponsoredSwap(
+        node as never,
         network as never,
         amm as never,
         goCoin as never,
