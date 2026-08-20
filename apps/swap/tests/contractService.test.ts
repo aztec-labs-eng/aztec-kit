@@ -106,10 +106,14 @@ describe("executeSponsoredSwap", () => {
       },
     };
 
+    // The sponsored path never touches the node; a stub keeps the call shape honest.
+    const node = {};
+
     expect(hasSubscription(FPC, AMM, SELECTOR, CONFIG_INDEX, USER)).toBe(false);
 
     await expect(
       executeSponsoredSwap(
+        node as never,
         network as never,
         amm as never,
         goCoin as never,
