@@ -90,6 +90,9 @@ describe("executeSponsoredSwap", () => {
         get_subscription_info: getSubscriptionInfo,
       },
     };
+    // The sponsor path never touches the node; only the subscribe path scans
+    // seat nullifiers through it.
+    const node = {};
     const network = {
       subscriptionFPC: {
         address: FPC,
@@ -110,6 +113,7 @@ describe("executeSponsoredSwap", () => {
 
     await expect(
       executeSponsoredSwap(
+        node as never,
         network as never,
         amm as never,
         goCoin as never,
