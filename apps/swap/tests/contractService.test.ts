@@ -108,8 +108,13 @@ describe("executeSponsoredSwap", () => {
 
     expect(hasSubscription(FPC, AMM, SELECTOR, CONFIG_INDEX, USER)).toBe(false);
 
+    // executeSponsoredSwap takes the node first; this test drives the already-
+    // subscribed path, which only reaches fpc.helpers.sponsor and never touches it.
+    const node = {};
+
     await expect(
       executeSponsoredSwap(
+        node as never,
         network as never,
         amm as never,
         goCoin as never,
