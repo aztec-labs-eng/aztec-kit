@@ -73,6 +73,8 @@ describe("executeSponsoredSwap", () => {
         })),
       },
     };
+    // Only forwarded to `helpers.subscribe`, which the sponsor path never reaches.
+    const node = {};
     const goCoin = { address: address(GO_COIN) };
     const goCoinPremium = { address: address(GO_COIN_PREMIUM) };
 
@@ -110,6 +112,7 @@ describe("executeSponsoredSwap", () => {
 
     await expect(
       executeSponsoredSwap(
+        node as never,
         network as never,
         amm as never,
         goCoin as never,
