@@ -654,12 +654,12 @@ __metadata:
     "@aztec-kit/common": "workspace:*"
     "@aztec-kit/contracts-ethereum": "workspace:*"
     "@aztec-kit/embedded-wallet": "workspace:*"
-    "@aztec/aztec.js": "npm:v5.3.0-nightly.20260818"
-    "@aztec/entrypoints": "npm:v5.3.0-nightly.20260818"
-    "@aztec/foundation": "npm:v5.3.0-nightly.20260818"
-    "@aztec/stdlib": "npm:v5.3.0-nightly.20260818"
-    "@aztec/wallet-sdk": "npm:v5.3.0-nightly.20260818"
-    "@aztec/wallets": "npm:v5.3.0-nightly.20260818"
+    "@aztec/aztec.js": "npm:v5.3.0-nightly.20260826"
+    "@aztec/entrypoints": "npm:v5.3.0-nightly.20260826"
+    "@aztec/foundation": "npm:v5.3.0-nightly.20260826"
+    "@aztec/stdlib": "npm:v5.3.0-nightly.20260826"
+    "@aztec/wallet-sdk": "npm:v5.3.0-nightly.20260826"
+    "@aztec/wallets": "npm:v5.3.0-nightly.20260826"
     "@emotion/react": "npm:^11.14.0"
     "@emotion/styled": "npm:^11.14.0"
     "@mui/icons-material": "npm:^6.3.1"
@@ -680,17 +680,17 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@aztec-kit/common@workspace:packages/common"
   dependencies:
-    "@aztec/accounts": "npm:v5.3.0-nightly.20260818"
-    "@aztec/aztec": "npm:v5.3.0-nightly.20260818"
-    "@aztec/aztec.js": "npm:v5.3.0-nightly.20260818"
-    "@aztec/constants": "npm:v5.3.0-nightly.20260818"
-    "@aztec/entrypoints": "npm:v5.3.0-nightly.20260818"
-    "@aztec/ethereum": "npm:v5.3.0-nightly.20260818"
-    "@aztec/foundation": "npm:v5.3.0-nightly.20260818"
-    "@aztec/noir-contracts.js": "npm:v5.3.0-nightly.20260818"
-    "@aztec/pxe": "npm:v5.3.0-nightly.20260818"
-    "@aztec/stdlib": "npm:v5.3.0-nightly.20260818"
-    "@aztec/wallets": "npm:v5.3.0-nightly.20260818"
+    "@aztec/accounts": "npm:v5.3.0-nightly.20260826"
+    "@aztec/aztec": "npm:v5.3.0-nightly.20260826"
+    "@aztec/aztec.js": "npm:v5.3.0-nightly.20260826"
+    "@aztec/constants": "npm:v5.3.0-nightly.20260826"
+    "@aztec/entrypoints": "npm:v5.3.0-nightly.20260826"
+    "@aztec/ethereum": "npm:v5.3.0-nightly.20260826"
+    "@aztec/foundation": "npm:v5.3.0-nightly.20260826"
+    "@aztec/noir-contracts.js": "npm:v5.3.0-nightly.20260826"
+    "@aztec/pxe": "npm:v5.3.0-nightly.20260826"
+    "@aztec/stdlib": "npm:v5.3.0-nightly.20260826"
+    "@aztec/wallets": "npm:v5.3.0-nightly.20260826"
     "@mui/material": "npm:^6.3.1"
     "@types/react": "npm:^19.0.6"
     react: "npm:^18.3.1"
@@ -715,14 +715,14 @@ __metadata:
   resolution: "@aztec-kit/contracts-aztec@workspace:packages/contracts/aztec"
   dependencies:
     "@aztec-kit/common": "workspace:*"
-    "@aztec/accounts": "npm:v5.3.0-nightly.20260818"
-    "@aztec/aztec.js": "npm:v5.3.0-nightly.20260818"
-    "@aztec/constants": "npm:v5.3.0-nightly.20260818"
-    "@aztec/foundation": "npm:v5.3.0-nightly.20260818"
-    "@aztec/noir-contracts.js": "npm:v5.3.0-nightly.20260818"
-    "@aztec/standard-contracts": "npm:v5.3.0-nightly.20260818"
-    "@aztec/stdlib": "npm:v5.3.0-nightly.20260818"
-    "@aztec/wallets": "npm:v5.3.0-nightly.20260818"
+    "@aztec/accounts": "npm:v5.3.0-nightly.20260826"
+    "@aztec/aztec.js": "npm:v5.3.0-nightly.20260826"
+    "@aztec/constants": "npm:v5.3.0-nightly.20260826"
+    "@aztec/foundation": "npm:v5.3.0-nightly.20260826"
+    "@aztec/noir-contracts.js": "npm:v5.3.0-nightly.20260826"
+    "@aztec/standard-contracts": "npm:v5.3.0-nightly.20260826"
+    "@aztec/stdlib": "npm:v5.3.0-nightly.20260826"
+    "@aztec/wallets": "npm:v5.3.0-nightly.20260826"
     typescript: "npm:~5.7.3"
     vitest: "npm:^4"
   languageName: unknown
@@ -746,7 +746,7 @@ __metadata:
     "@aztec-kit/common": "workspace:*"
     "@aztec-kit/contracts-aztec": "workspace:*"
     "@aztec-kit/contracts-ethereum": "workspace:*"
-    "@aztec/aztec.js": "npm:v5.3.0-nightly.20260818"
+    "@aztec/aztec.js": "npm:v5.3.0-nightly.20260826"
     "@playwright/test": "npm:^1.49.0"
     "@types/node": "npm:^22.15.17"
     typescript: "npm:~5.7.3"
@@ -760,14 +760,14 @@ __metadata:
   dependencies:
     "@aztec-kit/common": "workspace:*"
     "@aztec-kit/contracts-aztec": "workspace:*"
-    "@aztec/accounts": "npm:v5.3.0-nightly.20260818"
-    "@aztec/aztec.js": "npm:v5.3.0-nightly.20260818"
-    "@aztec/entrypoints": "npm:v5.3.0-nightly.20260818"
-    "@aztec/foundation": "npm:v5.3.0-nightly.20260818"
-    "@aztec/kv-store": "npm:v5.3.0-nightly.20260818"
-    "@aztec/stdlib": "npm:v5.3.0-nightly.20260818"
-    "@aztec/wallet-sdk": "npm:v5.3.0-nightly.20260818"
-    "@aztec/wallets": "npm:v5.3.0-nightly.20260818"
+    "@aztec/accounts": "npm:v5.3.0-nightly.20260826"
+    "@aztec/aztec.js": "npm:v5.3.0-nightly.20260826"
+    "@aztec/entrypoints": "npm:v5.3.0-nightly.20260826"
+    "@aztec/foundation": "npm:v5.3.0-nightly.20260826"
+    "@aztec/kv-store": "npm:v5.3.0-nightly.20260826"
+    "@aztec/stdlib": "npm:v5.3.0-nightly.20260826"
+    "@aztec/wallet-sdk": "npm:v5.3.0-nightly.20260826"
+    "@aztec/wallets": "npm:v5.3.0-nightly.20260826"
     "@emotion/react": "npm:^11.14.0"
     "@mui/icons-material": "npm:^6.3.1"
     "@mui/material": "npm:^6.3.1"
@@ -799,18 +799,18 @@ __metadata:
     "@aztec-kit/common": "workspace:*"
     "@aztec-kit/contracts-aztec": "workspace:*"
     "@aztec-kit/embedded-wallet": "workspace:*"
-    "@aztec/accounts": "npm:v5.3.0-nightly.20260818"
-    "@aztec/aztec-node": "npm:v5.3.0-nightly.20260818"
-    "@aztec/aztec.js": "npm:v5.3.0-nightly.20260818"
-    "@aztec/constants": "npm:v5.3.0-nightly.20260818"
-    "@aztec/entrypoints": "npm:v5.3.0-nightly.20260818"
-    "@aztec/foundation": "npm:v5.3.0-nightly.20260818"
-    "@aztec/l1-artifacts": "npm:v5.3.0-nightly.20260818"
-    "@aztec/noir-contracts.js": "npm:v5.3.0-nightly.20260818"
-    "@aztec/pxe": "npm:v5.3.0-nightly.20260818"
-    "@aztec/stdlib": "npm:v5.3.0-nightly.20260818"
-    "@aztec/wallet-sdk": "npm:v5.3.0-nightly.20260818"
-    "@aztec/wallets": "npm:v5.3.0-nightly.20260818"
+    "@aztec/accounts": "npm:v5.3.0-nightly.20260826"
+    "@aztec/aztec-node": "npm:v5.3.0-nightly.20260826"
+    "@aztec/aztec.js": "npm:v5.3.0-nightly.20260826"
+    "@aztec/constants": "npm:v5.3.0-nightly.20260826"
+    "@aztec/entrypoints": "npm:v5.3.0-nightly.20260826"
+    "@aztec/foundation": "npm:v5.3.0-nightly.20260826"
+    "@aztec/l1-artifacts": "npm:v5.3.0-nightly.20260826"
+    "@aztec/noir-contracts.js": "npm:v5.3.0-nightly.20260826"
+    "@aztec/pxe": "npm:v5.3.0-nightly.20260826"
+    "@aztec/stdlib": "npm:v5.3.0-nightly.20260826"
+    "@aztec/wallet-sdk": "npm:v5.3.0-nightly.20260826"
+    "@aztec/wallets": "npm:v5.3.0-nightly.20260826"
     "@emotion/react": "npm:^11.14.0"
     "@emotion/styled": "npm:^11.14.0"
     "@mui/icons-material": "npm:^6.3.1"
@@ -835,19 +835,19 @@ __metadata:
     "@aztec-kit/common": "workspace:*"
     "@aztec-kit/contracts-aztec": "workspace:*"
     "@aztec-kit/embedded-wallet": "workspace:*"
-    "@aztec/accounts": "npm:v5.3.0-nightly.20260818"
-    "@aztec/aztec": "npm:v5.3.0-nightly.20260818"
-    "@aztec/aztec.js": "npm:v5.3.0-nightly.20260818"
-    "@aztec/constants": "npm:v5.3.0-nightly.20260818"
-    "@aztec/entrypoints": "npm:v5.3.0-nightly.20260818"
-    "@aztec/ethereum": "npm:v5.3.0-nightly.20260818"
-    "@aztec/foundation": "npm:v5.3.0-nightly.20260818"
-    "@aztec/noir-contracts.js": "npm:v5.3.0-nightly.20260818"
-    "@aztec/protocol-contracts": "npm:v5.3.0-nightly.20260818"
-    "@aztec/pxe": "npm:v5.3.0-nightly.20260818"
-    "@aztec/stdlib": "npm:v5.3.0-nightly.20260818"
-    "@aztec/wallet-sdk": "npm:v5.3.0-nightly.20260818"
-    "@aztec/wallets": "npm:v5.3.0-nightly.20260818"
+    "@aztec/accounts": "npm:v5.3.0-nightly.20260826"
+    "@aztec/aztec": "npm:v5.3.0-nightly.20260826"
+    "@aztec/aztec.js": "npm:v5.3.0-nightly.20260826"
+    "@aztec/constants": "npm:v5.3.0-nightly.20260826"
+    "@aztec/entrypoints": "npm:v5.3.0-nightly.20260826"
+    "@aztec/ethereum": "npm:v5.3.0-nightly.20260826"
+    "@aztec/foundation": "npm:v5.3.0-nightly.20260826"
+    "@aztec/noir-contracts.js": "npm:v5.3.0-nightly.20260826"
+    "@aztec/protocol-contracts": "npm:v5.3.0-nightly.20260826"
+    "@aztec/pxe": "npm:v5.3.0-nightly.20260826"
+    "@aztec/stdlib": "npm:v5.3.0-nightly.20260826"
+    "@aztec/wallet-sdk": "npm:v5.3.0-nightly.20260826"
+    "@aztec/wallets": "npm:v5.3.0-nightly.20260826"
     "@emotion/react": "npm:^11.14.0"
     "@emotion/styled": "npm:^11.14.0"
     "@mui/icons-material": "npm:^6.3.1"
@@ -872,142 +872,142 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@aztec/accounts@npm:5.3.0-nightly.20260818, @aztec/accounts@npm:v5.3.0-nightly.20260818":
-  version: 5.3.0-nightly.20260818
-  resolution: "@aztec/accounts@npm:5.3.0-nightly.20260818"
+"@aztec/accounts@npm:5.3.0-nightly.20260826, @aztec/accounts@npm:v5.3.0-nightly.20260826":
+  version: 5.3.0-nightly.20260826
+  resolution: "@aztec/accounts@npm:5.3.0-nightly.20260826"
   dependencies:
-    "@aztec/aztec.js": "npm:5.3.0-nightly.20260818"
-    "@aztec/entrypoints": "npm:5.3.0-nightly.20260818"
-    "@aztec/ethereum": "npm:5.3.0-nightly.20260818"
-    "@aztec/foundation": "npm:5.3.0-nightly.20260818"
-    "@aztec/stdlib": "npm:5.3.0-nightly.20260818"
+    "@aztec/aztec.js": "npm:5.3.0-nightly.20260826"
+    "@aztec/entrypoints": "npm:5.3.0-nightly.20260826"
+    "@aztec/ethereum": "npm:5.3.0-nightly.20260826"
+    "@aztec/foundation": "npm:5.3.0-nightly.20260826"
+    "@aztec/stdlib": "npm:5.3.0-nightly.20260826"
     tslib: "npm:^2.4.0"
-  checksum: 10c0/bf13ffb82535fbf27edb0124c4d27aad77d801a4a441bc80763d2d2ef2c8164ab31b1923bd11c3d40ab979f2142e0e95c61f806e97666240ae53123ebd94f948
+  checksum: 10c0/0d4f608ed7fe29105e6fbc716187d7c31ccf3ce80b32e3cef71914c2e1e2393f9ed61dda22df7b35aedc0c23121b81cf0e85ff863f9fe8ecb76690c410443789
   languageName: node
   linkType: hard
 
-"@aztec/archiver@npm:5.3.0-nightly.20260818":
-  version: 5.3.0-nightly.20260818
-  resolution: "@aztec/archiver@npm:5.3.0-nightly.20260818"
+"@aztec/archiver@npm:5.3.0-nightly.20260826":
+  version: 5.3.0-nightly.20260826
+  resolution: "@aztec/archiver@npm:5.3.0-nightly.20260826"
   dependencies:
-    "@aztec/blob-client": "npm:5.3.0-nightly.20260818"
-    "@aztec/blob-lib": "npm:5.3.0-nightly.20260818"
-    "@aztec/constants": "npm:5.3.0-nightly.20260818"
-    "@aztec/epoch-cache": "npm:5.3.0-nightly.20260818"
-    "@aztec/ethereum": "npm:5.3.0-nightly.20260818"
-    "@aztec/foundation": "npm:5.3.0-nightly.20260818"
-    "@aztec/kv-store": "npm:5.3.0-nightly.20260818"
-    "@aztec/l1-artifacts": "npm:5.3.0-nightly.20260818"
-    "@aztec/noir-protocol-circuits-types": "npm:5.3.0-nightly.20260818"
-    "@aztec/protocol-contracts": "npm:5.3.0-nightly.20260818"
-    "@aztec/standard-contracts": "npm:5.3.0-nightly.20260818"
-    "@aztec/stdlib": "npm:5.3.0-nightly.20260818"
-    "@aztec/telemetry-client": "npm:5.3.0-nightly.20260818"
+    "@aztec/blob-client": "npm:5.3.0-nightly.20260826"
+    "@aztec/blob-lib": "npm:5.3.0-nightly.20260826"
+    "@aztec/constants": "npm:5.3.0-nightly.20260826"
+    "@aztec/epoch-cache": "npm:5.3.0-nightly.20260826"
+    "@aztec/ethereum": "npm:5.3.0-nightly.20260826"
+    "@aztec/foundation": "npm:5.3.0-nightly.20260826"
+    "@aztec/kv-store": "npm:5.3.0-nightly.20260826"
+    "@aztec/l1-artifacts": "npm:5.3.0-nightly.20260826"
+    "@aztec/noir-protocol-circuits-types": "npm:5.3.0-nightly.20260826"
+    "@aztec/protocol-contracts": "npm:5.3.0-nightly.20260826"
+    "@aztec/standard-contracts": "npm:5.3.0-nightly.20260826"
+    "@aztec/stdlib": "npm:5.3.0-nightly.20260826"
+    "@aztec/telemetry-client": "npm:5.3.0-nightly.20260826"
     lodash.groupby: "npm:^4.6.0"
     lodash.omit: "npm:^4.5.0"
     tslib: "npm:^2.5.0"
     viem: "npm:@aztec/viem@2.38.2"
     zod: "npm:^4"
-  checksum: 10c0/398b4f02c10bd40aef143cf047811e736ecefe846746b53c1f72ef608c3c108c611ed219d066c145e41edc7a5e8a023fe2ead21fde2eb9b15b935f16011ed7d8
+  checksum: 10c0/9f2b72994bca0c495b1f1017157ba81869020952aeebff73949714edf8ff124c773b3bd6a9ac764f8e74b04fa8e80d19dc2f1350b05b2b1b539a9123dc1c96b9
   languageName: node
   linkType: hard
 
-"@aztec/aztec-node@npm:5.3.0-nightly.20260818, @aztec/aztec-node@npm:v5.3.0-nightly.20260818":
-  version: 5.3.0-nightly.20260818
-  resolution: "@aztec/aztec-node@npm:5.3.0-nightly.20260818"
+"@aztec/aztec-node@npm:5.3.0-nightly.20260826, @aztec/aztec-node@npm:v5.3.0-nightly.20260826":
+  version: 5.3.0-nightly.20260826
+  resolution: "@aztec/aztec-node@npm:5.3.0-nightly.20260826"
   dependencies:
-    "@aztec/archiver": "npm:5.3.0-nightly.20260818"
-    "@aztec/bb-prover": "npm:5.3.0-nightly.20260818"
-    "@aztec/bb.js": "npm:5.3.0-nightly.20260818"
-    "@aztec/blob-client": "npm:5.3.0-nightly.20260818"
-    "@aztec/blob-lib": "npm:5.3.0-nightly.20260818"
-    "@aztec/constants": "npm:5.3.0-nightly.20260818"
-    "@aztec/epoch-cache": "npm:5.3.0-nightly.20260818"
-    "@aztec/ethereum": "npm:5.3.0-nightly.20260818"
-    "@aztec/foundation": "npm:5.3.0-nightly.20260818"
-    "@aztec/kv-store": "npm:5.3.0-nightly.20260818"
-    "@aztec/l1-artifacts": "npm:5.3.0-nightly.20260818"
-    "@aztec/node-keystore": "npm:5.3.0-nightly.20260818"
-    "@aztec/node-lib": "npm:5.3.0-nightly.20260818"
-    "@aztec/noir-protocol-circuits-types": "npm:5.3.0-nightly.20260818"
-    "@aztec/p2p": "npm:5.3.0-nightly.20260818"
-    "@aztec/protocol-contracts": "npm:5.3.0-nightly.20260818"
-    "@aztec/prover-client": "npm:5.3.0-nightly.20260818"
-    "@aztec/prover-node": "npm:5.3.0-nightly.20260818"
-    "@aztec/sequencer-client": "npm:5.3.0-nightly.20260818"
-    "@aztec/simulator": "npm:5.3.0-nightly.20260818"
-    "@aztec/slasher": "npm:5.3.0-nightly.20260818"
-    "@aztec/standard-contracts": "npm:5.3.0-nightly.20260818"
-    "@aztec/stdlib": "npm:5.3.0-nightly.20260818"
-    "@aztec/telemetry-client": "npm:5.3.0-nightly.20260818"
-    "@aztec/validator-client": "npm:5.3.0-nightly.20260818"
-    "@aztec/validator-ha-signer": "npm:5.3.0-nightly.20260818"
-    "@aztec/world-state": "npm:5.3.0-nightly.20260818"
+    "@aztec/archiver": "npm:5.3.0-nightly.20260826"
+    "@aztec/bb-prover": "npm:5.3.0-nightly.20260826"
+    "@aztec/bb.js": "npm:5.3.0-nightly.20260826"
+    "@aztec/blob-client": "npm:5.3.0-nightly.20260826"
+    "@aztec/blob-lib": "npm:5.3.0-nightly.20260826"
+    "@aztec/constants": "npm:5.3.0-nightly.20260826"
+    "@aztec/epoch-cache": "npm:5.3.0-nightly.20260826"
+    "@aztec/ethereum": "npm:5.3.0-nightly.20260826"
+    "@aztec/foundation": "npm:5.3.0-nightly.20260826"
+    "@aztec/kv-store": "npm:5.3.0-nightly.20260826"
+    "@aztec/l1-artifacts": "npm:5.3.0-nightly.20260826"
+    "@aztec/node-keystore": "npm:5.3.0-nightly.20260826"
+    "@aztec/node-lib": "npm:5.3.0-nightly.20260826"
+    "@aztec/noir-protocol-circuits-types": "npm:5.3.0-nightly.20260826"
+    "@aztec/p2p": "npm:5.3.0-nightly.20260826"
+    "@aztec/protocol-contracts": "npm:5.3.0-nightly.20260826"
+    "@aztec/prover-client": "npm:5.3.0-nightly.20260826"
+    "@aztec/prover-node": "npm:5.3.0-nightly.20260826"
+    "@aztec/sequencer-client": "npm:5.3.0-nightly.20260826"
+    "@aztec/simulator": "npm:5.3.0-nightly.20260826"
+    "@aztec/slasher": "npm:5.3.0-nightly.20260826"
+    "@aztec/standard-contracts": "npm:5.3.0-nightly.20260826"
+    "@aztec/stdlib": "npm:5.3.0-nightly.20260826"
+    "@aztec/telemetry-client": "npm:5.3.0-nightly.20260826"
+    "@aztec/validator-client": "npm:5.3.0-nightly.20260826"
+    "@aztec/validator-ha-signer": "npm:5.3.0-nightly.20260826"
+    "@aztec/world-state": "npm:5.3.0-nightly.20260826"
     koa: "npm:^2.16.1"
     koa-router: "npm:^13.1.1"
     tslib: "npm:^2.4.0"
     viem: "npm:@aztec/viem@2.38.2"
-  checksum: 10c0/0a94f2fb8c722b5b6047cf3f501170e30160901e792a468a15665af8ebb11dfa6d7cace2fc82dc8e040bd2701e1555a5ee729e24491099f1d3799bc4be75dbb0
+  checksum: 10c0/d0aa7bf1b23677f3c3e35847b7ba8f71cd2e236b3ac90b96255c28d5a84a9ca3f9bbdc03147cdb3f20eb2f58fb86a8e391d815d97e473345ae182da9e4a6b371
   languageName: node
   linkType: hard
 
-"@aztec/aztec.js@npm:5.3.0-nightly.20260818, @aztec/aztec.js@npm:v5.3.0-nightly.20260818":
-  version: 5.3.0-nightly.20260818
-  resolution: "@aztec/aztec.js@npm:5.3.0-nightly.20260818"
+"@aztec/aztec.js@npm:5.3.0-nightly.20260826, @aztec/aztec.js@npm:v5.3.0-nightly.20260826":
+  version: 5.3.0-nightly.20260826
+  resolution: "@aztec/aztec.js@npm:5.3.0-nightly.20260826"
   dependencies:
-    "@aztec/constants": "npm:5.3.0-nightly.20260818"
-    "@aztec/entrypoints": "npm:5.3.0-nightly.20260818"
-    "@aztec/ethereum": "npm:5.3.0-nightly.20260818"
-    "@aztec/foundation": "npm:5.3.0-nightly.20260818"
-    "@aztec/l1-artifacts": "npm:5.3.0-nightly.20260818"
-    "@aztec/protocol-contracts": "npm:5.3.0-nightly.20260818"
-    "@aztec/standard-contracts": "npm:5.3.0-nightly.20260818"
-    "@aztec/stdlib": "npm:5.3.0-nightly.20260818"
+    "@aztec/constants": "npm:5.3.0-nightly.20260826"
+    "@aztec/entrypoints": "npm:5.3.0-nightly.20260826"
+    "@aztec/ethereum": "npm:5.3.0-nightly.20260826"
+    "@aztec/foundation": "npm:5.3.0-nightly.20260826"
+    "@aztec/l1-artifacts": "npm:5.3.0-nightly.20260826"
+    "@aztec/protocol-contracts": "npm:5.3.0-nightly.20260826"
+    "@aztec/standard-contracts": "npm:5.3.0-nightly.20260826"
+    "@aztec/stdlib": "npm:5.3.0-nightly.20260826"
     axios: "npm:^1.15.1"
     tslib: "npm:^2.4.0"
     viem: "npm:@aztec/viem@2.38.2"
     zod: "npm:^4"
-  checksum: 10c0/9128fc07fe8626fd64ee5552616e2688d3e07062348d273c670be2e052366ceaa7cbdee2a1276f0325a26c4097dd1c2832a5bd2c3a71180b4cdfbcc43bd0487d
+  checksum: 10c0/37a918efec5dfa72ca31c0cdbe6885b1e7c82db5b1dbe3201582724f542546f257ea0a72c1394107951259059698dab5dc2bf6be911a476a668fc763d16f0bbe
   languageName: node
   linkType: hard
 
-"@aztec/aztec@npm:v5.3.0-nightly.20260818":
-  version: 5.3.0-nightly.20260818
-  resolution: "@aztec/aztec@npm:5.3.0-nightly.20260818"
+"@aztec/aztec@npm:v5.3.0-nightly.20260826":
+  version: 5.3.0-nightly.20260826
+  resolution: "@aztec/aztec@npm:5.3.0-nightly.20260826"
   dependencies:
-    "@aztec/accounts": "npm:5.3.0-nightly.20260818"
-    "@aztec/archiver": "npm:5.3.0-nightly.20260818"
-    "@aztec/aztec-node": "npm:5.3.0-nightly.20260818"
-    "@aztec/aztec.js": "npm:5.3.0-nightly.20260818"
-    "@aztec/bb-prover": "npm:5.3.0-nightly.20260818"
-    "@aztec/bb.js": "npm:5.3.0-nightly.20260818"
-    "@aztec/blob-client": "npm:5.3.0-nightly.20260818"
-    "@aztec/bot": "npm:5.3.0-nightly.20260818"
-    "@aztec/builder": "npm:5.3.0-nightly.20260818"
-    "@aztec/cli": "npm:5.3.0-nightly.20260818"
-    "@aztec/constants": "npm:5.3.0-nightly.20260818"
-    "@aztec/entrypoints": "npm:5.3.0-nightly.20260818"
-    "@aztec/ethereum": "npm:5.3.0-nightly.20260818"
-    "@aztec/foundation": "npm:5.3.0-nightly.20260818"
-    "@aztec/kv-store": "npm:5.3.0-nightly.20260818"
-    "@aztec/l1-artifacts": "npm:5.3.0-nightly.20260818"
-    "@aztec/node-lib": "npm:5.3.0-nightly.20260818"
-    "@aztec/noir-contracts.js": "npm:5.3.0-nightly.20260818"
-    "@aztec/noir-protocol-circuits-types": "npm:5.3.0-nightly.20260818"
-    "@aztec/p2p": "npm:5.3.0-nightly.20260818"
-    "@aztec/p2p-bootstrap": "npm:5.3.0-nightly.20260818"
-    "@aztec/protocol-contracts": "npm:5.3.0-nightly.20260818"
-    "@aztec/prover-client": "npm:5.3.0-nightly.20260818"
-    "@aztec/prover-node": "npm:5.3.0-nightly.20260818"
-    "@aztec/pxe": "npm:5.3.0-nightly.20260818"
-    "@aztec/sequencer-client": "npm:5.3.0-nightly.20260818"
-    "@aztec/standard-contracts": "npm:5.3.0-nightly.20260818"
-    "@aztec/stdlib": "npm:5.3.0-nightly.20260818"
-    "@aztec/telemetry-client": "npm:5.3.0-nightly.20260818"
-    "@aztec/txe": "npm:5.3.0-nightly.20260818"
-    "@aztec/validator-ha-signer": "npm:5.3.0-nightly.20260818"
-    "@aztec/wallets": "npm:5.3.0-nightly.20260818"
-    "@aztec/world-state": "npm:5.3.0-nightly.20260818"
+    "@aztec/accounts": "npm:5.3.0-nightly.20260826"
+    "@aztec/archiver": "npm:5.3.0-nightly.20260826"
+    "@aztec/aztec-node": "npm:5.3.0-nightly.20260826"
+    "@aztec/aztec.js": "npm:5.3.0-nightly.20260826"
+    "@aztec/bb-prover": "npm:5.3.0-nightly.20260826"
+    "@aztec/bb.js": "npm:5.3.0-nightly.20260826"
+    "@aztec/blob-client": "npm:5.3.0-nightly.20260826"
+    "@aztec/bot": "npm:5.3.0-nightly.20260826"
+    "@aztec/builder": "npm:5.3.0-nightly.20260826"
+    "@aztec/cli": "npm:5.3.0-nightly.20260826"
+    "@aztec/constants": "npm:5.3.0-nightly.20260826"
+    "@aztec/entrypoints": "npm:5.3.0-nightly.20260826"
+    "@aztec/ethereum": "npm:5.3.0-nightly.20260826"
+    "@aztec/foundation": "npm:5.3.0-nightly.20260826"
+    "@aztec/kv-store": "npm:5.3.0-nightly.20260826"
+    "@aztec/l1-artifacts": "npm:5.3.0-nightly.20260826"
+    "@aztec/node-lib": "npm:5.3.0-nightly.20260826"
+    "@aztec/noir-contracts.js": "npm:5.3.0-nightly.20260826"
+    "@aztec/noir-protocol-circuits-types": "npm:5.3.0-nightly.20260826"
+    "@aztec/p2p": "npm:5.3.0-nightly.20260826"
+    "@aztec/p2p-bootstrap": "npm:5.3.0-nightly.20260826"
+    "@aztec/protocol-contracts": "npm:5.3.0-nightly.20260826"
+    "@aztec/prover-client": "npm:5.3.0-nightly.20260826"
+    "@aztec/prover-node": "npm:5.3.0-nightly.20260826"
+    "@aztec/pxe": "npm:5.3.0-nightly.20260826"
+    "@aztec/sequencer-client": "npm:5.3.0-nightly.20260826"
+    "@aztec/standard-contracts": "npm:5.3.0-nightly.20260826"
+    "@aztec/stdlib": "npm:5.3.0-nightly.20260826"
+    "@aztec/telemetry-client": "npm:5.3.0-nightly.20260826"
+    "@aztec/txe": "npm:5.3.0-nightly.20260826"
+    "@aztec/validator-ha-signer": "npm:5.3.0-nightly.20260826"
+    "@aztec/wallets": "npm:5.3.0-nightly.20260826"
+    "@aztec/world-state": "npm:5.3.0-nightly.20260826"
     "@iarna/toml": "npm:^2.2.5"
     "@types/chalk": "npm:^2.2.0"
     abitype: "npm:^0.8.11"
@@ -1019,24 +1019,24 @@ __metadata:
     zod: "npm:^4"
   bin:
     aztec: scripts/aztec.sh
-  checksum: 10c0/fa5e9ce845c96ffb82f5836845800af07cb980732be06e7b21ef5af9f52a1425b6af78ba105fcd1394ca6986f180e5d96263b86b87b1b2b0c896c682a4496ea8
+  checksum: 10c0/ce357529bffc095e4221af80842be405899d82cab58d0d8a421f38330b7943292bac37d69fdf868ad1963eccca4a9bc5395320e1e863f325b47ee9d197258dec
   languageName: node
   linkType: hard
 
-"@aztec/bb-prover@npm:5.3.0-nightly.20260818":
-  version: 5.3.0-nightly.20260818
-  resolution: "@aztec/bb-prover@npm:5.3.0-nightly.20260818"
+"@aztec/bb-prover@npm:5.3.0-nightly.20260826":
+  version: 5.3.0-nightly.20260826
+  resolution: "@aztec/bb-prover@npm:5.3.0-nightly.20260826"
   dependencies:
-    "@aztec/bb.js": "npm:5.3.0-nightly.20260818"
-    "@aztec/constants": "npm:5.3.0-nightly.20260818"
-    "@aztec/foundation": "npm:5.3.0-nightly.20260818"
-    "@aztec/noir-noirc_abi": "npm:5.3.0-nightly.20260818"
-    "@aztec/noir-protocol-circuits-types": "npm:5.3.0-nightly.20260818"
-    "@aztec/noir-types": "npm:5.3.0-nightly.20260818"
-    "@aztec/simulator": "npm:5.3.0-nightly.20260818"
-    "@aztec/stdlib": "npm:5.3.0-nightly.20260818"
-    "@aztec/telemetry-client": "npm:5.3.0-nightly.20260818"
-    "@aztec/world-state": "npm:5.3.0-nightly.20260818"
+    "@aztec/bb.js": "npm:5.3.0-nightly.20260826"
+    "@aztec/constants": "npm:5.3.0-nightly.20260826"
+    "@aztec/foundation": "npm:5.3.0-nightly.20260826"
+    "@aztec/noir-noirc_abi": "npm:5.3.0-nightly.20260826"
+    "@aztec/noir-protocol-circuits-types": "npm:5.3.0-nightly.20260826"
+    "@aztec/noir-types": "npm:5.3.0-nightly.20260826"
+    "@aztec/simulator": "npm:5.3.0-nightly.20260826"
+    "@aztec/stdlib": "npm:5.3.0-nightly.20260826"
+    "@aztec/telemetry-client": "npm:5.3.0-nightly.20260826"
+    "@aztec/world-state": "npm:5.3.0-nightly.20260826"
     commander: "npm:^12.1.0"
     msgpackr: "npm:^1.11.2"
     pako: "npm:^2.1.0"
@@ -1044,13 +1044,13 @@ __metadata:
     tslib: "npm:^2.4.0"
   bin:
     bb-cli: dest/bb/index.js
-  checksum: 10c0/ae9d4e57af492e63b660b98e819f1883b9502c34ed7e1a983fa7cb3179ed914237606cf883cb150084ea34e5e7ff05102a2ae3352f99eda35b811c5e6ee6a503
+  checksum: 10c0/667f31223c665a7414ca34ef659ff3fedf90a312d2f893b61790b734fb7e0083d3403dfd10c2a8d0b430f07b127a3f7d638e157d99e19494966dd16e3fcb1ab3
   languageName: node
   linkType: hard
 
-"@aztec/bb.js@npm:5.3.0-nightly.20260818":
-  version: 5.3.0-nightly.20260818
-  resolution: "@aztec/bb.js@npm:5.3.0-nightly.20260818"
+"@aztec/bb.js@npm:5.3.0-nightly.20260826":
+  version: 5.3.0-nightly.20260826
+  resolution: "@aztec/bb.js@npm:5.3.0-nightly.20260826"
   dependencies:
     comlink: "npm:^4.4.1"
     commander: "npm:^12.1.0"
@@ -1060,20 +1060,20 @@ __metadata:
     tslib: "npm:^2.4.0"
   bin:
     bb: dest/node/bin/index.js
-  checksum: 10c0/ee7e7f725d69ab00df99a7cbcab494a393dadcf7f772d2d0059a9a20b616fa26ddadf7b96ffdbb58ec7b837530aca42446bf46dcc4eaf7402aa46c3422a78b0f
+  checksum: 10c0/655018bd4e8f992210017cd52cc087aa744d63dc99b12a2f5d9fb6fffe9b8f5a151824003b9de31a19dfdbf4b2d05e991cab22b383a53482b8141c17af1a3217
   languageName: node
   linkType: hard
 
-"@aztec/blob-client@npm:5.3.0-nightly.20260818":
-  version: 5.3.0-nightly.20260818
-  resolution: "@aztec/blob-client@npm:5.3.0-nightly.20260818"
+"@aztec/blob-client@npm:5.3.0-nightly.20260826":
+  version: 5.3.0-nightly.20260826
+  resolution: "@aztec/blob-client@npm:5.3.0-nightly.20260826"
   dependencies:
-    "@aztec/blob-lib": "npm:5.3.0-nightly.20260818"
-    "@aztec/ethereum": "npm:5.3.0-nightly.20260818"
-    "@aztec/foundation": "npm:5.3.0-nightly.20260818"
-    "@aztec/kv-store": "npm:5.3.0-nightly.20260818"
-    "@aztec/stdlib": "npm:5.3.0-nightly.20260818"
-    "@aztec/telemetry-client": "npm:5.3.0-nightly.20260818"
+    "@aztec/blob-lib": "npm:5.3.0-nightly.20260826"
+    "@aztec/ethereum": "npm:5.3.0-nightly.20260826"
+    "@aztec/foundation": "npm:5.3.0-nightly.20260826"
+    "@aztec/kv-store": "npm:5.3.0-nightly.20260826"
+    "@aztec/stdlib": "npm:5.3.0-nightly.20260826"
+    "@aztec/telemetry-client": "npm:5.3.0-nightly.20260826"
     express: "npm:^4.21.2"
     snappy: "npm:7.2.2"
     source-map-support: "npm:^0.5.21"
@@ -1082,80 +1082,80 @@ __metadata:
     zod: "npm:^4"
   bin:
     blob-client: dest/client/bin/index.js
-  checksum: 10c0/00995b873f7c569bff9e835ee116f083baeb92c537dd1c2bc76d4bc15429c90d5ffbd03898b7dc3a253e44f36a8e48baac41dbb3a4d4d3e7c5f75d51cd906225
+  checksum: 10c0/5ec74dbbcee8f6db39d880c00a67665bff94e21c6db61887247132ff7cdb341638f2950a1c4181d6b36011322663ea532078874fd2c77d3e78fca4253ce4f413
   languageName: node
   linkType: hard
 
-"@aztec/blob-lib@npm:5.3.0-nightly.20260818":
-  version: 5.3.0-nightly.20260818
-  resolution: "@aztec/blob-lib@npm:5.3.0-nightly.20260818"
+"@aztec/blob-lib@npm:5.3.0-nightly.20260826":
+  version: 5.3.0-nightly.20260826
+  resolution: "@aztec/blob-lib@npm:5.3.0-nightly.20260826"
   dependencies:
-    "@aztec/constants": "npm:5.3.0-nightly.20260818"
-    "@aztec/foundation": "npm:5.3.0-nightly.20260818"
+    "@aztec/constants": "npm:5.3.0-nightly.20260826"
+    "@aztec/foundation": "npm:5.3.0-nightly.20260826"
     "@crate-crypto/node-eth-kzg": "npm:^0.10.0"
     tslib: "npm:^2.4.0"
-  checksum: 10c0/0c8fa848683a5070442180519b8253a4f8ef6aa83005c6c65b966cd69ff6cb24791cb8bfc6bef312fb9f233b21f106aa5f30c1cc32db117e1e2bbe511fa8e7a3
+  checksum: 10c0/316d20399ddaebbe7974152d082ddffc40c7b0f401569d177024cceb820cc31eb0c75304dc25ec2a422318840ccf0287cca0bb7dcd221e3e3472bc4324867fb0
   languageName: node
   linkType: hard
 
-"@aztec/bot@npm:5.3.0-nightly.20260818":
-  version: 5.3.0-nightly.20260818
-  resolution: "@aztec/bot@npm:5.3.0-nightly.20260818"
+"@aztec/bot@npm:5.3.0-nightly.20260826":
+  version: 5.3.0-nightly.20260826
+  resolution: "@aztec/bot@npm:5.3.0-nightly.20260826"
   dependencies:
-    "@aztec/accounts": "npm:5.3.0-nightly.20260818"
-    "@aztec/aztec.js": "npm:5.3.0-nightly.20260818"
-    "@aztec/entrypoints": "npm:5.3.0-nightly.20260818"
-    "@aztec/ethereum": "npm:5.3.0-nightly.20260818"
-    "@aztec/foundation": "npm:5.3.0-nightly.20260818"
-    "@aztec/kv-store": "npm:5.3.0-nightly.20260818"
-    "@aztec/l1-artifacts": "npm:5.3.0-nightly.20260818"
-    "@aztec/noir-contracts.js": "npm:5.3.0-nightly.20260818"
-    "@aztec/noir-protocol-circuits-types": "npm:5.3.0-nightly.20260818"
-    "@aztec/noir-test-contracts.js": "npm:5.3.0-nightly.20260818"
-    "@aztec/protocol-contracts": "npm:5.3.0-nightly.20260818"
-    "@aztec/stdlib": "npm:5.3.0-nightly.20260818"
-    "@aztec/telemetry-client": "npm:5.3.0-nightly.20260818"
-    "@aztec/wallets": "npm:5.3.0-nightly.20260818"
+    "@aztec/accounts": "npm:5.3.0-nightly.20260826"
+    "@aztec/aztec.js": "npm:5.3.0-nightly.20260826"
+    "@aztec/entrypoints": "npm:5.3.0-nightly.20260826"
+    "@aztec/ethereum": "npm:5.3.0-nightly.20260826"
+    "@aztec/foundation": "npm:5.3.0-nightly.20260826"
+    "@aztec/kv-store": "npm:5.3.0-nightly.20260826"
+    "@aztec/l1-artifacts": "npm:5.3.0-nightly.20260826"
+    "@aztec/noir-contracts.js": "npm:5.3.0-nightly.20260826"
+    "@aztec/noir-protocol-circuits-types": "npm:5.3.0-nightly.20260826"
+    "@aztec/noir-test-contracts.js": "npm:5.3.0-nightly.20260826"
+    "@aztec/protocol-contracts": "npm:5.3.0-nightly.20260826"
+    "@aztec/stdlib": "npm:5.3.0-nightly.20260826"
+    "@aztec/telemetry-client": "npm:5.3.0-nightly.20260826"
+    "@aztec/wallets": "npm:5.3.0-nightly.20260826"
     source-map-support: "npm:^0.5.21"
     tslib: "npm:^2.4.0"
     viem: "npm:@aztec/viem@2.38.2"
     zod: "npm:^4"
-  checksum: 10c0/b55c3d554e0ca6a2d4e704b8558172425fe026e234286eb10abdb25878ba5dafc47967afab1d1068f0fc666ba4d90ff5c5695229c8f6ab090ac00faf7bd42da4
+  checksum: 10c0/de895013422a933724245cd1b5ccae03b9a98e446d30bc03933efebe156566efcb407a5539b196b5a2837140837763449ed51d49f3fbd8b34b3083bfb9c95698
   languageName: node
   linkType: hard
 
-"@aztec/builder@npm:5.3.0-nightly.20260818":
-  version: 5.3.0-nightly.20260818
-  resolution: "@aztec/builder@npm:5.3.0-nightly.20260818"
+"@aztec/builder@npm:5.3.0-nightly.20260826":
+  version: 5.3.0-nightly.20260826
+  resolution: "@aztec/builder@npm:5.3.0-nightly.20260826"
   dependencies:
-    "@aztec/foundation": "npm:5.3.0-nightly.20260818"
-    "@aztec/stdlib": "npm:5.3.0-nightly.20260818"
+    "@aztec/foundation": "npm:5.3.0-nightly.20260826"
+    "@aztec/stdlib": "npm:5.3.0-nightly.20260826"
     commander: "npm:^12.1.0"
-  checksum: 10c0/9d2c132c9e59a88ed2ba9f7c4c4e0972e434afee9b582e6c7656a63cc0ea1f1a2327cab8a997f3988bd47a027f860afc205da2d807a4ab4a83e76493a7b162f6
+  checksum: 10c0/f579cf87ec853944699bd8a7b4b887c2a649ec3a4510f2568cd0656acc504c3e17ce577c165a8a7b13b98a07356e6b1e92cab2d2bf11275db5be5e4337209316
   languageName: node
   linkType: hard
 
-"@aztec/cli@npm:5.3.0-nightly.20260818":
-  version: 5.3.0-nightly.20260818
-  resolution: "@aztec/cli@npm:5.3.0-nightly.20260818"
+"@aztec/cli@npm:5.3.0-nightly.20260826":
+  version: 5.3.0-nightly.20260826
+  resolution: "@aztec/cli@npm:5.3.0-nightly.20260826"
   dependencies:
-    "@aztec/accounts": "npm:5.3.0-nightly.20260818"
-    "@aztec/archiver": "npm:5.3.0-nightly.20260818"
-    "@aztec/aztec.js": "npm:5.3.0-nightly.20260818"
-    "@aztec/constants": "npm:5.3.0-nightly.20260818"
-    "@aztec/entrypoints": "npm:5.3.0-nightly.20260818"
-    "@aztec/ethereum": "npm:5.3.0-nightly.20260818"
-    "@aztec/foundation": "npm:5.3.0-nightly.20260818"
-    "@aztec/l1-artifacts": "npm:5.3.0-nightly.20260818"
-    "@aztec/node-keystore": "npm:5.3.0-nightly.20260818"
-    "@aztec/node-lib": "npm:5.3.0-nightly.20260818"
-    "@aztec/p2p": "npm:5.3.0-nightly.20260818"
-    "@aztec/protocol-contracts": "npm:5.3.0-nightly.20260818"
-    "@aztec/sequencer-client": "npm:5.3.0-nightly.20260818"
-    "@aztec/slasher": "npm:5.3.0-nightly.20260818"
-    "@aztec/stdlib": "npm:5.3.0-nightly.20260818"
-    "@aztec/wallets": "npm:5.3.0-nightly.20260818"
-    "@aztec/world-state": "npm:5.3.0-nightly.20260818"
+    "@aztec/accounts": "npm:5.3.0-nightly.20260826"
+    "@aztec/archiver": "npm:5.3.0-nightly.20260826"
+    "@aztec/aztec.js": "npm:5.3.0-nightly.20260826"
+    "@aztec/constants": "npm:5.3.0-nightly.20260826"
+    "@aztec/entrypoints": "npm:5.3.0-nightly.20260826"
+    "@aztec/ethereum": "npm:5.3.0-nightly.20260826"
+    "@aztec/foundation": "npm:5.3.0-nightly.20260826"
+    "@aztec/l1-artifacts": "npm:5.3.0-nightly.20260826"
+    "@aztec/node-keystore": "npm:5.3.0-nightly.20260826"
+    "@aztec/node-lib": "npm:5.3.0-nightly.20260826"
+    "@aztec/p2p": "npm:5.3.0-nightly.20260826"
+    "@aztec/protocol-contracts": "npm:5.3.0-nightly.20260826"
+    "@aztec/sequencer-client": "npm:5.3.0-nightly.20260826"
+    "@aztec/slasher": "npm:5.3.0-nightly.20260826"
+    "@aztec/stdlib": "npm:5.3.0-nightly.20260826"
+    "@aztec/wallets": "npm:5.3.0-nightly.20260826"
+    "@aztec/world-state": "npm:5.3.0-nightly.20260826"
     "@ethersproject/wallet": "npm:^5.8.0"
     "@iarna/toml": "npm:^2.2.5"
     "@libp2p/peer-id-factory": "npm:^3.0.4"
@@ -1168,85 +1168,85 @@ __metadata:
     tslib: "npm:^2.4.0"
     viem: "npm:@aztec/viem@2.38.2"
   peerDependencies:
-    "@aztec/accounts": 5.3.0-nightly.20260818
-    "@aztec/bb-prover": 5.3.0-nightly.20260818
-    "@aztec/ethereum": 5.3.0-nightly.20260818
-    "@aztec/l1-artifacts": 5.3.0-nightly.20260818
-    "@aztec/noir-contracts.js": 5.3.0-nightly.20260818
-    "@aztec/noir-protocol-circuits-types": 5.3.0-nightly.20260818
-    "@aztec/noir-test-contracts.js": 5.3.0-nightly.20260818
-    "@aztec/protocol-contracts": 5.3.0-nightly.20260818
-    "@aztec/stdlib": 5.3.0-nightly.20260818
-  checksum: 10c0/596cfa4af8a06d29e34aaea8b3937b454d839850da3d347c992d5904b3befadd31d218eb080e5aed2c06c326073a56ebfaedf25d9dfac642cf40ec53bdc5e945
+    "@aztec/accounts": 5.3.0-nightly.20260826
+    "@aztec/bb-prover": 5.3.0-nightly.20260826
+    "@aztec/ethereum": 5.3.0-nightly.20260826
+    "@aztec/l1-artifacts": 5.3.0-nightly.20260826
+    "@aztec/noir-contracts.js": 5.3.0-nightly.20260826
+    "@aztec/noir-protocol-circuits-types": 5.3.0-nightly.20260826
+    "@aztec/noir-test-contracts.js": 5.3.0-nightly.20260826
+    "@aztec/protocol-contracts": 5.3.0-nightly.20260826
+    "@aztec/stdlib": 5.3.0-nightly.20260826
+  checksum: 10c0/0953d03ccad1878fac5649994df57ffc79e4ee9d4b71a7ef5e164fb3039682c66441e95f76492a9928f8684e3f968418c6a3ea93bb700da1597682d2fdefe554
   languageName: node
   linkType: hard
 
-"@aztec/constants@npm:5.3.0-nightly.20260818, @aztec/constants@npm:v5.3.0-nightly.20260818":
-  version: 5.3.0-nightly.20260818
-  resolution: "@aztec/constants@npm:5.3.0-nightly.20260818"
+"@aztec/constants@npm:5.3.0-nightly.20260826, @aztec/constants@npm:v5.3.0-nightly.20260826":
+  version: 5.3.0-nightly.20260826
+  resolution: "@aztec/constants@npm:5.3.0-nightly.20260826"
   dependencies:
-    "@aztec/foundation": "npm:5.3.0-nightly.20260818"
+    "@aztec/foundation": "npm:5.3.0-nightly.20260826"
     tslib: "npm:^2.4.0"
-  checksum: 10c0/0b7aa7d55aea40f7d74be19aea8da426cae55cda5ca7e0f1d0bbafec5338c6d89132102570883958beb004ca7ea74470b8ff2f2e2d461b06972e6dc63f618a55
+  checksum: 10c0/abc5cc9c9c5566f1cbd2748629ed2127c2bbf886cdbe1ef0de4a54ce987a7c37b6a6b8257caf24301cb27840e0a51dc9936e6df9bc10c7d82284593878eb291d
   languageName: node
   linkType: hard
 
-"@aztec/entrypoints@npm:5.3.0-nightly.20260818, @aztec/entrypoints@npm:v5.3.0-nightly.20260818":
-  version: 5.3.0-nightly.20260818
-  resolution: "@aztec/entrypoints@npm:5.3.0-nightly.20260818"
+"@aztec/entrypoints@npm:5.3.0-nightly.20260826, @aztec/entrypoints@npm:v5.3.0-nightly.20260826":
+  version: 5.3.0-nightly.20260826
+  resolution: "@aztec/entrypoints@npm:5.3.0-nightly.20260826"
   dependencies:
-    "@aztec/constants": "npm:5.3.0-nightly.20260818"
-    "@aztec/foundation": "npm:5.3.0-nightly.20260818"
-    "@aztec/protocol-contracts": "npm:5.3.0-nightly.20260818"
-    "@aztec/standard-contracts": "npm:5.3.0-nightly.20260818"
-    "@aztec/stdlib": "npm:5.3.0-nightly.20260818"
+    "@aztec/constants": "npm:5.3.0-nightly.20260826"
+    "@aztec/foundation": "npm:5.3.0-nightly.20260826"
+    "@aztec/protocol-contracts": "npm:5.3.0-nightly.20260826"
+    "@aztec/standard-contracts": "npm:5.3.0-nightly.20260826"
+    "@aztec/stdlib": "npm:5.3.0-nightly.20260826"
     tslib: "npm:^2.4.0"
     zod: "npm:^4"
-  checksum: 10c0/90186c359cb484822d005ac9d47037d30025680216741b3a07de5169846392e6417d87392831f6640c64a5ee91d8902f2880f22acc59f662294fc825d0db6743
+  checksum: 10c0/6b43ca1b282347167b1f01795727c1d00d2deef7a609ae268a4c4f4261df33c04f40635bd33809fae43a2c587f79f4d90adb79d466c272d5fda0c8ebdcbdb929
   languageName: node
   linkType: hard
 
-"@aztec/epoch-cache@npm:5.3.0-nightly.20260818":
-  version: 5.3.0-nightly.20260818
-  resolution: "@aztec/epoch-cache@npm:5.3.0-nightly.20260818"
+"@aztec/epoch-cache@npm:5.3.0-nightly.20260826":
+  version: 5.3.0-nightly.20260826
+  resolution: "@aztec/epoch-cache@npm:5.3.0-nightly.20260826"
   dependencies:
-    "@aztec/ethereum": "npm:5.3.0-nightly.20260818"
-    "@aztec/foundation": "npm:5.3.0-nightly.20260818"
-    "@aztec/l1-artifacts": "npm:5.3.0-nightly.20260818"
-    "@aztec/stdlib": "npm:5.3.0-nightly.20260818"
+    "@aztec/ethereum": "npm:5.3.0-nightly.20260826"
+    "@aztec/foundation": "npm:5.3.0-nightly.20260826"
+    "@aztec/l1-artifacts": "npm:5.3.0-nightly.20260826"
+    "@aztec/stdlib": "npm:5.3.0-nightly.20260826"
     dotenv: "npm:^16.0.3"
     get-port: "npm:^7.1.0"
     jest-mock-extended: "npm:^4.0.0"
     tslib: "npm:^2.4.0"
     viem: "npm:@aztec/viem@2.38.2"
     zod: "npm:^4"
-  checksum: 10c0/73ce32cad88518094b57110a257a083cb216a985f1a76054ac45347e5e9f4fb3e58ee0983279acc8a54e71653ea3fe844baaaf6c683ea55426c77f7936b77c0f
+  checksum: 10c0/62f97b68e272561f00a637c366e26d71497326a5f2e8afbda8d90ad212aa66f484dcf04cd3b88ffdc0472ca26815c7ec2c290da4ea14a95a75ee3aa9a509db94
   languageName: node
   linkType: hard
 
-"@aztec/ethereum@npm:5.3.0-nightly.20260818, @aztec/ethereum@npm:v5.3.0-nightly.20260818":
-  version: 5.3.0-nightly.20260818
-  resolution: "@aztec/ethereum@npm:5.3.0-nightly.20260818"
+"@aztec/ethereum@npm:5.3.0-nightly.20260826, @aztec/ethereum@npm:v5.3.0-nightly.20260826":
+  version: 5.3.0-nightly.20260826
+  resolution: "@aztec/ethereum@npm:5.3.0-nightly.20260826"
   dependencies:
-    "@aztec/blob-lib": "npm:5.3.0-nightly.20260818"
-    "@aztec/constants": "npm:5.3.0-nightly.20260818"
-    "@aztec/foundation": "npm:5.3.0-nightly.20260818"
-    "@aztec/l1-artifacts": "npm:5.3.0-nightly.20260818"
+    "@aztec/blob-lib": "npm:5.3.0-nightly.20260826"
+    "@aztec/constants": "npm:5.3.0-nightly.20260826"
+    "@aztec/foundation": "npm:5.3.0-nightly.20260826"
+    "@aztec/l1-artifacts": "npm:5.3.0-nightly.20260826"
     dotenv: "npm:^16.0.3"
     lodash.chunk: "npm:^4.2.0"
     lodash.pickby: "npm:^4.5.0"
     tslib: "npm:^2.4.0"
     viem: "npm:@aztec/viem@2.38.2"
     zod: "npm:^4"
-  checksum: 10c0/a8470a5621ee9bf1b25db987c4f25fa802c298e5425604567209366a48d967c5e50fe2598ad7849b2bd0cd1d68bbaeded8951936c84e67193444bbdfdd471513
+  checksum: 10c0/e6ccb5b8c8940692e2cad08a6248e2a05e75e160fe0499cb84088078e24cd08293142f0b411280e7a6732a1be95bf19097bdc5d39616ad1b0341b499d328ba6d
   languageName: node
   linkType: hard
 
-"@aztec/foundation@npm:5.3.0-nightly.20260818, @aztec/foundation@npm:v5.3.0-nightly.20260818":
-  version: 5.3.0-nightly.20260818
-  resolution: "@aztec/foundation@npm:5.3.0-nightly.20260818"
+"@aztec/foundation@npm:5.3.0-nightly.20260826, @aztec/foundation@npm:v5.3.0-nightly.20260826":
+  version: 5.3.0-nightly.20260826
+  resolution: "@aztec/foundation@npm:5.3.0-nightly.20260826"
   dependencies:
-    "@aztec/bb.js": "npm:5.3.0-nightly.20260818"
+    "@aztec/bb.js": "npm:5.3.0-nightly.20260826"
     "@koa/cors": "npm:^5.0.0"
     "@noble/curves": "npm:=1.7.0"
     "@noble/hashes": "npm:^1.6.1"
@@ -1268,209 +1268,209 @@ __metadata:
     sha3: "npm:^2.1.4"
     undici: "npm:^5.28.5"
     zod: "npm:^4"
-  checksum: 10c0/14ac0568cb9090fd47c6fe6891bdf0baa935df76cca4a7343c583e30ab5c0d4177749371a6714744e27b1be6e22300a233877db6d8c9c56145fa66a0a0ec92e3
+  checksum: 10c0/88ba727f144fd319b10813e781d7862626a2db117c4ebc25acfcf3d1b9a9acb7706bf322a1742296af1d84a4a63c1dd25479b8d0e3fd7eec07bf41ddfc7ed752
   languageName: node
   linkType: hard
 
-"@aztec/key-store@npm:5.3.0-nightly.20260818":
-  version: 5.3.0-nightly.20260818
-  resolution: "@aztec/key-store@npm:5.3.0-nightly.20260818"
+"@aztec/key-store@npm:5.3.0-nightly.20260826":
+  version: 5.3.0-nightly.20260826
+  resolution: "@aztec/key-store@npm:5.3.0-nightly.20260826"
   dependencies:
-    "@aztec/constants": "npm:5.3.0-nightly.20260818"
-    "@aztec/foundation": "npm:5.3.0-nightly.20260818"
-    "@aztec/kv-store": "npm:5.3.0-nightly.20260818"
-    "@aztec/stdlib": "npm:5.3.0-nightly.20260818"
+    "@aztec/constants": "npm:5.3.0-nightly.20260826"
+    "@aztec/foundation": "npm:5.3.0-nightly.20260826"
+    "@aztec/kv-store": "npm:5.3.0-nightly.20260826"
+    "@aztec/stdlib": "npm:5.3.0-nightly.20260826"
     tslib: "npm:^2.4.0"
-  checksum: 10c0/b49421f30a5404f779ea0e735edc92bc032aff05968097372c7e9e1c0d910b04101755d096bb4378b4e30d9e8d02ae804b53fd3102178d829440c3ed6f688f9d
+  checksum: 10c0/c92614ad163b9c3d778dc0d6b605d6d79983244d43e4425187c8694a22b0a8645605351f2fd2809247b615a1b18a931bf90bb3cc63769e38dcf33cdd1c2803b1
   languageName: node
   linkType: hard
 
-"@aztec/kv-store@npm:5.3.0-nightly.20260818, @aztec/kv-store@npm:v5.3.0-nightly.20260818":
-  version: 5.3.0-nightly.20260818
-  resolution: "@aztec/kv-store@npm:5.3.0-nightly.20260818"
+"@aztec/kv-store@npm:5.3.0-nightly.20260826, @aztec/kv-store@npm:v5.3.0-nightly.20260826":
+  version: 5.3.0-nightly.20260826
+  resolution: "@aztec/kv-store@npm:5.3.0-nightly.20260826"
   dependencies:
-    "@aztec/constants": "npm:5.3.0-nightly.20260818"
-    "@aztec/ethereum": "npm:5.3.0-nightly.20260818"
-    "@aztec/foundation": "npm:5.3.0-nightly.20260818"
-    "@aztec/native": "npm:5.3.0-nightly.20260818"
-    "@aztec/sqlite3mc-wasm": "npm:5.3.0-nightly.20260818"
-    "@aztec/stdlib": "npm:5.3.0-nightly.20260818"
+    "@aztec/constants": "npm:5.3.0-nightly.20260826"
+    "@aztec/ethereum": "npm:5.3.0-nightly.20260826"
+    "@aztec/foundation": "npm:5.3.0-nightly.20260826"
+    "@aztec/native": "npm:5.3.0-nightly.20260826"
+    "@aztec/sqlite3mc-wasm": "npm:5.3.0-nightly.20260826"
+    "@aztec/stdlib": "npm:5.3.0-nightly.20260826"
     idb: "npm:^8.0.0"
     lmdb: "npm:^3.2.0"
     msgpackr: "npm:^1.11.2"
     ohash: "npm:^2.0.11"
     ordered-binary: "npm:^1.5.3"
-  checksum: 10c0/e601be660bc52c318c73fe4099f65013ac87c79d0380c329a66bd131c110ac02110c8217ed4630c8c9de3977ea8205d140dd454436c928a971430c158c2bc1b1
+  checksum: 10c0/9d69fd2310d1574acd5f2ed958dde4d46bac9ab27db26aeec1e5983d3a8b71e6dc16f4e0aed5fff8a4423644664433b5942f879781d072db34fa56719660ee57
   languageName: node
   linkType: hard
 
-"@aztec/l1-artifacts@npm:5.3.0-nightly.20260818, @aztec/l1-artifacts@npm:v5.3.0-nightly.20260818":
-  version: 5.3.0-nightly.20260818
-  resolution: "@aztec/l1-artifacts@npm:5.3.0-nightly.20260818"
+"@aztec/l1-artifacts@npm:5.3.0-nightly.20260826, @aztec/l1-artifacts@npm:v5.3.0-nightly.20260826":
+  version: 5.3.0-nightly.20260826
+  resolution: "@aztec/l1-artifacts@npm:5.3.0-nightly.20260826"
   dependencies:
     tslib: "npm:^2.4.0"
-  checksum: 10c0/6d172457d0debdd606dbdc3db16e1ece40f30ed3625cce0d970387e32bf4de198552629e782080713bb790fa253c5340e9bca26b12dc358350011842ff6afd95
+  checksum: 10c0/e73ae3d8566d30402b8955c821fa35d1bd838ce6db9eafa0e0cdd3b63942172e0180e544031c93971b009f7503bd90df9d9abe77a650929a7f08ad67447ceb20
   languageName: node
   linkType: hard
 
-"@aztec/native@npm:5.3.0-nightly.20260818":
-  version: 5.3.0-nightly.20260818
-  resolution: "@aztec/native@npm:5.3.0-nightly.20260818"
+"@aztec/native@npm:5.3.0-nightly.20260826":
+  version: 5.3.0-nightly.20260826
+  resolution: "@aztec/native@npm:5.3.0-nightly.20260826"
   dependencies:
-    "@aztec/bb.js": "npm:5.3.0-nightly.20260818"
-    "@aztec/foundation": "npm:5.3.0-nightly.20260818"
+    "@aztec/bb.js": "npm:5.3.0-nightly.20260826"
+    "@aztec/foundation": "npm:5.3.0-nightly.20260826"
     msgpackr: "npm:^1.11.2"
-  checksum: 10c0/bebf6b6d9cf67ae5c86807b3dab6add6a672579a4ba37844431032efd825f778aeed869afe63118c45641a9f631a3769460347e40a93f12c8cdf1f8d034940e6
+  checksum: 10c0/c597af1db15e5d707b788de61e050b7c36b3dd62de26f754e60f0d322356a8f360378cd3df32d8822c0515bf96b7bcb2acfd22c78ad7c8331bde4772b48d094f
   languageName: node
   linkType: hard
 
-"@aztec/node-keystore@npm:5.3.0-nightly.20260818":
-  version: 5.3.0-nightly.20260818
-  resolution: "@aztec/node-keystore@npm:5.3.0-nightly.20260818"
+"@aztec/node-keystore@npm:5.3.0-nightly.20260826":
+  version: 5.3.0-nightly.20260826
+  resolution: "@aztec/node-keystore@npm:5.3.0-nightly.20260826"
   dependencies:
-    "@aztec/ethereum": "npm:5.3.0-nightly.20260818"
-    "@aztec/foundation": "npm:5.3.0-nightly.20260818"
-    "@aztec/stdlib": "npm:5.3.0-nightly.20260818"
+    "@aztec/ethereum": "npm:5.3.0-nightly.20260826"
+    "@aztec/foundation": "npm:5.3.0-nightly.20260826"
+    "@aztec/stdlib": "npm:5.3.0-nightly.20260826"
     "@ethersproject/wallet": "npm:^5.7.0"
     tslib: "npm:^2.4.0"
     viem: "npm:@aztec/viem@2.38.2"
     zod: "npm:^4"
-  checksum: 10c0/7945616ade7a5fb8411f0737478784917b6cc73d4fc8e7ca0a7fdb1bc5b0e156fab388adc480d0b9e8e12f728a466c4d492b7cc91160f6160fee528224b17730
+  checksum: 10c0/07709611b436f665820566ade2c10e0d1b34932f407b2cb1ea850be5e69310759e8b36aebf70d0023606932db70a1242de9c084c28d14a5a06b30959045a287f
   languageName: node
   linkType: hard
 
-"@aztec/node-lib@npm:5.3.0-nightly.20260818":
-  version: 5.3.0-nightly.20260818
-  resolution: "@aztec/node-lib@npm:5.3.0-nightly.20260818"
+"@aztec/node-lib@npm:5.3.0-nightly.20260826":
+  version: 5.3.0-nightly.20260826
+  resolution: "@aztec/node-lib@npm:5.3.0-nightly.20260826"
   dependencies:
-    "@aztec/archiver": "npm:5.3.0-nightly.20260818"
-    "@aztec/bb-prover": "npm:5.3.0-nightly.20260818"
-    "@aztec/blob-client": "npm:5.3.0-nightly.20260818"
-    "@aztec/constants": "npm:5.3.0-nightly.20260818"
-    "@aztec/epoch-cache": "npm:5.3.0-nightly.20260818"
-    "@aztec/ethereum": "npm:5.3.0-nightly.20260818"
-    "@aztec/foundation": "npm:5.3.0-nightly.20260818"
-    "@aztec/kv-store": "npm:5.3.0-nightly.20260818"
-    "@aztec/p2p": "npm:5.3.0-nightly.20260818"
-    "@aztec/protocol-contracts": "npm:5.3.0-nightly.20260818"
-    "@aztec/prover-client": "npm:5.3.0-nightly.20260818"
-    "@aztec/sequencer-client": "npm:5.3.0-nightly.20260818"
-    "@aztec/simulator": "npm:5.3.0-nightly.20260818"
-    "@aztec/stdlib": "npm:5.3.0-nightly.20260818"
-    "@aztec/telemetry-client": "npm:5.3.0-nightly.20260818"
-    "@aztec/validator-client": "npm:5.3.0-nightly.20260818"
-    "@aztec/world-state": "npm:5.3.0-nightly.20260818"
+    "@aztec/archiver": "npm:5.3.0-nightly.20260826"
+    "@aztec/bb-prover": "npm:5.3.0-nightly.20260826"
+    "@aztec/blob-client": "npm:5.3.0-nightly.20260826"
+    "@aztec/constants": "npm:5.3.0-nightly.20260826"
+    "@aztec/epoch-cache": "npm:5.3.0-nightly.20260826"
+    "@aztec/ethereum": "npm:5.3.0-nightly.20260826"
+    "@aztec/foundation": "npm:5.3.0-nightly.20260826"
+    "@aztec/kv-store": "npm:5.3.0-nightly.20260826"
+    "@aztec/p2p": "npm:5.3.0-nightly.20260826"
+    "@aztec/protocol-contracts": "npm:5.3.0-nightly.20260826"
+    "@aztec/prover-client": "npm:5.3.0-nightly.20260826"
+    "@aztec/sequencer-client": "npm:5.3.0-nightly.20260826"
+    "@aztec/simulator": "npm:5.3.0-nightly.20260826"
+    "@aztec/stdlib": "npm:5.3.0-nightly.20260826"
+    "@aztec/telemetry-client": "npm:5.3.0-nightly.20260826"
+    "@aztec/validator-client": "npm:5.3.0-nightly.20260826"
+    "@aztec/world-state": "npm:5.3.0-nightly.20260826"
     tslib: "npm:^2.4.0"
-  checksum: 10c0/57a12ad10ef65655983124a882457881b10a9b4daef648017b3469fe04dd0d07121b3ed6c69e5be90006c00cd57023b82bc5db038ea0dfc6b3c0465f395c2850
+  checksum: 10c0/01390b195e395907503b9c17337700059b70c086f355a541fae44884f0e242f4beae7b90aa362b5a2b229542de1d2affcffc72ee9acf2a4ecf2abeb81a2a40e6
   languageName: node
   linkType: hard
 
-"@aztec/noir-acvm_js@npm:5.3.0-nightly.20260818":
-  version: 5.3.0-nightly.20260818
-  resolution: "@aztec/noir-acvm_js@npm:5.3.0-nightly.20260818"
-  checksum: 10c0/1b74057bb81aca0edcaa2f05549fa3cd399cbbfb6105636ebded9a3b4b039b97a9786dd32a78cbb96a14c67411f181f0fefd21a26e2f6f0955c8e2d6196b51b8
+"@aztec/noir-acvm_js@npm:5.3.0-nightly.20260826":
+  version: 5.3.0-nightly.20260826
+  resolution: "@aztec/noir-acvm_js@npm:5.3.0-nightly.20260826"
+  checksum: 10c0/b88c2339178edc045bd08ad15ad812bfa665d5b1c36e846e5d297d3ef728f763b0574820ad426b24e23fbcbd56cfa7777f181e4760109f57608304ecfa424006
   languageName: node
   linkType: hard
 
-"@aztec/noir-contracts.js@npm:5.3.0-nightly.20260818, @aztec/noir-contracts.js@npm:v5.3.0-nightly.20260818":
-  version: 5.3.0-nightly.20260818
-  resolution: "@aztec/noir-contracts.js@npm:5.3.0-nightly.20260818"
+"@aztec/noir-contracts.js@npm:5.3.0-nightly.20260826, @aztec/noir-contracts.js@npm:v5.3.0-nightly.20260826":
+  version: 5.3.0-nightly.20260826
+  resolution: "@aztec/noir-contracts.js@npm:5.3.0-nightly.20260826"
   dependencies:
-    "@aztec/aztec.js": "npm:5.3.0-nightly.20260818"
+    "@aztec/aztec.js": "npm:5.3.0-nightly.20260826"
     tslib: "npm:^2.4.0"
-  checksum: 10c0/412f384456383dab8e781e1a64d660ecc65e8e2e933928d8b29a97098e950e3d14bcfac10a9a0a2ab5def79ee00266649537ac693f1546aee3e705e47265be4f
+  checksum: 10c0/806f53ef3976c6ab28d1a87c242f0109dab7e570679b265d16d44fd24e0395dc6db13e6a5a2c0c306df31f69899c1099fcbfa38310f502e07ddb544b9ca9e295
   languageName: node
   linkType: hard
 
-"@aztec/noir-noir_codegen@npm:5.3.0-nightly.20260818":
-  version: 5.3.0-nightly.20260818
-  resolution: "@aztec/noir-noir_codegen@npm:5.3.0-nightly.20260818"
+"@aztec/noir-noir_codegen@npm:5.3.0-nightly.20260826":
+  version: 5.3.0-nightly.20260826
+  resolution: "@aztec/noir-noir_codegen@npm:5.3.0-nightly.20260826"
   dependencies:
-    "@aztec/noir-types": "npm:5.3.0-nightly.20260818"
+    "@aztec/noir-types": "npm:5.3.0-nightly.20260826"
     glob: "npm:^13.0.6"
     ts-command-line-args: "npm:^2.5.1"
   bin:
     noir-codegen: lib/main.js
-  checksum: 10c0/caf001069f1db77d7c347ad143bcdb4d0894f94dedeb2e13dcf1f8517873255f1f41af71254d11edc250e0858e6112a786d1fa46d0301e9699bfd42a048338a6
+  checksum: 10c0/3aa73541c0220554fa5a621750aac8ddf0de0a4922822622c0a4ccf4a374136488d915a4a30d8f2088bfed7ec1b64857b26700e2fc833fe10cdda390facad3e2
   languageName: node
   linkType: hard
 
-"@aztec/noir-noirc_abi@npm:5.3.0-nightly.20260818":
-  version: 5.3.0-nightly.20260818
-  resolution: "@aztec/noir-noirc_abi@npm:5.3.0-nightly.20260818"
+"@aztec/noir-noirc_abi@npm:5.3.0-nightly.20260826":
+  version: 5.3.0-nightly.20260826
+  resolution: "@aztec/noir-noirc_abi@npm:5.3.0-nightly.20260826"
   dependencies:
-    "@aztec/noir-types": "npm:5.3.0-nightly.20260818"
-  checksum: 10c0/e693ca71a2850cc0852ff664d90f0e8286f37794b08d065eebd620194c95b994bb3af31c4efc872b4344272140e859ce55de85d1bd621a1f2178fc69815db40f
+    "@aztec/noir-types": "npm:5.3.0-nightly.20260826"
+  checksum: 10c0/2059a87be0acd08806771f5a781babf4243d85917d4530a281030e2e585b6f7ceb39068fccf89cdcea6b3d098f88a2dfb32bc7afb4252c4be957c02e09db89ed
   languageName: node
   linkType: hard
 
-"@aztec/noir-protocol-circuits-types@npm:5.3.0-nightly.20260818":
-  version: 5.3.0-nightly.20260818
-  resolution: "@aztec/noir-protocol-circuits-types@npm:5.3.0-nightly.20260818"
+"@aztec/noir-protocol-circuits-types@npm:5.3.0-nightly.20260826":
+  version: 5.3.0-nightly.20260826
+  resolution: "@aztec/noir-protocol-circuits-types@npm:5.3.0-nightly.20260826"
   dependencies:
-    "@aztec/blob-lib": "npm:5.3.0-nightly.20260818"
-    "@aztec/constants": "npm:5.3.0-nightly.20260818"
-    "@aztec/foundation": "npm:5.3.0-nightly.20260818"
-    "@aztec/noir-acvm_js": "npm:5.3.0-nightly.20260818"
-    "@aztec/noir-noir_codegen": "npm:5.3.0-nightly.20260818"
-    "@aztec/noir-noirc_abi": "npm:5.3.0-nightly.20260818"
-    "@aztec/noir-types": "npm:5.3.0-nightly.20260818"
-    "@aztec/stdlib": "npm:5.3.0-nightly.20260818"
+    "@aztec/blob-lib": "npm:5.3.0-nightly.20260826"
+    "@aztec/constants": "npm:5.3.0-nightly.20260826"
+    "@aztec/foundation": "npm:5.3.0-nightly.20260826"
+    "@aztec/noir-acvm_js": "npm:5.3.0-nightly.20260826"
+    "@aztec/noir-noir_codegen": "npm:5.3.0-nightly.20260826"
+    "@aztec/noir-noirc_abi": "npm:5.3.0-nightly.20260826"
+    "@aztec/noir-types": "npm:5.3.0-nightly.20260826"
+    "@aztec/stdlib": "npm:5.3.0-nightly.20260826"
     change-case: "npm:^5.4.4"
     tslib: "npm:^2.4.0"
-  checksum: 10c0/378e76c9a3e629aa594c01dd7183d1882a1fcb04e54794fa736aace78fb69ebeeb2d3c4a9b7e1e5f78a979d49001afccbed4b567a397d1228e0f7ad8c97f0572
+  checksum: 10c0/c46db9c3d8ab157e8a40844490be2fbac83d983973091acb0958a0655673eabbf12494069814be796bf3ba00f4a13a967cd189861aac0772698f12ad951a8528
   languageName: node
   linkType: hard
 
-"@aztec/noir-test-contracts.js@npm:5.3.0-nightly.20260818":
-  version: 5.3.0-nightly.20260818
-  resolution: "@aztec/noir-test-contracts.js@npm:5.3.0-nightly.20260818"
+"@aztec/noir-test-contracts.js@npm:5.3.0-nightly.20260826":
+  version: 5.3.0-nightly.20260826
+  resolution: "@aztec/noir-test-contracts.js@npm:5.3.0-nightly.20260826"
   dependencies:
-    "@aztec/aztec.js": "npm:5.3.0-nightly.20260818"
+    "@aztec/aztec.js": "npm:5.3.0-nightly.20260826"
     tslib: "npm:^2.4.0"
-  checksum: 10c0/be33665e168fa90fa4b8cc7fde41e846b558c983126c0b3117c15953b1a6025b2bbe6fc10ed39d0e653215c7ec2cc62ced117e5bd13c8498ea6a975eb84bf7dd
+  checksum: 10c0/4ba785b1b5524ad8ae3009366b32c00cfcc1cbbf2baee762c75a8401869ff30c26626ab2f0349b0f31f3a80288ba8a83fa63bb506f504853a847fbab9bd30604
   languageName: node
   linkType: hard
 
-"@aztec/noir-types@npm:5.3.0-nightly.20260818":
-  version: 5.3.0-nightly.20260818
-  resolution: "@aztec/noir-types@npm:5.3.0-nightly.20260818"
-  checksum: 10c0/b13e0b0f47156e66a2553af615536d3cee4b9663002ffd2c54c6da6a50522dacf66f9bb86408f652b36165163c46cdc7a7a245bea221f3b99ece8fdfc842ea13
+"@aztec/noir-types@npm:5.3.0-nightly.20260826":
+  version: 5.3.0-nightly.20260826
+  resolution: "@aztec/noir-types@npm:5.3.0-nightly.20260826"
+  checksum: 10c0/23093cf80effcbe928b808ac88921ec80ed9634e78f9b8817698ba0aec3ae3e0173882e7d32c8070a00781fa4e85ed94e7474eca6c107f70af8570f8bc79dcba
   languageName: node
   linkType: hard
 
-"@aztec/p2p-bootstrap@npm:5.3.0-nightly.20260818":
-  version: 5.3.0-nightly.20260818
-  resolution: "@aztec/p2p-bootstrap@npm:5.3.0-nightly.20260818"
+"@aztec/p2p-bootstrap@npm:5.3.0-nightly.20260826":
+  version: 5.3.0-nightly.20260826
+  resolution: "@aztec/p2p-bootstrap@npm:5.3.0-nightly.20260826"
   dependencies:
-    "@aztec/foundation": "npm:5.3.0-nightly.20260818"
-    "@aztec/kv-store": "npm:5.3.0-nightly.20260818"
-    "@aztec/p2p": "npm:5.3.0-nightly.20260818"
-    "@aztec/telemetry-client": "npm:5.3.0-nightly.20260818"
+    "@aztec/foundation": "npm:5.3.0-nightly.20260826"
+    "@aztec/kv-store": "npm:5.3.0-nightly.20260826"
+    "@aztec/p2p": "npm:5.3.0-nightly.20260826"
+    "@aztec/telemetry-client": "npm:5.3.0-nightly.20260826"
     dotenv: "npm:^16.0.3"
     koa: "npm:^2.16.1"
     koa-router: "npm:^13.1.1"
     tslib: "npm:^2.4.0"
-  checksum: 10c0/3875f7d4924a34817a52cf84462713fc11c77593a0a9227946c2b6cf40c2bd4fd7a409158063c5c2f2fe9a90b08c887dbb8e446ab6478231eb0f576bb1dabd7f
+  checksum: 10c0/7a7ee0bf3efb32afd0bf7a5e1ce9ca49daf3315b3f99984444309d072b1234d3cf44825066ec7a11ccd8004bd25de3def73d78570c2d3f95cb8111b15858bac9
   languageName: node
   linkType: hard
 
-"@aztec/p2p@npm:5.3.0-nightly.20260818":
-  version: 5.3.0-nightly.20260818
-  resolution: "@aztec/p2p@npm:5.3.0-nightly.20260818"
+"@aztec/p2p@npm:5.3.0-nightly.20260826":
+  version: 5.3.0-nightly.20260826
+  resolution: "@aztec/p2p@npm:5.3.0-nightly.20260826"
   dependencies:
-    "@aztec/constants": "npm:5.3.0-nightly.20260818"
-    "@aztec/epoch-cache": "npm:5.3.0-nightly.20260818"
-    "@aztec/ethereum": "npm:5.3.0-nightly.20260818"
-    "@aztec/foundation": "npm:5.3.0-nightly.20260818"
-    "@aztec/kv-store": "npm:5.3.0-nightly.20260818"
-    "@aztec/noir-contracts.js": "npm:5.3.0-nightly.20260818"
-    "@aztec/noir-protocol-circuits-types": "npm:5.3.0-nightly.20260818"
-    "@aztec/protocol-contracts": "npm:5.3.0-nightly.20260818"
-    "@aztec/simulator": "npm:5.3.0-nightly.20260818"
-    "@aztec/standard-contracts": "npm:5.3.0-nightly.20260818"
-    "@aztec/stdlib": "npm:5.3.0-nightly.20260818"
-    "@aztec/telemetry-client": "npm:5.3.0-nightly.20260818"
+    "@aztec/constants": "npm:5.3.0-nightly.20260826"
+    "@aztec/epoch-cache": "npm:5.3.0-nightly.20260826"
+    "@aztec/ethereum": "npm:5.3.0-nightly.20260826"
+    "@aztec/foundation": "npm:5.3.0-nightly.20260826"
+    "@aztec/kv-store": "npm:5.3.0-nightly.20260826"
+    "@aztec/noir-contracts.js": "npm:5.3.0-nightly.20260826"
+    "@aztec/noir-protocol-circuits-types": "npm:5.3.0-nightly.20260826"
+    "@aztec/protocol-contracts": "npm:5.3.0-nightly.20260826"
+    "@aztec/simulator": "npm:5.3.0-nightly.20260826"
+    "@aztec/standard-contracts": "npm:5.3.0-nightly.20260826"
+    "@aztec/stdlib": "npm:5.3.0-nightly.20260826"
+    "@aztec/telemetry-client": "npm:5.3.0-nightly.20260826"
     "@chainsafe/libp2p-gossipsub": "npm:13.0.0"
     "@chainsafe/libp2p-noise": "npm:^15.0.0"
     "@chainsafe/libp2p-yamux": "npm:^6.0.2"
@@ -1494,102 +1494,102 @@ __metadata:
     sha3: "npm:^2.1.4"
     snappy: "npm:7.2.2"
     tslib: "npm:^2.4.0"
-  checksum: 10c0/4e111b14fc45563f23883f1ae7f9cd59a1f6cf6e4e7ab6b9725bdace56ff20ca12894f85f42750c527e36e2517aed6c4a71e104a1efb3d9ef157d270ea07e068
+  checksum: 10c0/c8db435d9f074a86dae47b6b308e4072dd68b0bd97a96bbedcfc5473a16f040cf6b7fb4b0fff53e23110c37f6a19f1ee266308df73dd94cb7e8fb693a64d5259
   languageName: node
   linkType: hard
 
-"@aztec/protocol-contracts@npm:5.3.0-nightly.20260818, @aztec/protocol-contracts@npm:v5.3.0-nightly.20260818":
-  version: 5.3.0-nightly.20260818
-  resolution: "@aztec/protocol-contracts@npm:5.3.0-nightly.20260818"
+"@aztec/protocol-contracts@npm:5.3.0-nightly.20260826, @aztec/protocol-contracts@npm:v5.3.0-nightly.20260826":
+  version: 5.3.0-nightly.20260826
+  resolution: "@aztec/protocol-contracts@npm:5.3.0-nightly.20260826"
   dependencies:
-    "@aztec/constants": "npm:5.3.0-nightly.20260818"
-    "@aztec/foundation": "npm:5.3.0-nightly.20260818"
-    "@aztec/stdlib": "npm:5.3.0-nightly.20260818"
+    "@aztec/constants": "npm:5.3.0-nightly.20260826"
+    "@aztec/foundation": "npm:5.3.0-nightly.20260826"
+    "@aztec/stdlib": "npm:5.3.0-nightly.20260826"
     lodash.chunk: "npm:^4.2.0"
     lodash.omit: "npm:^4.5.0"
     tslib: "npm:^2.4.0"
-  checksum: 10c0/39ddc7b01962dbc9354b8b245413d1367e0c446cd16b3dae3fb95104d1d3850d0035270e1861e7c18fa21a969267cb871715d874a45f6be5b76595f979215713
+  checksum: 10c0/4fc50e4de6e1e89a09691d97e07703945f4bbde95fc5e971a82480c4a03cf3bd0ff48ebd9209c0a21ed84e07095886fc4fbddf81bf0159176147ef136cd2335b
   languageName: node
   linkType: hard
 
-"@aztec/prover-client@npm:5.3.0-nightly.20260818":
-  version: 5.3.0-nightly.20260818
-  resolution: "@aztec/prover-client@npm:5.3.0-nightly.20260818"
+"@aztec/prover-client@npm:5.3.0-nightly.20260826":
+  version: 5.3.0-nightly.20260826
+  resolution: "@aztec/prover-client@npm:5.3.0-nightly.20260826"
   dependencies:
-    "@aztec/bb-prover": "npm:5.3.0-nightly.20260818"
-    "@aztec/blob-lib": "npm:5.3.0-nightly.20260818"
-    "@aztec/constants": "npm:5.3.0-nightly.20260818"
-    "@aztec/ethereum": "npm:5.3.0-nightly.20260818"
-    "@aztec/foundation": "npm:5.3.0-nightly.20260818"
-    "@aztec/kv-store": "npm:5.3.0-nightly.20260818"
-    "@aztec/noir-protocol-circuits-types": "npm:5.3.0-nightly.20260818"
-    "@aztec/noir-types": "npm:5.3.0-nightly.20260818"
-    "@aztec/protocol-contracts": "npm:5.3.0-nightly.20260818"
-    "@aztec/simulator": "npm:5.3.0-nightly.20260818"
-    "@aztec/stdlib": "npm:5.3.0-nightly.20260818"
-    "@aztec/telemetry-client": "npm:5.3.0-nightly.20260818"
-    "@aztec/world-state": "npm:5.3.0-nightly.20260818"
+    "@aztec/bb-prover": "npm:5.3.0-nightly.20260826"
+    "@aztec/blob-lib": "npm:5.3.0-nightly.20260826"
+    "@aztec/constants": "npm:5.3.0-nightly.20260826"
+    "@aztec/ethereum": "npm:5.3.0-nightly.20260826"
+    "@aztec/foundation": "npm:5.3.0-nightly.20260826"
+    "@aztec/kv-store": "npm:5.3.0-nightly.20260826"
+    "@aztec/noir-protocol-circuits-types": "npm:5.3.0-nightly.20260826"
+    "@aztec/noir-types": "npm:5.3.0-nightly.20260826"
+    "@aztec/protocol-contracts": "npm:5.3.0-nightly.20260826"
+    "@aztec/simulator": "npm:5.3.0-nightly.20260826"
+    "@aztec/stdlib": "npm:5.3.0-nightly.20260826"
+    "@aztec/telemetry-client": "npm:5.3.0-nightly.20260826"
+    "@aztec/world-state": "npm:5.3.0-nightly.20260826"
     "@iarna/toml": "npm:^2.2.5"
     commander: "npm:^12.1.0"
     lodash.chunk: "npm:^4.2.0"
     source-map-support: "npm:^0.5.21"
     tslib: "npm:^2.4.0"
     zod: "npm:^4"
-  checksum: 10c0/6e976f79780160edc546af81e2a5dbeac43ff914b12b183893fcf42010b94ef9a81124be9a394e8bb7656a0f19b52fb8bd5515cd171321026f7cc6da4dbe1d38
+  checksum: 10c0/7189693fdd557ff7a986ee28f2375905233bb91b8761edf804509ba135118c15cccef2b2713443bd91ce71c1703ff4d775cda14dce0a05148fb439a337de3990
   languageName: node
   linkType: hard
 
-"@aztec/prover-node@npm:5.3.0-nightly.20260818":
-  version: 5.3.0-nightly.20260818
-  resolution: "@aztec/prover-node@npm:5.3.0-nightly.20260818"
+"@aztec/prover-node@npm:5.3.0-nightly.20260826":
+  version: 5.3.0-nightly.20260826
+  resolution: "@aztec/prover-node@npm:5.3.0-nightly.20260826"
   dependencies:
-    "@aztec/archiver": "npm:5.3.0-nightly.20260818"
-    "@aztec/bb-prover": "npm:5.3.0-nightly.20260818"
-    "@aztec/blob-client": "npm:5.3.0-nightly.20260818"
-    "@aztec/blob-lib": "npm:5.3.0-nightly.20260818"
-    "@aztec/constants": "npm:5.3.0-nightly.20260818"
-    "@aztec/epoch-cache": "npm:5.3.0-nightly.20260818"
-    "@aztec/ethereum": "npm:5.3.0-nightly.20260818"
-    "@aztec/foundation": "npm:5.3.0-nightly.20260818"
-    "@aztec/kv-store": "npm:5.3.0-nightly.20260818"
-    "@aztec/l1-artifacts": "npm:5.3.0-nightly.20260818"
-    "@aztec/native": "npm:5.3.0-nightly.20260818"
-    "@aztec/node-keystore": "npm:5.3.0-nightly.20260818"
-    "@aztec/node-lib": "npm:5.3.0-nightly.20260818"
-    "@aztec/noir-protocol-circuits-types": "npm:5.3.0-nightly.20260818"
-    "@aztec/p2p": "npm:5.3.0-nightly.20260818"
-    "@aztec/protocol-contracts": "npm:5.3.0-nightly.20260818"
-    "@aztec/prover-client": "npm:5.3.0-nightly.20260818"
-    "@aztec/sequencer-client": "npm:5.3.0-nightly.20260818"
-    "@aztec/simulator": "npm:5.3.0-nightly.20260818"
-    "@aztec/stdlib": "npm:5.3.0-nightly.20260818"
-    "@aztec/telemetry-client": "npm:5.3.0-nightly.20260818"
-    "@aztec/world-state": "npm:5.3.0-nightly.20260818"
+    "@aztec/archiver": "npm:5.3.0-nightly.20260826"
+    "@aztec/bb-prover": "npm:5.3.0-nightly.20260826"
+    "@aztec/blob-client": "npm:5.3.0-nightly.20260826"
+    "@aztec/blob-lib": "npm:5.3.0-nightly.20260826"
+    "@aztec/constants": "npm:5.3.0-nightly.20260826"
+    "@aztec/epoch-cache": "npm:5.3.0-nightly.20260826"
+    "@aztec/ethereum": "npm:5.3.0-nightly.20260826"
+    "@aztec/foundation": "npm:5.3.0-nightly.20260826"
+    "@aztec/kv-store": "npm:5.3.0-nightly.20260826"
+    "@aztec/l1-artifacts": "npm:5.3.0-nightly.20260826"
+    "@aztec/native": "npm:5.3.0-nightly.20260826"
+    "@aztec/node-keystore": "npm:5.3.0-nightly.20260826"
+    "@aztec/node-lib": "npm:5.3.0-nightly.20260826"
+    "@aztec/noir-protocol-circuits-types": "npm:5.3.0-nightly.20260826"
+    "@aztec/p2p": "npm:5.3.0-nightly.20260826"
+    "@aztec/protocol-contracts": "npm:5.3.0-nightly.20260826"
+    "@aztec/prover-client": "npm:5.3.0-nightly.20260826"
+    "@aztec/sequencer-client": "npm:5.3.0-nightly.20260826"
+    "@aztec/simulator": "npm:5.3.0-nightly.20260826"
+    "@aztec/stdlib": "npm:5.3.0-nightly.20260826"
+    "@aztec/telemetry-client": "npm:5.3.0-nightly.20260826"
+    "@aztec/world-state": "npm:5.3.0-nightly.20260826"
     source-map-support: "npm:^0.5.21"
     tslib: "npm:^2.4.0"
     viem: "npm:@aztec/viem@2.38.2"
-  checksum: 10c0/d4c0c380d28c4d7e837756552a1a633e65f1e3fb05fe48f3a5db51991b78543db78ee87c6aea94c0818285938c5b5a127317a3c0c9ac92ea601b35b3d3a592e7
+  checksum: 10c0/c210736729612c700f3c67e90f150312b8cf56af7649f9ff36d84157a75fb8defb96777c5df1807348e6f98f79483ffaee3779c999548ade6c29bc8313960224
   languageName: node
   linkType: hard
 
-"@aztec/pxe@npm:5.3.0-nightly.20260818, @aztec/pxe@npm:v5.3.0-nightly.20260818":
-  version: 5.3.0-nightly.20260818
-  resolution: "@aztec/pxe@npm:5.3.0-nightly.20260818"
+"@aztec/pxe@npm:5.3.0-nightly.20260826, @aztec/pxe@npm:v5.3.0-nightly.20260826":
+  version: 5.3.0-nightly.20260826
+  resolution: "@aztec/pxe@npm:5.3.0-nightly.20260826"
   dependencies:
-    "@aztec/bb-prover": "npm:5.3.0-nightly.20260818"
-    "@aztec/bb.js": "npm:5.3.0-nightly.20260818"
-    "@aztec/builder": "npm:5.3.0-nightly.20260818"
-    "@aztec/constants": "npm:5.3.0-nightly.20260818"
-    "@aztec/ethereum": "npm:5.3.0-nightly.20260818"
-    "@aztec/foundation": "npm:5.3.0-nightly.20260818"
-    "@aztec/key-store": "npm:5.3.0-nightly.20260818"
-    "@aztec/kv-store": "npm:5.3.0-nightly.20260818"
-    "@aztec/noir-protocol-circuits-types": "npm:5.3.0-nightly.20260818"
-    "@aztec/noir-types": "npm:5.3.0-nightly.20260818"
-    "@aztec/protocol-contracts": "npm:5.3.0-nightly.20260818"
-    "@aztec/simulator": "npm:5.3.0-nightly.20260818"
-    "@aztec/standard-contracts": "npm:5.3.0-nightly.20260818"
-    "@aztec/stdlib": "npm:5.3.0-nightly.20260818"
+    "@aztec/bb-prover": "npm:5.3.0-nightly.20260826"
+    "@aztec/bb.js": "npm:5.3.0-nightly.20260826"
+    "@aztec/builder": "npm:5.3.0-nightly.20260826"
+    "@aztec/constants": "npm:5.3.0-nightly.20260826"
+    "@aztec/ethereum": "npm:5.3.0-nightly.20260826"
+    "@aztec/foundation": "npm:5.3.0-nightly.20260826"
+    "@aztec/key-store": "npm:5.3.0-nightly.20260826"
+    "@aztec/kv-store": "npm:5.3.0-nightly.20260826"
+    "@aztec/noir-protocol-circuits-types": "npm:5.3.0-nightly.20260826"
+    "@aztec/noir-types": "npm:5.3.0-nightly.20260826"
+    "@aztec/protocol-contracts": "npm:5.3.0-nightly.20260826"
+    "@aztec/simulator": "npm:5.3.0-nightly.20260826"
+    "@aztec/standard-contracts": "npm:5.3.0-nightly.20260826"
+    "@aztec/stdlib": "npm:5.3.0-nightly.20260826"
     koa: "npm:^2.16.1"
     koa-router: "npm:^13.1.1"
     lodash.omit: "npm:^4.5.0"
@@ -1598,117 +1598,117 @@ __metadata:
     viem: "npm:@aztec/viem@2.38.2"
   bin:
     pxe: dest/bin/index.js
-  checksum: 10c0/c2008d0ef2a30665d7bda66435014bce30cba28fa42c06ab49008b515e1dced595b1a007245201b9d8731c855ff8a75c9e332610980ef3a40dd1b72226319983
+  checksum: 10c0/08da80206de045d19d6ec682aeb198c2633ae62b82371a5a14a9bced4840fc3d992ed26ebb740b171615016b37c5e7c4f5e39132da7cb6a9a9fab01ac8adea89
   languageName: node
   linkType: hard
 
-"@aztec/sequencer-client@npm:5.3.0-nightly.20260818":
-  version: 5.3.0-nightly.20260818
-  resolution: "@aztec/sequencer-client@npm:5.3.0-nightly.20260818"
+"@aztec/sequencer-client@npm:5.3.0-nightly.20260826":
+  version: 5.3.0-nightly.20260826
+  resolution: "@aztec/sequencer-client@npm:5.3.0-nightly.20260826"
   dependencies:
-    "@aztec/aztec.js": "npm:5.3.0-nightly.20260818"
-    "@aztec/bb-prover": "npm:5.3.0-nightly.20260818"
-    "@aztec/blob-client": "npm:5.3.0-nightly.20260818"
-    "@aztec/blob-lib": "npm:5.3.0-nightly.20260818"
-    "@aztec/constants": "npm:5.3.0-nightly.20260818"
-    "@aztec/epoch-cache": "npm:5.3.0-nightly.20260818"
-    "@aztec/ethereum": "npm:5.3.0-nightly.20260818"
-    "@aztec/foundation": "npm:5.3.0-nightly.20260818"
-    "@aztec/l1-artifacts": "npm:5.3.0-nightly.20260818"
-    "@aztec/node-keystore": "npm:5.3.0-nightly.20260818"
-    "@aztec/noir-acvm_js": "npm:5.3.0-nightly.20260818"
-    "@aztec/noir-contracts.js": "npm:5.3.0-nightly.20260818"
-    "@aztec/noir-protocol-circuits-types": "npm:5.3.0-nightly.20260818"
-    "@aztec/noir-types": "npm:5.3.0-nightly.20260818"
-    "@aztec/p2p": "npm:5.3.0-nightly.20260818"
-    "@aztec/protocol-contracts": "npm:5.3.0-nightly.20260818"
-    "@aztec/prover-client": "npm:5.3.0-nightly.20260818"
-    "@aztec/simulator": "npm:5.3.0-nightly.20260818"
-    "@aztec/slasher": "npm:5.3.0-nightly.20260818"
-    "@aztec/stdlib": "npm:5.3.0-nightly.20260818"
-    "@aztec/telemetry-client": "npm:5.3.0-nightly.20260818"
-    "@aztec/validator-client": "npm:5.3.0-nightly.20260818"
-    "@aztec/validator-ha-signer": "npm:5.3.0-nightly.20260818"
-    "@aztec/world-state": "npm:5.3.0-nightly.20260818"
+    "@aztec/aztec.js": "npm:5.3.0-nightly.20260826"
+    "@aztec/bb-prover": "npm:5.3.0-nightly.20260826"
+    "@aztec/blob-client": "npm:5.3.0-nightly.20260826"
+    "@aztec/blob-lib": "npm:5.3.0-nightly.20260826"
+    "@aztec/constants": "npm:5.3.0-nightly.20260826"
+    "@aztec/epoch-cache": "npm:5.3.0-nightly.20260826"
+    "@aztec/ethereum": "npm:5.3.0-nightly.20260826"
+    "@aztec/foundation": "npm:5.3.0-nightly.20260826"
+    "@aztec/l1-artifacts": "npm:5.3.0-nightly.20260826"
+    "@aztec/node-keystore": "npm:5.3.0-nightly.20260826"
+    "@aztec/noir-acvm_js": "npm:5.3.0-nightly.20260826"
+    "@aztec/noir-contracts.js": "npm:5.3.0-nightly.20260826"
+    "@aztec/noir-protocol-circuits-types": "npm:5.3.0-nightly.20260826"
+    "@aztec/noir-types": "npm:5.3.0-nightly.20260826"
+    "@aztec/p2p": "npm:5.3.0-nightly.20260826"
+    "@aztec/protocol-contracts": "npm:5.3.0-nightly.20260826"
+    "@aztec/prover-client": "npm:5.3.0-nightly.20260826"
+    "@aztec/simulator": "npm:5.3.0-nightly.20260826"
+    "@aztec/slasher": "npm:5.3.0-nightly.20260826"
+    "@aztec/stdlib": "npm:5.3.0-nightly.20260826"
+    "@aztec/telemetry-client": "npm:5.3.0-nightly.20260826"
+    "@aztec/validator-client": "npm:5.3.0-nightly.20260826"
+    "@aztec/validator-ha-signer": "npm:5.3.0-nightly.20260826"
+    "@aztec/world-state": "npm:5.3.0-nightly.20260826"
     lodash.chunk: "npm:^4.2.0"
     tslib: "npm:^2.4.0"
     viem: "npm:@aztec/viem@2.38.2"
-  checksum: 10c0/23276036336fcba242720c883e0366338d74277df63f1a4a09d81b021b65b076e7d3f3bddb401e491fdb7222c7f36489edcbae9d31f9d1a4ff90ab41a0149718
+  checksum: 10c0/d8fe7e8c7ff2fd4f4c33e8223debdc140c1e9869d08d1b0b29081b216d85c7e78eee0f36c5700a3c9faf10269f8de682f800c1286581503dff7ec46efe1c63ca
   languageName: node
   linkType: hard
 
-"@aztec/simulator@npm:5.3.0-nightly.20260818":
-  version: 5.3.0-nightly.20260818
-  resolution: "@aztec/simulator@npm:5.3.0-nightly.20260818"
+"@aztec/simulator@npm:5.3.0-nightly.20260826":
+  version: 5.3.0-nightly.20260826
+  resolution: "@aztec/simulator@npm:5.3.0-nightly.20260826"
   dependencies:
-    "@aztec/constants": "npm:5.3.0-nightly.20260818"
-    "@aztec/foundation": "npm:5.3.0-nightly.20260818"
-    "@aztec/native": "npm:5.3.0-nightly.20260818"
-    "@aztec/noir-acvm_js": "npm:5.3.0-nightly.20260818"
-    "@aztec/noir-noirc_abi": "npm:5.3.0-nightly.20260818"
-    "@aztec/noir-protocol-circuits-types": "npm:5.3.0-nightly.20260818"
-    "@aztec/noir-types": "npm:5.3.0-nightly.20260818"
-    "@aztec/protocol-contracts": "npm:5.3.0-nightly.20260818"
-    "@aztec/standard-contracts": "npm:5.3.0-nightly.20260818"
-    "@aztec/stdlib": "npm:5.3.0-nightly.20260818"
-    "@aztec/telemetry-client": "npm:5.3.0-nightly.20260818"
-    "@aztec/world-state": "npm:5.3.0-nightly.20260818"
+    "@aztec/constants": "npm:5.3.0-nightly.20260826"
+    "@aztec/foundation": "npm:5.3.0-nightly.20260826"
+    "@aztec/native": "npm:5.3.0-nightly.20260826"
+    "@aztec/noir-acvm_js": "npm:5.3.0-nightly.20260826"
+    "@aztec/noir-noirc_abi": "npm:5.3.0-nightly.20260826"
+    "@aztec/noir-protocol-circuits-types": "npm:5.3.0-nightly.20260826"
+    "@aztec/noir-types": "npm:5.3.0-nightly.20260826"
+    "@aztec/protocol-contracts": "npm:5.3.0-nightly.20260826"
+    "@aztec/standard-contracts": "npm:5.3.0-nightly.20260826"
+    "@aztec/stdlib": "npm:5.3.0-nightly.20260826"
+    "@aztec/telemetry-client": "npm:5.3.0-nightly.20260826"
+    "@aztec/world-state": "npm:5.3.0-nightly.20260826"
     lodash.clonedeep: "npm:^4.5.0"
     lodash.merge: "npm:^4.6.2"
     tslib: "npm:^2.4.0"
-  checksum: 10c0/2eef729f2665c5f2059227070cf2af385916066005b9f039ed9df4c1024def2c4152029bfe6764b0bdb3708c183be9e467acd49292741dda3e2fe183fbd1cdd9
+  checksum: 10c0/e8021e666b54bd2c427b6fd39d58c2c7dbc7a563cb4a37b770fc757d6da75dd664ab479e7482068bea16030335a2330f1cabd64ff7a7c7456590b2bb8586935a
   languageName: node
   linkType: hard
 
-"@aztec/slasher@npm:5.3.0-nightly.20260818":
-  version: 5.3.0-nightly.20260818
-  resolution: "@aztec/slasher@npm:5.3.0-nightly.20260818"
+"@aztec/slasher@npm:5.3.0-nightly.20260826":
+  version: 5.3.0-nightly.20260826
+  resolution: "@aztec/slasher@npm:5.3.0-nightly.20260826"
   dependencies:
-    "@aztec/epoch-cache": "npm:5.3.0-nightly.20260818"
-    "@aztec/ethereum": "npm:5.3.0-nightly.20260818"
-    "@aztec/foundation": "npm:5.3.0-nightly.20260818"
-    "@aztec/kv-store": "npm:5.3.0-nightly.20260818"
-    "@aztec/l1-artifacts": "npm:5.3.0-nightly.20260818"
-    "@aztec/stdlib": "npm:5.3.0-nightly.20260818"
-    "@aztec/telemetry-client": "npm:5.3.0-nightly.20260818"
+    "@aztec/epoch-cache": "npm:5.3.0-nightly.20260826"
+    "@aztec/ethereum": "npm:5.3.0-nightly.20260826"
+    "@aztec/foundation": "npm:5.3.0-nightly.20260826"
+    "@aztec/kv-store": "npm:5.3.0-nightly.20260826"
+    "@aztec/l1-artifacts": "npm:5.3.0-nightly.20260826"
+    "@aztec/stdlib": "npm:5.3.0-nightly.20260826"
+    "@aztec/telemetry-client": "npm:5.3.0-nightly.20260826"
     source-map-support: "npm:^0.5.21"
     tslib: "npm:^2.4.0"
     viem: "npm:@aztec/viem@2.38.2"
     zod: "npm:^4"
-  checksum: 10c0/5fc00cebd99472a821b67ee9012e4e3904189754f18f753736f77503fca0b3380e8bb1f4281a07f470016f4fe66f2fcb96149552c3164c19b15c1683bf490c02
+  checksum: 10c0/fdb34b17538c1a316adc1e70629b7d1a0aacedd651f5f7be1425b20dbbb53901ad7f647a5d76e37097616604191c980d0cb5730d7c4896971eb638146df35b78
   languageName: node
   linkType: hard
 
-"@aztec/sqlite3mc-wasm@npm:5.3.0-nightly.20260818":
-  version: 5.3.0-nightly.20260818
-  resolution: "@aztec/sqlite3mc-wasm@npm:5.3.0-nightly.20260818"
-  checksum: 10c0/1a46defc5b95514ccea4afbca285ecdd568dd3d828d74db2911eacf2690258a1d380f2278ea1d4625bdc83ff9ae36d1e4be416498c6727fa625b4449564d06bd
+"@aztec/sqlite3mc-wasm@npm:5.3.0-nightly.20260826":
+  version: 5.3.0-nightly.20260826
+  resolution: "@aztec/sqlite3mc-wasm@npm:5.3.0-nightly.20260826"
+  checksum: 10c0/317587f545d17891ebd380302860d39b3ea764c40bb2607e17e4fecb15c2504ab82c9ce2bb855a60e8cf31d6d094a036dd81dfc2f7b64d9779b28a8283013ef2
   languageName: node
   linkType: hard
 
-"@aztec/standard-contracts@npm:5.3.0-nightly.20260818, @aztec/standard-contracts@npm:v5.3.0-nightly.20260818":
-  version: 5.3.0-nightly.20260818
-  resolution: "@aztec/standard-contracts@npm:5.3.0-nightly.20260818"
+"@aztec/standard-contracts@npm:5.3.0-nightly.20260826, @aztec/standard-contracts@npm:v5.3.0-nightly.20260826":
+  version: 5.3.0-nightly.20260826
+  resolution: "@aztec/standard-contracts@npm:5.3.0-nightly.20260826"
   dependencies:
-    "@aztec/foundation": "npm:5.3.0-nightly.20260818"
-    "@aztec/stdlib": "npm:5.3.0-nightly.20260818"
+    "@aztec/foundation": "npm:5.3.0-nightly.20260826"
+    "@aztec/stdlib": "npm:5.3.0-nightly.20260826"
     tslib: "npm:^2.4.0"
-  checksum: 10c0/258e8c6a31498e025be500b880f84d5d2725e9f2c442142270cab2f92bf3ef6734db5c78946448309d69376e4fe864872f6c7c028f57bda10cd60d98c13abac7
+  checksum: 10c0/bed279c251b089c74cac9611fa3740d2f975b9d9a347dff6f76138acbd479a834c592696f679e97286f344a973c281dffec466e46dd2b430d0d650a34976ae9e
   languageName: node
   linkType: hard
 
-"@aztec/stdlib@npm:5.3.0-nightly.20260818, @aztec/stdlib@npm:v5.3.0-nightly.20260818":
-  version: 5.3.0-nightly.20260818
-  resolution: "@aztec/stdlib@npm:5.3.0-nightly.20260818"
+"@aztec/stdlib@npm:5.3.0-nightly.20260826, @aztec/stdlib@npm:v5.3.0-nightly.20260826":
+  version: 5.3.0-nightly.20260826
+  resolution: "@aztec/stdlib@npm:5.3.0-nightly.20260826"
   dependencies:
     "@aws-sdk/client-s3": "npm:^3.892.0"
-    "@aztec/bb.js": "npm:5.3.0-nightly.20260818"
-    "@aztec/blob-lib": "npm:5.3.0-nightly.20260818"
-    "@aztec/constants": "npm:5.3.0-nightly.20260818"
-    "@aztec/ethereum": "npm:5.3.0-nightly.20260818"
-    "@aztec/foundation": "npm:5.3.0-nightly.20260818"
-    "@aztec/l1-artifacts": "npm:5.3.0-nightly.20260818"
-    "@aztec/noir-noirc_abi": "npm:5.3.0-nightly.20260818"
+    "@aztec/bb.js": "npm:5.3.0-nightly.20260826"
+    "@aztec/blob-lib": "npm:5.3.0-nightly.20260826"
+    "@aztec/constants": "npm:5.3.0-nightly.20260826"
+    "@aztec/ethereum": "npm:5.3.0-nightly.20260826"
+    "@aztec/foundation": "npm:5.3.0-nightly.20260826"
+    "@aztec/l1-artifacts": "npm:5.3.0-nightly.20260826"
+    "@aztec/noir-noirc_abi": "npm:5.3.0-nightly.20260826"
     "@google-cloud/storage": "npm:^7.15.0"
     axios: "npm:^1.15.1"
     json-stringify-deterministic: "npm:1.0.12"
@@ -1721,16 +1721,16 @@ __metadata:
     tslib: "npm:^2.4.0"
     viem: "npm:@aztec/viem@2.38.2"
     zod: "npm:^4"
-  checksum: 10c0/dee3b3ed5dd29cb661373bfc9e6243b9a0874bf0b8bef1cfd63345e7ebf24baccc1b1221f8ac80c8d04ae3827ceac414e0e1f882dc3b57bdae70381aba09c611
+  checksum: 10c0/456fa1096dd980af64c119b5a301d08ed9af48697739b8e391538c980c17afe81578b41676675c49fcae97c9bd1555eb4a1ce34ece21c3ea35acc1f38fc3a973
   languageName: node
   linkType: hard
 
-"@aztec/telemetry-client@npm:5.3.0-nightly.20260818":
-  version: 5.3.0-nightly.20260818
-  resolution: "@aztec/telemetry-client@npm:5.3.0-nightly.20260818"
+"@aztec/telemetry-client@npm:5.3.0-nightly.20260826":
+  version: 5.3.0-nightly.20260826
+  resolution: "@aztec/telemetry-client@npm:5.3.0-nightly.20260826"
   dependencies:
-    "@aztec/foundation": "npm:5.3.0-nightly.20260818"
-    "@aztec/stdlib": "npm:5.3.0-nightly.20260818"
+    "@aztec/foundation": "npm:5.3.0-nightly.20260826"
+    "@aztec/stdlib": "npm:5.3.0-nightly.20260826"
     "@opentelemetry/api": "npm:^1.9.0"
     "@opentelemetry/api-logs": "npm:^0.55.0"
     "@opentelemetry/core": "npm:^1.28.0"
@@ -1747,133 +1747,133 @@ __metadata:
     "@opentelemetry/semantic-conventions": "npm:^1.28.0"
     prom-client: "npm:^15.1.3"
     viem: "npm:@aztec/viem@2.38.2"
-  checksum: 10c0/93164f0f25d9f492522eab6008caf55aa89cb4472102bf4c5fa0a84d28ad74cbacd47fced74a4fbcdc67771c85984680a0c2f33717477ebfffec486ba22f4340
+  checksum: 10c0/bc68c1b728d0af4f9f7eedd5a4277dd4f198c92c73aa604f3d73ce2f3f6f1efab61e510b1da93200129806972d63fd73613f0af4c539fe3623b291f56cef6c7b
   languageName: node
   linkType: hard
 
-"@aztec/txe@npm:5.3.0-nightly.20260818":
-  version: 5.3.0-nightly.20260818
-  resolution: "@aztec/txe@npm:5.3.0-nightly.20260818"
+"@aztec/txe@npm:5.3.0-nightly.20260826":
+  version: 5.3.0-nightly.20260826
+  resolution: "@aztec/txe@npm:5.3.0-nightly.20260826"
   dependencies:
-    "@aztec/accounts": "npm:5.3.0-nightly.20260818"
-    "@aztec/archiver": "npm:5.3.0-nightly.20260818"
-    "@aztec/aztec-node": "npm:5.3.0-nightly.20260818"
-    "@aztec/aztec.js": "npm:5.3.0-nightly.20260818"
-    "@aztec/bb-prover": "npm:5.3.0-nightly.20260818"
-    "@aztec/bb.js": "npm:5.3.0-nightly.20260818"
-    "@aztec/constants": "npm:5.3.0-nightly.20260818"
-    "@aztec/foundation": "npm:5.3.0-nightly.20260818"
-    "@aztec/key-store": "npm:5.3.0-nightly.20260818"
-    "@aztec/kv-store": "npm:5.3.0-nightly.20260818"
-    "@aztec/protocol-contracts": "npm:5.3.0-nightly.20260818"
-    "@aztec/pxe": "npm:5.3.0-nightly.20260818"
-    "@aztec/simulator": "npm:5.3.0-nightly.20260818"
-    "@aztec/standard-contracts": "npm:5.3.0-nightly.20260818"
-    "@aztec/stdlib": "npm:5.3.0-nightly.20260818"
-    "@aztec/world-state": "npm:5.3.0-nightly.20260818"
+    "@aztec/accounts": "npm:5.3.0-nightly.20260826"
+    "@aztec/archiver": "npm:5.3.0-nightly.20260826"
+    "@aztec/aztec-node": "npm:5.3.0-nightly.20260826"
+    "@aztec/aztec.js": "npm:5.3.0-nightly.20260826"
+    "@aztec/bb-prover": "npm:5.3.0-nightly.20260826"
+    "@aztec/bb.js": "npm:5.3.0-nightly.20260826"
+    "@aztec/constants": "npm:5.3.0-nightly.20260826"
+    "@aztec/foundation": "npm:5.3.0-nightly.20260826"
+    "@aztec/key-store": "npm:5.3.0-nightly.20260826"
+    "@aztec/kv-store": "npm:5.3.0-nightly.20260826"
+    "@aztec/protocol-contracts": "npm:5.3.0-nightly.20260826"
+    "@aztec/pxe": "npm:5.3.0-nightly.20260826"
+    "@aztec/simulator": "npm:5.3.0-nightly.20260826"
+    "@aztec/standard-contracts": "npm:5.3.0-nightly.20260826"
+    "@aztec/stdlib": "npm:5.3.0-nightly.20260826"
+    "@aztec/world-state": "npm:5.3.0-nightly.20260826"
     msgpackr: "npm:^1.11.2"
     zod: "npm:^4"
   bin:
     txe: dest/bin/index.js
-  checksum: 10c0/7544de4fcc22b7f453b3c44d8c722f6fedd7b4ab5faa5a282cc391dc4912eb3a72b1070eb8db880cc8ff8804e53ba85d54a0472caed7549e50f1c3e30bcdb3b4
+  checksum: 10c0/65ad368c0642bfa2622a542407fe9fa9979126f5a9e104b5567d930493ca3b018cb8809d4e05e2629b31978bf959a1bbc5aec187c39ca9368b55af83d4a7e9c4
   languageName: node
   linkType: hard
 
-"@aztec/validator-client@npm:5.3.0-nightly.20260818":
-  version: 5.3.0-nightly.20260818
-  resolution: "@aztec/validator-client@npm:5.3.0-nightly.20260818"
+"@aztec/validator-client@npm:5.3.0-nightly.20260826":
+  version: 5.3.0-nightly.20260826
+  resolution: "@aztec/validator-client@npm:5.3.0-nightly.20260826"
   dependencies:
-    "@aztec/blob-client": "npm:5.3.0-nightly.20260818"
-    "@aztec/blob-lib": "npm:5.3.0-nightly.20260818"
-    "@aztec/constants": "npm:5.3.0-nightly.20260818"
-    "@aztec/epoch-cache": "npm:5.3.0-nightly.20260818"
-    "@aztec/ethereum": "npm:5.3.0-nightly.20260818"
-    "@aztec/foundation": "npm:5.3.0-nightly.20260818"
-    "@aztec/node-keystore": "npm:5.3.0-nightly.20260818"
-    "@aztec/noir-protocol-circuits-types": "npm:5.3.0-nightly.20260818"
-    "@aztec/p2p": "npm:5.3.0-nightly.20260818"
-    "@aztec/protocol-contracts": "npm:5.3.0-nightly.20260818"
-    "@aztec/prover-client": "npm:5.3.0-nightly.20260818"
-    "@aztec/simulator": "npm:5.3.0-nightly.20260818"
-    "@aztec/slasher": "npm:5.3.0-nightly.20260818"
-    "@aztec/stdlib": "npm:5.3.0-nightly.20260818"
-    "@aztec/telemetry-client": "npm:5.3.0-nightly.20260818"
-    "@aztec/validator-ha-signer": "npm:5.3.0-nightly.20260818"
+    "@aztec/blob-client": "npm:5.3.0-nightly.20260826"
+    "@aztec/blob-lib": "npm:5.3.0-nightly.20260826"
+    "@aztec/constants": "npm:5.3.0-nightly.20260826"
+    "@aztec/epoch-cache": "npm:5.3.0-nightly.20260826"
+    "@aztec/ethereum": "npm:5.3.0-nightly.20260826"
+    "@aztec/foundation": "npm:5.3.0-nightly.20260826"
+    "@aztec/node-keystore": "npm:5.3.0-nightly.20260826"
+    "@aztec/noir-protocol-circuits-types": "npm:5.3.0-nightly.20260826"
+    "@aztec/p2p": "npm:5.3.0-nightly.20260826"
+    "@aztec/protocol-contracts": "npm:5.3.0-nightly.20260826"
+    "@aztec/prover-client": "npm:5.3.0-nightly.20260826"
+    "@aztec/simulator": "npm:5.3.0-nightly.20260826"
+    "@aztec/slasher": "npm:5.3.0-nightly.20260826"
+    "@aztec/stdlib": "npm:5.3.0-nightly.20260826"
+    "@aztec/telemetry-client": "npm:5.3.0-nightly.20260826"
+    "@aztec/validator-ha-signer": "npm:5.3.0-nightly.20260826"
     koa: "npm:^2.16.1"
     koa-router: "npm:^13.1.1"
     tslib: "npm:^2.4.0"
     viem: "npm:@aztec/viem@2.38.2"
   bin:
     validator-client: dest/bin/index.js
-  checksum: 10c0/a2c7c6618231ac1c543fe035b842ee9fc6719f11fbd46ecce6c8be20caed1844b7129673ff35e4d7bd2d8752032cf346484eeff06f9762089d67c00c06b9a56b
+  checksum: 10c0/6cc0da156e3450d86639956c17cad88c6d8cf3d6444fef039d4eec1e7e3e816a5a891f086b94411d2090aafab4e073d0cdcde9b72028c21d510e3421d122eb57
   languageName: node
   linkType: hard
 
-"@aztec/validator-ha-signer@npm:5.3.0-nightly.20260818":
-  version: 5.3.0-nightly.20260818
-  resolution: "@aztec/validator-ha-signer@npm:5.3.0-nightly.20260818"
+"@aztec/validator-ha-signer@npm:5.3.0-nightly.20260826":
+  version: 5.3.0-nightly.20260826
+  resolution: "@aztec/validator-ha-signer@npm:5.3.0-nightly.20260826"
   dependencies:
-    "@aztec/ethereum": "npm:5.3.0-nightly.20260818"
-    "@aztec/foundation": "npm:5.3.0-nightly.20260818"
-    "@aztec/kv-store": "npm:5.3.0-nightly.20260818"
-    "@aztec/stdlib": "npm:5.3.0-nightly.20260818"
-    "@aztec/telemetry-client": "npm:5.3.0-nightly.20260818"
+    "@aztec/ethereum": "npm:5.3.0-nightly.20260826"
+    "@aztec/foundation": "npm:5.3.0-nightly.20260826"
+    "@aztec/kv-store": "npm:5.3.0-nightly.20260826"
+    "@aztec/stdlib": "npm:5.3.0-nightly.20260826"
+    "@aztec/telemetry-client": "npm:5.3.0-nightly.20260826"
     node-pg-migrate: "npm:^8.0.4"
     pg: "npm:^8.11.3"
     tslib: "npm:^2.4.0"
     zod: "npm:^4"
-  checksum: 10c0/a2e25b011d13e5e8834df2b60887207755f3c36d7467b44d8fde01c0c7c3f36164c82540f0e9143fc4cb58183fdea5626bbaf7d418105475f7cb4c573563d292
+  checksum: 10c0/ccb8a695c262d18396485ab50e2460f84d12262c4bab39cc5e415de1ddd48f1d20559b8c2059fb332ffae34156d4bc7d439dd01e1b28c21ad9d4b9cf1096c48c
   languageName: node
   linkType: hard
 
-"@aztec/wallet-sdk@npm:5.3.0-nightly.20260818, @aztec/wallet-sdk@npm:v5.3.0-nightly.20260818":
-  version: 5.3.0-nightly.20260818
-  resolution: "@aztec/wallet-sdk@npm:5.3.0-nightly.20260818"
+"@aztec/wallet-sdk@npm:5.3.0-nightly.20260826, @aztec/wallet-sdk@npm:v5.3.0-nightly.20260826":
+  version: 5.3.0-nightly.20260826
+  resolution: "@aztec/wallet-sdk@npm:5.3.0-nightly.20260826"
   dependencies:
-    "@aztec/aztec.js": "npm:5.3.0-nightly.20260818"
-    "@aztec/constants": "npm:5.3.0-nightly.20260818"
-    "@aztec/entrypoints": "npm:5.3.0-nightly.20260818"
-    "@aztec/foundation": "npm:5.3.0-nightly.20260818"
-    "@aztec/pxe": "npm:5.3.0-nightly.20260818"
-    "@aztec/stdlib": "npm:5.3.0-nightly.20260818"
-  checksum: 10c0/c397f388ec5862f7b576be4082f9bd9d298733d22e583ef3561a13526cb73b4f9c87977e4ab178ee79bffb2eaeb4062f25e68df910d30969fd2da320d642f865
+    "@aztec/aztec.js": "npm:5.3.0-nightly.20260826"
+    "@aztec/constants": "npm:5.3.0-nightly.20260826"
+    "@aztec/entrypoints": "npm:5.3.0-nightly.20260826"
+    "@aztec/foundation": "npm:5.3.0-nightly.20260826"
+    "@aztec/pxe": "npm:5.3.0-nightly.20260826"
+    "@aztec/stdlib": "npm:5.3.0-nightly.20260826"
+  checksum: 10c0/eec2364aa43e235133e0063280c49ef0a782bc8dec09330de9245ad1ada353fd7ef960799b4aa1d1191fa74ee1d78cf7d076ce1d92ddf70f4cd8b41ff7297cba
   languageName: node
   linkType: hard
 
-"@aztec/wallets@npm:5.3.0-nightly.20260818, @aztec/wallets@npm:v5.3.0-nightly.20260818":
-  version: 5.3.0-nightly.20260818
-  resolution: "@aztec/wallets@npm:5.3.0-nightly.20260818"
+"@aztec/wallets@npm:5.3.0-nightly.20260826, @aztec/wallets@npm:v5.3.0-nightly.20260826":
+  version: 5.3.0-nightly.20260826
+  resolution: "@aztec/wallets@npm:5.3.0-nightly.20260826"
   dependencies:
-    "@aztec/accounts": "npm:5.3.0-nightly.20260818"
-    "@aztec/aztec.js": "npm:5.3.0-nightly.20260818"
-    "@aztec/entrypoints": "npm:5.3.0-nightly.20260818"
-    "@aztec/foundation": "npm:5.3.0-nightly.20260818"
-    "@aztec/kv-store": "npm:5.3.0-nightly.20260818"
-    "@aztec/protocol-contracts": "npm:5.3.0-nightly.20260818"
-    "@aztec/pxe": "npm:5.3.0-nightly.20260818"
-    "@aztec/standard-contracts": "npm:5.3.0-nightly.20260818"
-    "@aztec/stdlib": "npm:5.3.0-nightly.20260818"
-    "@aztec/wallet-sdk": "npm:5.3.0-nightly.20260818"
-  checksum: 10c0/bc541049d5b84284d57b0b501b0ffe5810d5fe218c3204970fb1daa156ea218de1bffc9a12653053743dee737f5e4c2bb0323d6e2f4ea4f874d998c4f3f069e8
+    "@aztec/accounts": "npm:5.3.0-nightly.20260826"
+    "@aztec/aztec.js": "npm:5.3.0-nightly.20260826"
+    "@aztec/entrypoints": "npm:5.3.0-nightly.20260826"
+    "@aztec/foundation": "npm:5.3.0-nightly.20260826"
+    "@aztec/kv-store": "npm:5.3.0-nightly.20260826"
+    "@aztec/protocol-contracts": "npm:5.3.0-nightly.20260826"
+    "@aztec/pxe": "npm:5.3.0-nightly.20260826"
+    "@aztec/standard-contracts": "npm:5.3.0-nightly.20260826"
+    "@aztec/stdlib": "npm:5.3.0-nightly.20260826"
+    "@aztec/wallet-sdk": "npm:5.3.0-nightly.20260826"
+  checksum: 10c0/d2277ab13b0421d9e43a527b2cb2b5ac23c17b0a1b6f81aa5280313280f15fdca3cd267ea998915ee2524e0c1b2383d040ff71baadd5fd07c306c27075099461
   languageName: node
   linkType: hard
 
-"@aztec/world-state@npm:5.3.0-nightly.20260818":
-  version: 5.3.0-nightly.20260818
-  resolution: "@aztec/world-state@npm:5.3.0-nightly.20260818"
+"@aztec/world-state@npm:5.3.0-nightly.20260826":
+  version: 5.3.0-nightly.20260826
+  resolution: "@aztec/world-state@npm:5.3.0-nightly.20260826"
   dependencies:
-    "@aztec/bb.js": "npm:5.3.0-nightly.20260818"
-    "@aztec/constants": "npm:5.3.0-nightly.20260818"
-    "@aztec/foundation": "npm:5.3.0-nightly.20260818"
-    "@aztec/kv-store": "npm:5.3.0-nightly.20260818"
-    "@aztec/native": "npm:5.3.0-nightly.20260818"
-    "@aztec/protocol-contracts": "npm:5.3.0-nightly.20260818"
-    "@aztec/stdlib": "npm:5.3.0-nightly.20260818"
-    "@aztec/telemetry-client": "npm:5.3.0-nightly.20260818"
+    "@aztec/bb.js": "npm:5.3.0-nightly.20260826"
+    "@aztec/constants": "npm:5.3.0-nightly.20260826"
+    "@aztec/foundation": "npm:5.3.0-nightly.20260826"
+    "@aztec/kv-store": "npm:5.3.0-nightly.20260826"
+    "@aztec/native": "npm:5.3.0-nightly.20260826"
+    "@aztec/protocol-contracts": "npm:5.3.0-nightly.20260826"
+    "@aztec/stdlib": "npm:5.3.0-nightly.20260826"
+    "@aztec/telemetry-client": "npm:5.3.0-nightly.20260826"
     msgpackr: "npm:^1.11.2"
     tslib: "npm:^2.4.0"
     zod: "npm:^4"
-  checksum: 10c0/d97202cd74f99aa7894cbcfe3e189c596888c1ae8e103c924640882350f89ddba3ed9670b95656d0670ef31ff4a8c919a84a38af3ee378adea999ad839e5c623
+  checksum: 10c0/140fae17c41ed7fd408d259c61909c8c0c8c4d2ac32347d808ce585b8e24e13ab832f2764a9750fac8854a17e11e8862adea4984afe98d6e0d66a5bb10aaeabd
   languageName: node
   linkType: hard
 
