@@ -204,9 +204,22 @@ function installAztecCLI(version) {
   if (isCI) {
     log(COLORS.yellow, `Running version-specific installer for ${version}...`);
     process.env.FOUNDRY_DIR = `${process.env.HOME}/.foundry`;
-    exec(
-      `curl -fsSL "https://install.aztec.network/${version}/install" | VERSION="${version}" bash`,
-    );
+    // Download before running: piped into bash, a curl 404 is masked by bash
+    // exiting 0 on empty input and nothing gets installed.
+    const installerUrl = `https://install.aztec.network/${version}/install`;
+    let installer;
+    try {
+      installer = exec(`curl -fsSL "${installerUrl}"`, { silent: true });
+    } catch {
+      log(COLORS.red, `Installer not available at ${installerUrl}`);
+      log(COLORS.red, `The ${version} release did not publish its toolchain assets.`);
+      process.exit(1);
+    }
+    exec("bash", {
+      input: installer,
+      stdio: ["pipe", "inherit", "inherit"],
+      env: { ...process.env, VERSION: version },
+    });
     // `internal-bin` holds nargo + foundry binaries since
     // v4.3.0-nightly.20260512-1 — the installer's shell-wrapper `aztec`
     // prepends it for subprocesses, but the npm-shipped CLI (which our
