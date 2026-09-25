@@ -17,7 +17,7 @@ import {
 import AccountBalanceWalletIcon from "@mui/icons-material/AccountBalanceWallet";
 import RocketLaunchIcon from "@mui/icons-material/RocketLaunch";
 import RefreshIcon from "@mui/icons-material/Refresh";
-import type { WalletProvider } from "@aztec/wallet-sdk/manager";
+import type { WalletProvider } from "@aztec-labs/wallet-sdk/manager";
 
 interface WalletSelectionProps {
   wallets: WalletProvider[];

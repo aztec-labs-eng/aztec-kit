@@ -1,7 +1,7 @@
-import { AztecAddress } from "@aztec/aztec.js/addresses";
-import { type AbiType, type ContractArtifact, type FunctionAbi } from "@aztec/aztec.js/abi";
-import { Contract } from "@aztec/aztec.js/contracts";
-import type { ContractInstanceWithAddress } from "@aztec/stdlib/contract";
+import { AztecAddress } from "@aztec-labs/aztec.js/addresses";
+import { type AbiType, type ContractArtifact, type FunctionAbi } from "@aztec-labs/aztec.js/abi";
+import { Contract } from "@aztec-labs/aztec.js/contracts";
+import type { ContractInstanceWithAddress } from "@aztec-labs/stdlib/contract";
 import { EmbeddedWallet } from "@aztec-kit/embedded-wallet";
 import { SubscriptionFPC } from "@aztec-kit/contracts-aztec/subscription-fpc";
 import {

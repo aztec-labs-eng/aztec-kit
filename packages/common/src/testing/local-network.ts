@@ -7,7 +7,7 @@
  *
  * For vitest suites that want a fast, parallel-safe, in-process network,
  * use `setupLocalNetwork` — as of v5.0.1 the framework we used to maintain
- * here ships upstream in `@aztec/aztec/testing`, re-exported by `./index.ts`.
+ * here ships upstream in `@aztec-labs/aztec/testing`, re-exported by `./index.ts`.
  *
  * Process-group spawn and cleanup live in `./spawn.ts`, so killing the test
  * runner (cleanly or not) tears down every spawned child — no orphan anvils.

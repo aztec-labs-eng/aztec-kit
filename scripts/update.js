@@ -13,7 +13,7 @@
  *
  * When `--version` is omitted, the script auto-fetches the latest nightly. The
  * major series tracked is taken from `--major` if passed, otherwise inferred
- * from the current `@aztec/aztec.js` pin in any workspace package.json — so
+ * from the current `@aztec-labs/aztec.js` pin in any workspace package.json — so
  * `main` (v4) and `next` (v5) each track their own stream automatically.
  */
 
@@ -159,14 +159,10 @@ function updateNargoToml(version) {
     let content = readFileSync(nargoPath, "utf-8");
     const original = content;
 
-    // aztec-nr
+    // aztec-nr mirror (aztec, uint-note, compressed-string, ...) and the aztec-node monorepo
+    // (token / account contracts)
     content = content.replace(
-      /(git\s*=\s*"https:\/\/github\.com\/AztecProtocol\/aztec-nr"[^}]*tag\s*=\s*")v[^"]+"/g,
-      `$1v${version}"`,
-    );
-    // aztec-packages
-    content = content.replace(
-      /(git\s*=\s*"https:\/\/github\.com\/AztecProtocol\/aztec-packages\/?",?\s*tag\s*=\s*")v[^"]+"/g,
+      /(git\s*=\s*"https:\/\/github\.com\/aztec-labs-eng\/aztec-(?:nr|node)\/?",?\s*tag\s*=\s*")v[^"]+"/g,
       `$1v${version}"`,
     );
 
@@ -205,7 +201,7 @@ function installAztecCLI(version) {
     log(COLORS.yellow, `Running version-specific installer for ${version}...`);
     process.env.FOUNDRY_DIR = `${process.env.HOME}/.foundry`;
     exec(
-      `curl -fsSL "https://install.aztec.network/${version}/install" | VERSION="${version}" bash`,
+      `curl -fsSL "https://install.aztec-labs.com/${version}/install" | VERSION="${version}" bash`,
     );
     // `internal-bin` holds nargo + foundry binaries since
     // v4.3.0-nightly.20260512-1 — the installer's shell-wrapper `aztec`
@@ -237,7 +233,7 @@ function compileContracts() {
 }
 
 /**
- * Reads `@aztec/aztec.js`'s current pin from any workspace package.json and
+ * Reads `@aztec-labs/aztec.js`'s current pin from any workspace package.json and
  * returns its leading major (e.g. `"v4.3.0-rc.1"` → `4`). Used to pick which
  * nightly series to track when the caller doesn't pass `--major`.
  */
@@ -249,7 +245,8 @@ function inferMajorFromPin() {
     } catch {
       continue;
     }
-    const pin = pkg.dependencies?.["@aztec/aztec.js"] || pkg.devDependencies?.["@aztec/aztec.js"];
+    const pin =
+      pkg.dependencies?.["@aztec-labs/aztec.js"] || pkg.devDependencies?.["@aztec-labs/aztec.js"];
     const m = pin?.match(/^v?(\d+)\./);
     if (m) return Number(m[1]);
   }
@@ -259,7 +256,7 @@ function inferMajorFromPin() {
 async function fetchLatestNightly(major) {
   log(COLORS.yellow, `Fetching latest v${major} nightly from npm...`);
   try {
-    const output = exec("npm view @aztec/aztec.js versions --json", { silent: true });
+    const output = exec("npm view @aztec-labs/aztec.js versions --json", { silent: true });
     const versions = JSON.parse(output);
     const re = new RegExp(`^${major}\\.\\d+\\.\\d+-nightly\\.\\d+$`);
     const nightlies = versions.filter((v) => re.test(v));
@@ -319,7 +316,7 @@ async function main() {
         log(COLORS.red, "Could not infer major from workspace pins. Pass --major or --version.");
         process.exit(1);
       }
-      log(COLORS.green, `Inferred major v${major} from current @aztec/aztec.js pin\n`);
+      log(COLORS.green, `Inferred major v${major} from current @aztec-labs/aztec.js pin\n`);
     }
     version = await fetchLatestNightly(major);
     log(COLORS.green, `Latest nightly version: v${version}\n`);

@@ -1,5 +1,5 @@
 import { Box, TextField, Typography, Autocomplete } from "@mui/material";
-import type { FunctionAbi, AbiType } from "@aztec/aztec.js/abi";
+import type { FunctionAbi, AbiType } from "@aztec-labs/aztec.js/abi";
 import { shortAddress } from "@aztec-kit/common/ui";
 
 export interface AliasedAddress {

@@ -6,8 +6,8 @@
 import { Box, Typography, CircularProgress } from "@mui/material";
 import AccountBalanceWalletIcon from "@mui/icons-material/AccountBalanceWallet";
 import SecurityIcon from "@mui/icons-material/Security";
-import type { WalletProvider } from "@aztec/wallet-sdk/manager";
-import { hashToEmoji } from "@aztec/wallet-sdk/crypto";
+import type { WalletProvider } from "@aztec-labs/wallet-sdk/manager";
+import { hashToEmoji } from "@aztec-labs/wallet-sdk/crypto";
 
 interface ConnectingWalletProps {
   wallet: WalletProvider;

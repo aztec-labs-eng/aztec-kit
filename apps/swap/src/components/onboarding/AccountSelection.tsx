@@ -4,7 +4,7 @@
  */
 
 import { Box, Typography, List, ListItem, ListItemButton, ListItemText } from "@mui/material";
-import type { AztecAddress } from "@aztec/aztec.js/addresses";
+import type { AztecAddress } from "@aztec-labs/aztec.js/addresses";
 
 interface AccountItem {
   item: AztecAddress;

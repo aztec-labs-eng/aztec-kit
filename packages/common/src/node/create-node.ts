@@ -1,5 +1,5 @@
-import { createAztecNodeClient, type AztecNode } from "@aztec/aztec.js/node";
-import { defaultFetch } from "@aztec/foundation/json-rpc/client";
+import { createAztecNodeClient, type AztecNode } from "@aztec-labs/aztec.js/node";
+import { defaultFetch } from "@aztec-labs/foundation/json-rpc/client";
 
 /**
  * Header that API-gateway-fronted nodes require for auth.
@@ -28,5 +28,5 @@ export function createNode(url: string, apiKey?: string, batchWindowMS?: number)
         defaultFetch(host, body, { ...extraHeaders, [AZTEC_API_KEY_HEADER]: apiKey }, noRetry)
     : undefined;
 
-  return createAztecNodeClient(url, undefined, fetch, batchWindowMS);
+  return createAztecNodeClient(url, { fetch, batchWindowMS });
 }

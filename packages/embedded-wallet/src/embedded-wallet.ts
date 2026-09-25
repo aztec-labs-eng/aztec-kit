@@ -1,5 +1,5 @@
 /**
- * EmbeddedWallet — thin wrapper over `@aztec/wallets`' EmbeddedWallet that adds
+ * EmbeddedWallet — thin wrapper over `@aztec-labs/wallets`' EmbeddedWallet that adds
  * our store/encryption/tx-progress conveniences.
  *
  * Initializerless Schnorr accounts are supported natively by the upstream base
@@ -9,36 +9,36 @@
  * below is just an ergonomic alias for the base method.
  */
 
-import { collectOffchainEffects, type ExecutionPayload, TxStatus } from "@aztec/stdlib/tx";
-import { createAztecNodeClient, type AztecNode } from "@aztec/aztec.js/node";
-import { defaultFetch } from "@aztec/foundation/json-rpc/client";
+import { collectOffchainEffects, type ExecutionPayload, TxStatus } from "@aztec-labs/stdlib/tx";
+import { createAztecNodeClient, type AztecNode } from "@aztec-labs/aztec.js/node";
+import { defaultFetch } from "@aztec-labs/foundation/json-rpc/client";
 import {
   type InteractionWaitOptions,
   NO_WAIT,
   type SendReturn,
   extractOffchainOutput,
-} from "@aztec/aztec.js/contracts";
-import { getGasLimits } from "@aztec/wallet-sdk/base-wallet";
-import { waitForTx } from "@aztec/aztec.js/node";
-import type { SendOptions } from "@aztec/aztec.js/wallet";
-import { CallAuthorizationRequest } from "@aztec/aztec.js/authorization";
-import { AccountManager } from "@aztec/aztec.js/wallet";
+} from "@aztec-labs/aztec.js/contracts";
+import { getGasLimits } from "@aztec-labs/wallet-sdk/base-wallet";
+import { waitForTx } from "@aztec-labs/aztec.js/node";
+import type { SendOptions } from "@aztec-labs/aztec.js/wallet";
+import { CallAuthorizationRequest } from "@aztec-labs/aztec.js/authorization";
+import { AccountManager } from "@aztec-labs/aztec.js/wallet";
 import { txProgress, type PhaseTiming, type TxProgressEvent } from "./tx-progress";
 import {
   EmbeddedWallet as EmbeddedWalletBase,
   type EmbeddedWalletOptions,
-} from "@aztec/wallets/embedded";
-import { AztecSQLiteOPFSStore } from "@aztec/kv-store/sqlite-opfs";
-import { AztecIndexedDBStore } from "@aztec/kv-store/deprecated/indexeddb";
-import type { AztecAsyncKVStore } from "@aztec/kv-store";
-import { createLogger } from "@aztec/foundation/log";
-import { Fr } from "@aztec/foundation/curves/bn254";
+} from "@aztec-labs/wallets/embedded";
+import { AztecSQLiteOPFSStore } from "@aztec-labs/kv-store/sqlite-opfs";
+import { AztecIndexedDBStore } from "@aztec-labs/kv-store/deprecated/indexeddb";
+import type { AztecAsyncKVStore } from "@aztec-labs/kv-store";
+import { createLogger } from "@aztec-labs/foundation/log";
+import { Fr } from "@aztec-labs/foundation/curves/bn254";
 import { registerSqliteInspectors } from "./sqlite-inspector";
 import { EncryptionKeyMismatchError, type StoreName } from "./encryption-key-mismatch-error";
 import { StaleStoredAccountError } from "./stale-stored-account-error";
-import { GasSettings } from "@aztec/stdlib/gas";
-import type { AztecAddress } from "@aztec/stdlib/aztec-address";
-import { deriveMasterMessageSigningSecretKey } from "@aztec/stdlib/keys";
+import { GasSettings } from "@aztec-labs/stdlib/gas";
+import type { AztecAddress } from "@aztec-labs/stdlib/aztec-address";
+import { deriveMasterMessageSigningSecretKey } from "@aztec-labs/stdlib/keys";
 
 /**
  * Sqlite3mc raises one of these messages when the supplied key fails to
@@ -78,7 +78,7 @@ async function openEncryptedOrPlain(
   }
 }
 
-/** Which `@aztec/kv-store` backend backs the PXE + walletDB stores. */
+/** Which `@aztec-labs/kv-store` backend backs the PXE + walletDB stores. */
 export type StoreBackend = "sqlite-opfs" | "indexeddb";
 
 /**
@@ -118,7 +118,7 @@ export type EmbeddedWalletExtraOptions = {
   inspect?: boolean;
 
   /**
-   * Which `@aztec/kv-store` backend backs the (non-ephemeral) PXE + walletDB
+   * Which `@aztec-labs/kv-store` backend backs the (non-ephemeral) PXE + walletDB
    * stores. Defaults to `"sqlite-opfs"`. `"indexeddb"` exists so CI can keep
    * getting signal on the IndexedDB path until it's fully deprecated; it has no
    * at-rest encryption, so it's incompatible with `getEncryptionKey`.
@@ -209,7 +209,7 @@ export class EmbeddedWallet extends EmbeddedWalletBase {
       : undefined;
     const node =
       typeof nodeOrUrl === "string"
-        ? createAztecNodeClient(nodeOrUrl, undefined, apiKeyFetch)
+        ? createAztecNodeClient(nodeOrUrl, { fetch: apiKeyFetch })
         : nodeOrUrl;
     const rootLogger = rest.logger ?? createLogger("embedded-wallet");
 

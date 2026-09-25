@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useEffect, useRef, type ReactNode } from "react";
-import type { AztecAddress } from "@aztec/aztec.js/addresses";
-import { type AztecNode } from "@aztec/aztec.js/node";
+import type { AztecAddress } from "@aztec-labs/aztec.js/addresses";
+import { type AztecNode } from "@aztec-labs/aztec.js/node";
 import { createNode } from "@aztec-kit/common/node";
 import { EmbeddedWallet, StaleStoredAccountError, txProgress } from "@aztec-kit/embedded-wallet";
 import { useNetwork } from "./NetworkContext";
