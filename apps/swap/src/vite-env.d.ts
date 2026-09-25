@@ -3,7 +3,7 @@
 interface ImportMetaEnv {
   readonly DEV: boolean;
   readonly PROD: boolean;
-  /** Key for the rpc2 gateway; substituted into config/networks/testnet.json. */
+  /** Key for the node API gateway; substituted into config/networks/testnet.json. */
   readonly VITE_TESTNET_API_KEY?: string;
 }
 

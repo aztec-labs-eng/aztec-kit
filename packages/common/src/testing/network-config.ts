@@ -7,8 +7,8 @@ export const VALID_NETWORKS = ["local", "testnet"] as const;
 export type NetworkName = (typeof VALID_NETWORKS)[number];
 
 /**
- * Aztec node endpoint per network. `testnet` sits behind the rpc2 API
- * gateway, which rejects unauthenticated calls with 403 — clients must send
+ * Aztec node endpoint per network. `testnet` sits behind an API
+ * gateway, which rejects unauthenticated calls with 401 — clients must send
  * its key (see {@link apiKeyForNetwork}).
  */
 export const NETWORK_URLS: Record<NetworkName, string> = {

@@ -157,7 +157,7 @@ export type EmbeddedWalletExtraOptions = {
  * has no `allowImportingTsExtensions`, and common's `./node` entry point is `.ts` source.
  * Keep the two in sync — changing the gateway's header means changing both.
  */
-const AZTEC_API_KEY_HEADER = "x-api-key";
+const AZTEC_API_KEY_HEADER = "x-aztec-api-key";
 
 export class EmbeddedWallet extends EmbeddedWalletBase {
   /**
