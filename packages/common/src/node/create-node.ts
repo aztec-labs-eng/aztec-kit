@@ -8,7 +8,8 @@ import { defaultFetch } from "@aztec-labs/foundation/json-rpc/client";
 /**
  * Auth header the rpc2 gateway requires. It fronts the nodes with AWS API Gateway, whose
  * key header is `x-api-key` — anything else comes back `403 {"message":"Forbidden"}`,
- * indistinguishable from sending no key at all.
+ * indistinguishable from sending no key at all. (Kong-fronted nodes such as staging-public read
+ * `x-aztec-api-key` instead, and their CORS preflight allows only that header.)
  */
 export const AZTEC_API_KEY_HEADER = "x-api-key";
 
