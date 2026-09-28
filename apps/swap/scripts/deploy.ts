@@ -16,10 +16,10 @@ import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "node:url";
 
-import { Fr } from "@aztec/foundation/curves/bn254";
-import { AztecAddress } from "@aztec/stdlib/aztec-address";
+import { Fr } from "@aztec-labs/foundation/curves/bn254";
+import { AztecAddress } from "@aztec-labs/stdlib/aztec-address";
 
-import { TokenContract } from "@aztec/noir-contracts.js/Token";
+import { TokenContract } from "@aztec-labs/noir-contracts.js/Token";
 import { AMMContract } from "@aztec-kit/contracts-aztec/artifacts/AMM";
 import { ProofOfPasswordContract } from "@aztec-kit/contracts-aztec/artifacts/ProofOfPassword";
 

@@ -3,17 +3,17 @@
  * Pure functions for wallet-related operations
  */
 
-import type { AztecNode } from "@aztec/aztec.js/node";
-import type { Wallet } from "@aztec/aztec.js/wallet";
-import type { ChainInfo } from "@aztec/aztec.js/account";
-import { Fr } from "@aztec/aztec.js/fields";
+import type { AztecNode } from "@aztec-labs/aztec.js/node";
+import type { Wallet } from "@aztec-labs/aztec.js/wallet";
+import type { ChainInfo } from "@aztec-labs/aztec.js/account";
+import { Fr } from "@aztec-labs/aztec.js/fields";
 import {
   WalletManager,
   type WalletProvider,
   type PendingConnection,
   type DiscoverySession,
-} from "@aztec/wallet-sdk/manager";
-import type { AztecAddress } from "@aztec/aztec.js/addresses";
+} from "@aztec-labs/wallet-sdk/manager";
+import type { AztecAddress } from "@aztec-labs/aztec.js/addresses";
 import {
   EmbeddedWallet,
   EncryptionKeyMismatchError,

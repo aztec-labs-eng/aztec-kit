@@ -15,13 +15,13 @@
  */
 
 import { describe, it, expect, beforeAll } from "vitest";
-import { EmbeddedWallet } from "@aztec/wallets/embedded";
-import type { AztecAddress } from "@aztec/aztec.js/addresses";
-import type { ContractInstanceWithAddress } from "@aztec/stdlib/contract";
-import { Fr } from "@aztec/aztec.js/fields";
-import { poseidon2Hash } from "@aztec/foundation/crypto/poseidon";
-import { randomBytes } from "@aztec/foundation/crypto/random";
-import { TokenContract, TokenContractArtifact } from "@aztec/noir-contracts.js/Token";
+import { EmbeddedWallet } from "@aztec-labs/wallets/embedded";
+import type { AztecAddress } from "@aztec-labs/aztec.js/addresses";
+import type { ContractInstanceWithAddress } from "@aztec-labs/stdlib/contract";
+import { Fr } from "@aztec-labs/aztec.js/fields";
+import { poseidon2Hash } from "@aztec-labs/foundation/crypto/poseidon";
+import { randomBytes } from "@aztec-labs/foundation/crypto/random";
+import { TokenContract, TokenContractArtifact } from "@aztec-labs/noir-contracts.js/Token";
 
 import { SubscriptionFPC } from "../lib/subscription-fpc.js";
 import { findFreeSeat, countAvailableSeats } from "../lib/seat-picker.js";

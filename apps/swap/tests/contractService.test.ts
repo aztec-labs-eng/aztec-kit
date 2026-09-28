@@ -7,7 +7,7 @@ const { configId } = vi.hoisted(() => ({
 }));
 
 // Stable config_id for the on-chain fallback assertion.
-vi.mock("@aztec/foundation/crypto/poseidon", () => ({
+vi.mock("@aztec-labs/foundation/crypto/poseidon", () => ({
   poseidon2Hash: vi.fn(async () => configId),
 }));
 

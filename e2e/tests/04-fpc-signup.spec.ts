@@ -4,10 +4,10 @@ import { spawn } from "node:child_process";
 import { readFile, writeFile } from "node:fs/promises";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
-import { FunctionSelector } from "@aztec/stdlib/abi";
+import { FunctionSelector } from "@aztec-labs/stdlib/abi";
 import { ProofOfPasswordContractArtifact } from "@aztec-kit/contracts-aztec/artifacts/ProofOfPassword";
 import { AMMContractArtifact } from "@aztec-kit/contracts-aztec/artifacts/AMM";
-import { TokenContractArtifact } from "@aztec/noir-contracts.js/Token";
+import { TokenContractArtifact } from "@aztec-labs/noir-contracts.js/Token";
 import {
   readState,
   writeState,
@@ -53,7 +53,7 @@ const POP_ARTIFACT_PATH = resolve(ARTIFACTS_DIR, "proof_of_password-ProofOfPassw
 const AMM_ARTIFACT_PATH = resolve(ARTIFACTS_DIR, "amm_contract-AMM.json");
 const TOKEN_ARTIFACT_PATH = resolve(
   REPO_ROOT,
-  "node_modules/@aztec/noir-contracts.js/artifacts/token_contract-Token.json",
+  "node_modules/@aztec-labs/noir-contracts.js/artifacts/token_contract-Token.json",
 );
 
 function runMint(env: NodeJS.ProcessEnv, toAddress: string): Promise<void> {

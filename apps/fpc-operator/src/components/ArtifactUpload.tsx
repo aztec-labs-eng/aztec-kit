@@ -1,7 +1,7 @@
 import { useDropzone } from "react-dropzone";
 import { Box, Typography, Button } from "@mui/material";
 import UploadFileIcon from "@mui/icons-material/UploadFile";
-import { loadContractArtifact, type ContractArtifact } from "@aztec/aztec.js/abi";
+import { loadContractArtifact, type ContractArtifact } from "@aztec-labs/aztec.js/abi";
 
 interface ArtifactUploadProps {
   onArtifactLoaded: (artifact: ContractArtifact) => void;

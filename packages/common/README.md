@@ -32,7 +32,7 @@ Two launch modes share the same spawn/cleanup machinery (`./spawn.ts`):
 
 - **`setupLocalNetworkCli({ logDir })`** — out-of-process. Shells out to `aztec start --local-network` (anvil + node + sequencer + prover as one subprocess tree on ports 8545/8080) and waits for both JSON-RPCs to answer. Slower but exercises the same CLI real users hit; used by the playwright e2e harness.
 
-Both place every child in its own POSIX process group and register `SIGINT`/`SIGTERM`/`SIGHUP`/`exit` handlers, so killing the test runner — gracefully or not — tears down anvil and friends with it. Required since the aztec-up change that stopped exposing `anvil`/`forge`/`nargo` on the user's PATH: `ensureAztecBinsInPath()` splices `~/.aztec/current/internal-bin` in so `@aztec/ethereum`'s internal `spawn("forge", ...)` keeps working.
+Both place every child in its own POSIX process group and register `SIGINT`/`SIGTERM`/`SIGHUP`/`exit` handlers, so killing the test runner — gracefully or not — tears down anvil and friends with it. Required since the aztec-up change that stopped exposing `anvil`/`forge`/`nargo` on the user's PATH: `ensureAztecBinsInPath()` splices `~/.aztec/current/internal-bin` in so `@aztec-labs/ethereum`'s internal `spawn("forge", ...)` keeps working.
 
 ## `vite`
 

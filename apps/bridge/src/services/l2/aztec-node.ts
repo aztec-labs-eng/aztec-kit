@@ -1,8 +1,8 @@
-import { type AztecNode, waitForTx } from "@aztec/aztec.js/node";
+import { type AztecNode, waitForTx } from "@aztec-labs/aztec.js/node";
 import { createNode } from "@aztec-kit/common/node";
-import { isL1ToL2MessageReady } from "@aztec/aztec.js/messaging";
-import { Fr } from "@aztec/foundation/curves/bn254";
-import { TxHash, TxStatus } from "@aztec/stdlib/tx";
+import { isL1ToL2MessageReady } from "@aztec-labs/aztec.js/messaging";
+import { Fr } from "@aztec-labs/foundation/curves/bn254";
+import { TxHash, TxStatus } from "@aztec-labs/stdlib/tx";
 import { zeroAddress } from "viem";
 import type { Hex } from "viem";
 import { MESSAGE_POLL_INTERVAL_MS } from "../../components/wizard/constants";

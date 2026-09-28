@@ -9,7 +9,7 @@
 
 import { formatUnits, parseUnits, type EIP1193Provider } from "viem";
 import { bridgeFeeJuice, bridgeMultiple, type L1Addresses } from "../../services";
-import type { AztecAddress } from "@aztec/stdlib/aztec-address";
+import type { AztecAddress } from "@aztec-labs/stdlib/aztec-address";
 import { EPHEMERAL_CLAIM_GAS_FJ } from "./constants";
 import type { BridgeStep, BridgeAction, ClaimKind } from "./types";
 

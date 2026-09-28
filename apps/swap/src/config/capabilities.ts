@@ -3,8 +3,8 @@
  * Declares all permissions needed for the app to function with external wallets
  */
 
-import type { AppCapabilities, ContractFunctionPattern } from "@aztec/aztec.js/wallet";
-import { AztecAddress } from "@aztec/aztec.js/addresses";
+import type { AppCapabilities, ContractFunctionPattern } from "@aztec-labs/aztec.js/wallet";
+import { AztecAddress } from "@aztec-labs/aztec.js/addresses";
 import type { NetworkConfig } from "./networks";
 
 /**

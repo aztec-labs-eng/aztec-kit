@@ -5,15 +5,15 @@
  */
 
 import { createContext, useContext, useEffect, useRef, type ReactNode, useCallback } from "react";
-import { type AztecNode } from "@aztec/aztec.js/node";
+import { type AztecNode } from "@aztec-labs/aztec.js/node";
 import { createNode } from "@aztec-kit/common/node";
-import type { Wallet } from "@aztec/aztec.js/wallet";
-import type { AztecAddress } from "@aztec/aztec.js/addresses";
+import type { Wallet } from "@aztec-labs/aztec.js/wallet";
+import type { AztecAddress } from "@aztec-labs/aztec.js/addresses";
 import type {
   WalletProvider,
   PendingConnection,
   DiscoverySession,
-} from "@aztec/wallet-sdk/manager";
+} from "@aztec-labs/wallet-sdk/manager";
 import { useNetwork } from "../network";
 import * as walletService from "../../services/walletService";
 import { useWalletReducer } from "./reducer";

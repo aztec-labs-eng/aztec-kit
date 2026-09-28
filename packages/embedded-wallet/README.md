@@ -1,6 +1,6 @@
 # @aztec-kit/embedded-wallet
 
-Embeddable Aztec wallet backed by `SchnorrInitializerlessAccount`. Thin layer on top of `@aztec/wallets` that ships pre-wired React components + hooks for dApps.
+Embeddable Aztec wallet backed by `SchnorrInitializerlessAccount`. Thin layer on top of `@aztec-labs/wallets` that ships pre-wired React components + hooks for dApps.
 
 ## Subpath exports
 

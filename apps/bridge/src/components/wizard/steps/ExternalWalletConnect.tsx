@@ -9,9 +9,9 @@ import {
   WalletManager,
   type WalletProvider,
   type PendingConnection,
-} from "@aztec/wallet-sdk/manager";
-import { hashToEmoji } from "@aztec/wallet-sdk/crypto";
-import { Fr } from "@aztec/foundation/curves/bn254";
+} from "@aztec-labs/wallet-sdk/manager";
+import { hashToEmoji } from "@aztec-labs/wallet-sdk/crypto";
+import { Fr } from "@aztec-labs/foundation/curves/bn254";
 
 const WEB_WALLET_URLS: string[] = [import.meta.env.VITE_WEB_WALLET_URL ?? "http://localhost:3001"];
 

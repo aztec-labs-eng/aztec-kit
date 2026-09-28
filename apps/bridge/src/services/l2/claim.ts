@@ -1,9 +1,9 @@
-import type { Wallet } from "@aztec/aztec.js/wallet";
-import { AztecAddress } from "@aztec/stdlib/aztec-address";
-import { FeeJuiceContract } from "@aztec/aztec.js/protocol";
-import { FeeJuicePaymentMethodWithClaim } from "@aztec/aztec.js/fee";
-import { BatchCall } from "@aztec/aztec.js/contracts";
-import { Fr } from "@aztec/foundation/curves/bn254";
+import type { Wallet } from "@aztec-labs/aztec.js/wallet";
+import { AztecAddress } from "@aztec-labs/stdlib/aztec-address";
+import { FeeJuiceContract } from "@aztec-labs/aztec.js/protocol";
+import { FeeJuicePaymentMethodWithClaim } from "@aztec-labs/aztec.js/fee";
+import { BatchCall } from "@aztec-labs/aztec.js/contracts";
+import { Fr } from "@aztec-labs/foundation/curves/bn254";
 import type { ClaimCredentials } from "../types";
 
 /**
@@ -16,7 +16,7 @@ export async function claimWithBootstrap(
   bootstrapClaim: ClaimCredentials,
   otherClaims: ClaimCredentials[],
 ) {
-  const fj = FeeJuiceContract.at(wallet);
+  const fj = FeeJuiceContract.withWallet(wallet);
 
   const paymentMethod = new FeeJuicePaymentMethodWithClaim(callerAddress, {
     claimAmount: BigInt(bootstrapClaim.claimAmount),
@@ -57,7 +57,7 @@ export async function claimBatch(
   callerAddress: AztecAddress,
   claims: ClaimCredentials[],
 ) {
-  const fj = FeeJuiceContract.at(wallet);
+  const fj = FeeJuiceContract.withWallet(wallet);
 
   const calls = claims.map((c) => {
     const target = AztecAddress.fromStringUnsafe(c.recipient);

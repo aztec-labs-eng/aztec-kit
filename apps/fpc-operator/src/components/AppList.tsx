@@ -17,9 +17,9 @@ import {
 import RefreshIcon from "@mui/icons-material/Refresh";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import DownloadIcon from "@mui/icons-material/Download";
-import { AztecAddress } from "@aztec/aztec.js/addresses";
+import { AztecAddress } from "@aztec-labs/aztec.js/addresses";
 import { shortAddress } from "@aztec-kit/common/ui";
-import { FunctionSelector } from "@aztec/aztec.js/abi";
+import { FunctionSelector } from "@aztec-labs/aztec.js/abi";
 import { formatUnits } from "viem";
 import type { SubscriptionFPCContract as SubscriptionFPC } from "@aztec-kit/contracts-aztec/artifacts/SubscriptionFPC";
 import {

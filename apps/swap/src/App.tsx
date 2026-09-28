@@ -22,7 +22,7 @@ import { useWallet } from "./contexts/wallet";
 import { useOnboarding } from "./contexts/onboarding";
 import { OnboardingModal } from "./components/OnboardingModal";
 import { TxNotificationCenter } from "@aztec-kit/embedded-wallet/ui";
-import type { AztecAddress } from "@aztec/aztec.js/addresses";
+import type { AztecAddress } from "@aztec-labs/aztec.js/addresses";
 import { lazy, Suspense } from "react";
 
 // Dev-only lazy import so ProfilePanel + its deps (canvas flame chart) are

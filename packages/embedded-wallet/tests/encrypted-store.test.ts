@@ -36,12 +36,12 @@ describe("EncryptionKeyMismatchError", () => {
 // after both opens. That's intentional: we're testing this package's wrapper
 // behavior, not the base wallet.
 
-vi.mock("@aztec/kv-store/sqlite-opfs", () => ({
+vi.mock("@aztec-labs/kv-store/sqlite-opfs", () => ({
   AztecSQLiteOPFSStore: { open: vi.fn() },
 }));
 
 const { EmbeddedWallet } = await import("../src/embedded-wallet.js");
-const { AztecSQLiteOPFSStore } = await import("@aztec/kv-store/sqlite-opfs");
+const { AztecSQLiteOPFSStore } = await import("@aztec-labs/kv-store/sqlite-opfs");
 
 // Stub node — only `getL1ContractAddresses()` is reached before the first open().
 function fakeNode() {

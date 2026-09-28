@@ -3,22 +3,22 @@
  * Pure functions for contract-related operations
  */
 
-import type { Wallet } from "@aztec/aztec.js/wallet";
-import type { AztecNode } from "@aztec/aztec.js/node";
-import { AztecAddress } from "@aztec/aztec.js/addresses";
-import { AztecAddress as AztecAddressClass } from "@aztec/aztec.js/addresses";
-import { Fr } from "@aztec/aztec.js/fields";
-import type { ContractArtifact } from "@aztec/aztec.js/abi";
-import { FunctionSelector } from "@aztec/aztec.js/abi";
-import type { ContractInstanceWithAddress } from "@aztec/stdlib/contract";
+import type { Wallet } from "@aztec-labs/aztec.js/wallet";
+import type { AztecNode } from "@aztec-labs/aztec.js/node";
+import { AztecAddress } from "@aztec-labs/aztec.js/addresses";
+import { AztecAddress as AztecAddressClass } from "@aztec-labs/aztec.js/addresses";
+import { Fr } from "@aztec-labs/aztec.js/fields";
+import type { ContractArtifact } from "@aztec-labs/aztec.js/abi";
+import { FunctionSelector } from "@aztec-labs/aztec.js/abi";
+import type { ContractInstanceWithAddress } from "@aztec-labs/stdlib/contract";
 import {
   BatchCall,
   getContractInstanceFromInstantiationParams,
   type OffchainMessage,
-} from "@aztec/aztec.js/contracts";
-import { poseidon2Hash } from "@aztec/foundation/crypto/poseidon";
-import type { TxReceipt } from "@aztec/stdlib/tx";
-import type { TokenContract } from "@aztec/noir-contracts.js/Token";
+} from "@aztec-labs/aztec.js/contracts";
+import { poseidon2Hash } from "@aztec-labs/foundation/crypto/poseidon";
+import type { TxReceipt } from "@aztec-labs/stdlib/tx";
+import type { TokenContract } from "@aztec-labs/noir-contracts.js/Token";
 import type { AMMContract } from "@aztec-kit/contracts-aztec/artifacts/AMM";
 import type { ProofOfPasswordContract } from "@aztec-kit/contracts-aztec/artifacts/ProofOfPassword";
 import { SubscriptionFPC } from "@aztec-kit/contracts-aztec/subscription-fpc";
@@ -66,7 +66,8 @@ export async function registerSwapContracts(
   const contractSalt = Fr.fromString(network.contracts.salt);
 
   // Import contract artifacts
-  const { TokenContract, TokenContractArtifact } = await import("@aztec/noir-contracts.js/Token");
+  const { TokenContract, TokenContractArtifact } =
+    await import("@aztec-labs/noir-contracts.js/Token");
   const { AMMContract, AMMContractArtifact } =
     await import("@aztec-kit/contracts-aztec/artifacts/AMM");
 

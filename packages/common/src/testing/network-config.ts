@@ -1,6 +1,6 @@
 /**
  * Network + payment-mode constants shared by every deploy script.
- * Node-only — scripts pass these to `@aztec/aztec.js/ethereum` clients.
+ * Node-only — scripts pass these to `@aztec-labs/aztec.js/ethereum` clients.
  */
 
 export const VALID_NETWORKS = ["local", "testnet"] as const;
@@ -13,7 +13,7 @@ export type NetworkName = (typeof VALID_NETWORKS)[number];
  */
 export const NETWORK_URLS: Record<NetworkName, string> = {
   local: "http://localhost:8080",
-  testnet: "https://testnet-v5.rpc2.aztec-labs.com",
+  testnet: "https://testnet-v6.rpc2.aztec-labs.com",
 };
 
 /**

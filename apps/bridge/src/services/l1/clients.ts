@@ -12,8 +12,8 @@ import {
   decodeEventLog,
 } from "viem";
 import { sepolia, mainnet, foundry } from "viem/chains";
-import { computeSecretHash } from "@aztec/aztec.js/crypto";
-import { Fr } from "@aztec/foundation/curves/bn254";
+import { computeSecretHash } from "@aztec-labs/aztec.js/crypto";
+import { Fr } from "@aztec-labs/foundation/curves/bn254";
 
 // ── ABIs ─────────────────────────────────────────────────────────────
 

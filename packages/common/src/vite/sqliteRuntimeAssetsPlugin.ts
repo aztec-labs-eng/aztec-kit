@@ -3,7 +3,7 @@ import { createRequire } from "module";
 import type { Plugin } from "vite";
 
 /**
- * Emits `@aztec/sqlite3mc-wasm`'s runtime-loaded files into `assets/` under
+ * Emits `@aztec-labs/sqlite3mc-wasm`'s runtime-loaded files into `assets/` under
  * their ORIGINAL names, so production builds can serve them.
  *
  * Since the SQLite3MultipleCiphers 2.3.5 bump (aztec-packages#24293), the
@@ -30,7 +30,7 @@ export function sqliteRuntimeAssetsPlugin(): Plugin {
       for (const file of RUNTIME_FILES) {
         let resolved: string;
         try {
-          resolved = require.resolve(`@aztec/sqlite3mc-wasm/vendor/jswasm/${file}`);
+          resolved = require.resolve(`@aztec-labs/sqlite3mc-wasm/vendor/jswasm/${file}`);
         } catch {
           return; // package not installed (e.g. a line that predates sqlite-opfs)
         }

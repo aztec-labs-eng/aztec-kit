@@ -21,20 +21,20 @@
  */
 import fs from "fs";
 import path from "path";
-import type { FunctionAbi, ContractArtifact } from "@aztec/aztec.js/abi";
-import { Contract } from "@aztec/aztec.js/contracts";
-import { AztecAddress } from "@aztec/stdlib/aztec-address";
-import { FunctionSelector } from "@aztec/stdlib/abi";
-import { Fr } from "@aztec/foundation/curves/bn254";
+import type { FunctionAbi, ContractArtifact } from "@aztec-labs/aztec.js/abi";
+import { Contract } from "@aztec-labs/aztec.js/contracts";
+import { AztecAddress } from "@aztec-labs/stdlib/aztec-address";
+import { FunctionSelector } from "@aztec-labs/stdlib/abi";
+import { Fr } from "@aztec-labs/foundation/curves/bn254";
 import {
   SubscriptionFPCContract,
   SubscriptionFPCContractArtifact,
 } from "@aztec-kit/contracts-aztec/artifacts/SubscriptionFPC";
 import { ProofOfPasswordContractArtifact } from "@aztec-kit/contracts-aztec/artifacts/ProofOfPassword";
 import { AMMContractArtifact } from "@aztec-kit/contracts-aztec/artifacts/AMM";
-import { TokenContractArtifact } from "@aztec/noir-contracts.js/Token";
+import { TokenContractArtifact } from "@aztec-labs/noir-contracts.js/Token";
 import { SubscriptionFPC, fpcSubscribeOverhead } from "@aztec-kit/contracts-aztec/subscription-fpc";
-import { Gas } from "@aztec/stdlib/gas";
+import { Gas } from "@aztec-labs/stdlib/gas";
 import {
   fetchFeeStats,
   computeMaxFeeFromP75,
@@ -53,8 +53,8 @@ import {
   type NetworkName,
   type SignedUpApp,
 } from "@aztec-kit/common/testing";
-import type { AztecNode } from "@aztec/aztec.js/node";
-import type { EmbeddedWallet } from "@aztec/wallets/embedded";
+import type { AztecNode } from "@aztec-labs/aztec.js/node";
+import type { EmbeddedWallet } from "@aztec-labs/wallets/embedded";
 
 const P75_BLOCK_RANGE = 2000;
 const P75_MULTIPLIER = 2;

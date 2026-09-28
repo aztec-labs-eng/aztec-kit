@@ -1,12 +1,12 @@
 import { describe, it, expect, beforeAll } from "vitest";
-import { EmbeddedWallet } from "@aztec/wallets/embedded";
-import type { AztecAddress } from "@aztec/aztec.js/addresses";
-import { Fr } from "@aztec/aztec.js/fields";
-import { getContractInstanceFromInstantiationParams } from "@aztec/aztec.js/contracts";
-import { randomBytes } from "@aztec/foundation/crypto/random";
-import { Ecdsa } from "@aztec/foundation/crypto/ecdsa";
-import type { AccountManager } from "@aztec/aztec.js/wallet";
-import { Gas } from "@aztec/stdlib/gas";
+import { EmbeddedWallet } from "@aztec-labs/wallets/embedded";
+import type { AztecAddress } from "@aztec-labs/aztec.js/addresses";
+import { Fr } from "@aztec-labs/aztec.js/fields";
+import { getContractInstanceFromInstantiationParams } from "@aztec-labs/aztec.js/contracts";
+import { randomBytes } from "@aztec-labs/foundation/crypto/random";
+import { Ecdsa } from "@aztec-labs/foundation/crypto/ecdsa";
+import type { AccountManager } from "@aztec-labs/aztec.js/wallet";
+import { Gas } from "@aztec-labs/stdlib/gas";
 
 import { EcdsaAccountDeployerContract } from "../noir/artifacts/EcdsaAccountDeployer.js";
 import { SubscriptionFPC, fpcSubscribeOverhead } from "../lib/subscription-fpc.js";

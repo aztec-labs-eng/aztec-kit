@@ -1,4 +1,4 @@
-import type { AztecAddress } from "@aztec/stdlib/aztec-address";
+import type { AztecAddress } from "@aztec-labs/stdlib/aztec-address";
 
 /**
  * Thrown by `EmbeddedWallet.loadStoredAccount` when a persisted account's

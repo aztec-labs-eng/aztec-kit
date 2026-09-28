@@ -1,8 +1,8 @@
 import { describe, it, expect, beforeAll } from "vitest";
-import type { AztecAddress } from "@aztec/aztec.js/addresses";
-import { Fr } from "@aztec/aztec.js/fields";
-import { randomBytes } from "@aztec/foundation/crypto/random";
-import { TokenContract } from "@aztec/noir-contracts.js/Token";
+import type { AztecAddress } from "@aztec-labs/aztec.js/addresses";
+import { Fr } from "@aztec-labs/aztec.js/fields";
+import { randomBytes } from "@aztec-labs/foundation/crypto/random";
+import { TokenContract } from "@aztec-labs/noir-contracts.js/Token";
 import { ProofOfPasswordContract } from "../noir/artifacts/ProofOfPassword.js";
 
 import { setupTestContext, type FPCTestContext } from "./utils.js";

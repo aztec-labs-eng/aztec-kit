@@ -1,6 +1,6 @@
 import { Box, Typography, MenuItem, TextField } from "@mui/material";
-import type { AbiType, ContractArtifact, FunctionAbi } from "@aztec/aztec.js/abi";
-import { getAllFunctionAbis } from "@aztec/aztec.js/abi";
+import type { AbiType, ContractArtifact, FunctionAbi } from "@aztec-labs/aztec.js/abi";
+import { getAllFunctionAbis } from "@aztec-labs/aztec.js/abi";
 
 interface FunctionSelectorProps {
   artifact: ContractArtifact;

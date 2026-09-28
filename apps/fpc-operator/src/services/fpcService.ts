@@ -1,8 +1,8 @@
-import { AztecAddress } from "@aztec/aztec.js/addresses";
-import type { AztecNode } from "@aztec/aztec.js/node";
-import type { FunctionSelector } from "@aztec/aztec.js/abi";
-import { Fr } from "@aztec/aztec.js/fields";
-import { poseidon2Hash } from "@aztec/foundation/crypto/poseidon";
+import { AztecAddress } from "@aztec-labs/aztec.js/addresses";
+import type { AztecNode } from "@aztec-labs/aztec.js/node";
+import type { FunctionSelector } from "@aztec-labs/aztec.js/abi";
+import { Fr } from "@aztec-labs/aztec.js/fields";
+import { poseidon2Hash } from "@aztec-labs/foundation/crypto/poseidon";
 import { EmbeddedWallet } from "@aztec-kit/embedded-wallet";
 import {
   SubscriptionFPCContract,

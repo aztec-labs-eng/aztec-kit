@@ -22,19 +22,19 @@ import {
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import EditIcon from "@mui/icons-material/Edit";
-import { AztecAddress } from "@aztec/aztec.js/addresses";
+import { AztecAddress } from "@aztec-labs/aztec.js/addresses";
 import { shortAddress } from "@aztec-kit/common/ui";
-import { getContractInstanceFromInstantiationParams } from "@aztec/stdlib/contract";
-import { Fr } from "@aztec/aztec.js/fields";
+import { getContractInstanceFromInstantiationParams } from "@aztec-labs/stdlib/contract";
+import { Fr } from "@aztec-labs/aztec.js/fields";
 import { parseUnits } from "viem";
 import {
   FunctionSelector as AztecFunctionSelector,
   type ContractArtifact,
   type FunctionAbi,
   getAllFunctionAbis,
-} from "@aztec/aztec.js/abi";
-import { getDefaultInitializer, getInitializer } from "@aztec/stdlib/abi";
-import type { ContractInstanceWithAddress } from "@aztec/stdlib/contract";
+} from "@aztec-labs/aztec.js/abi";
+import { getDefaultInitializer, getInitializer } from "@aztec-labs/stdlib/abi";
+import type { ContractInstanceWithAddress } from "@aztec-labs/stdlib/contract";
 import type { SubscriptionFPCContract } from "@aztec-kit/contracts-aztec/artifacts/SubscriptionFPC";
 import { SubscriptionFPC } from "@aztec-kit/contracts-aztec/subscription-fpc";
 import { useWallet } from "../contexts/WalletContext";
@@ -49,7 +49,7 @@ import {
   FPC_TEARDOWN_L2_GAS,
   FPC_TEARDOWN_DA_GAS,
 } from "@aztec-kit/contracts-aztec/fpc-gas-constants";
-import { FunctionType } from "@aztec/aztec.js/abi";
+import { FunctionType } from "@aztec-labs/aztec.js/abi";
 import { ArtifactUpload } from "./ArtifactUpload";
 import { FunctionSelector } from "./FunctionSelector";
 import { FunctionArgsForm, getDefaultArgs, type AliasedAddress } from "./FunctionArgsForm";

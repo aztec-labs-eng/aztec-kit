@@ -15,15 +15,15 @@
  */
 
 import { describe, it, expect, beforeAll } from "vitest";
-import { Fr } from "@aztec/aztec.js/fields";
-import { Gas } from "@aztec/stdlib/gas";
-import { randomBytes } from "@aztec/foundation/crypto/random";
-import { TokenContract, TokenContractArtifact } from "@aztec/noir-contracts.js/Token";
-import { NO_FROM } from "@aztec/aztec.js/account";
-import { SetPublicAuthwitContractInteraction } from "@aztec/aztec.js/authorization";
+import { Fr } from "@aztec-labs/aztec.js/fields";
+import { Gas } from "@aztec-labs/stdlib/gas";
+import { randomBytes } from "@aztec-labs/foundation/crypto/random";
+import { TokenContract, TokenContractArtifact } from "@aztec-labs/noir-contracts.js/Token";
+import { NO_FROM } from "@aztec-labs/aztec.js/account";
+import { SetPublicAuthwitContractInteraction } from "@aztec-labs/aztec.js/authorization";
 
-import { computeInnerAuthWitHash } from "@aztec/stdlib/auth-witness";
-import { computeVarArgsHash } from "@aztec/stdlib/hash";
+import { computeInnerAuthWitHash } from "@aztec-labs/stdlib/auth-witness";
+import { computeVarArgsHash } from "@aztec-labs/stdlib/hash";
 
 import {
   SubscriptionFPC,

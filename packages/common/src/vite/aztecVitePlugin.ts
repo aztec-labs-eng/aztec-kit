@@ -31,10 +31,10 @@ function detectViteMajor(): number {
 }
 
 /**
- * Reads the app's `@aztec/aztec.js` pin from its own package.json (Vite runs
+ * Reads the app's `@aztec-labs/aztec.js` pin from its own package.json (Vite runs
  * with cwd = the app dir). Pins are exact in this repo, so the pin IS the
  * installed version; the installed package.json itself is not reachable
- * (`@aztec/aztec.js` doesn't export `./package.json`). Returns "unknown" if
+ * (`@aztec-labs/aztec.js` doesn't export `./package.json`). Returns "unknown" if
  * the pin can't be read.
  */
 function detectAztecVersion(): string {
@@ -45,7 +45,9 @@ function detectAztecVersion(): string {
       devDependencies?: Record<string, string>;
     };
     return (
-      pkg.dependencies?.["@aztec/aztec.js"] ?? pkg.devDependencies?.["@aztec/aztec.js"] ?? "unknown"
+      pkg.dependencies?.["@aztec-labs/aztec.js"] ??
+      pkg.devDependencies?.["@aztec-labs/aztec.js"] ??
+      "unknown"
     );
   } catch {
     return "unknown";
@@ -64,8 +66,8 @@ function detectAztecVersion(): string {
  *     yarn-workspace hoisting
  *
  * On Vite 7 (and older) — additionally:
- *   - `optimizeDeps.exclude: ['@aztec/kv-store/sqlite-opfs', '@sqlite.org/sqlite-wasm',
- *     '@aztec/noir-acvm_js', '@aztec/noir-noirc_abi', '@aztec/bb.js']` so Web Worker
+ *   - `optimizeDeps.exclude: ['@aztec-labs/kv-store/sqlite-opfs', '@sqlite.org/sqlite-wasm',
+ *     '@aztec-foundation/noir-acvm_js', '@aztec-foundation/noir-noirc_abi', '@aztec-foundation/bb.js']` so Web Worker
  *     spawns via `new Worker(new URL('./worker.js', import.meta.url))` and sibling
  *     `.wasm` assets resolve against their real `node_modules` locations.
  *   - `optimizeDeps.include` for the CJS transitive deps reached via excluded
@@ -86,7 +88,7 @@ export function aztecVitePlugin(options: AztecVitePluginOptions = {}): Plugin[] 
     config(): UserConfig {
       // Cross-cutting defaults that apply on all Vite versions.
       const base = {
-        // Every app gets the @aztec/* version it was built against as a
+        // Every app gets the @aztec-labs/* version it was built against as a
         // compile-time constant (shown in the footers). Declared for TS in
         // each app's src/vite-env.d.ts.
         define: {
@@ -118,11 +120,11 @@ export function aztecVitePlugin(options: AztecVitePluginOptions = {}): Plugin[] 
           esbuild: { target },
           optimizeDeps: {
             exclude: [
-              "@aztec/noir-acvm_js",
-              "@aztec/noir-noirc_abi",
-              "@aztec/bb.js",
-              "@aztec/sqlite3mc-wasm",
-              "@aztec/kv-store/sqlite-opfs",
+              "@aztec-foundation/noir-acvm_js",
+              "@aztec-foundation/noir-noirc_abi",
+              "@aztec-foundation/bb.js",
+              "@aztec-labs/sqlite3mc-wasm",
+              "@aztec-labs/kv-store/sqlite-opfs",
             ],
             include: [
               "pino",
