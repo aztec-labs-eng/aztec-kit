@@ -12,7 +12,7 @@ name: Deploy to Vercel
 #   FPC_PROJECT_ID     / FPC_PROJECT_ID_NEXT
 #   SWAP_PROJECT_ID    / SWAP_PROJECT_ID_NEXT
 #
-# The Aztec node sits behind an API gateway, which 401s unauthenticated
+# The Aztec node sits behind the rpc2 API gateway, which 403s unauthenticated
 # calls. Its key is the repo secret TESTNET_API_KEY, exposed to the app builds
 # as `VITE_TESTNET_API_KEY` and substituted into config/networks/testnet.json
 # at build time (see apps/*/src/config/networks/index.ts). One secret covers

@@ -2,11 +2,15 @@ import { createAztecNodeClient, type AztecNode } from "@aztec-labs/aztec.js/node
 import { defaultFetch } from "@aztec-labs/foundation/json-rpc/client";
 
 /**
- * Auth header the node gateway requires. staging-public (and the v6 networks behind it) is
- * fronted by Kong, which reads the key from `x-aztec-api-key` — any other header name comes back
- * `401 {"message":"No API key found in request"}`, and its CORS preflight allows only this one.
+ * Header that API-gateway-fronted nodes require for auth.
+ * Sent on every JSON-RPC request when an API key is supplied.
  */
-export const AZTEC_API_KEY_HEADER = "x-aztec-api-key";
+/**
+ * Auth header the rpc2 gateway requires. It fronts the nodes with AWS API Gateway, whose
+ * key header is `x-api-key` — anything else comes back `403 {"message":"Forbidden"}`,
+ * indistinguishable from sending no key at all.
+ */
+export const AZTEC_API_KEY_HEADER = "x-api-key";
 
 /**
  * Create an Aztec node RPC client, optionally authenticating with an API key.
