@@ -112,7 +112,10 @@ function updatePackageJsonFiles(version) {
 
   for (const path of packageJsons) {
     const original = readFileSync(path, "utf-8");
-    const updated = original.replace(/"(@aztec\/[^"]+)": "v[^"]+"/g, `"$1": "v${version}"`);
+    const updated = original.replace(
+      /"(@aztec(?:-labs)?\/[^"]+)": "(v?)\d+\.\d+\.\d+[^"]*"/g,
+      (_, name, prefix) => `"${name}": "${prefix}${version}"`,
+    );
     if (updated !== original) {
       writeFileSync(path, updated, "utf-8");
       log(COLORS.green, `  ✓ ${relative(ROOT, path)}`);
