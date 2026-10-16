@@ -112,7 +112,11 @@ function updatePackageJsonFiles(version) {
 
   for (const path of packageJsons) {
     const original = readFileSync(path, "utf-8");
-    const updated = original.replace(/"(@aztec\/[^"]+)": "v[^"]+"/g, `"$1": "v${version}"`);
+    // Pins are `@aztec/*` with a `v` prefix or `@aztec-labs/*` bare; keep each pin's prefix style.
+    const updated = original.replace(
+      /"(@aztec(?:-labs)?\/[^"]+)": "(v?)\d[^"]*"/g,
+      (_, name, prefix) => `"${name}": "${prefix}${version}"`,
+    );
     if (updated !== original) {
       writeFileSync(path, updated, "utf-8");
       log(COLORS.green, `  ✓ ${relative(ROOT, path)}`);
