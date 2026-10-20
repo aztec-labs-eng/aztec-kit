@@ -112,7 +112,12 @@ function updatePackageJsonFiles(version) {
 
   for (const path of packageJsons) {
     const original = readFileSync(path, "utf-8");
-    const updated = original.replace(/"(@aztec\/[^"]+)": "v[^"]+"/g, `"$1": "v${version}"`);
+    // Published Aztec scopes; `@aztec-kit/*` are local workspaces and are left alone.
+    // The optional `v` prefix of each existing pin is preserved.
+    const updated = original.replace(
+      /"(@aztec(?:-labs|-foundation)?\/[^"]+)": "(v?)\d[^"]*"/g,
+      `"$1": "$2${version}"`,
+    );
     if (updated !== original) {
       writeFileSync(path, updated, "utf-8");
       log(COLORS.green, `  ✓ ${relative(ROOT, path)}`);
