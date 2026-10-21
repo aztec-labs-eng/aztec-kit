@@ -7,6 +7,7 @@
  *   - every workspace package.json under apps/, packages/, e2e/: `@aztec-labs/*` pins are set
  *     to VERSION; `@aztec-foundation/*` pins (bb.js, l1-artifacts, noir-*) are on their own
  *     version line and are set to whatever `@aztec-labs/*@VERSION` itself depends on
+ *   - root `resolutions` that yarn-patch an Aztec package: carried over to VERSION
  *   - `.aztecrc` (the Aztec CLI toolchain pin)
  *   - every Nargo.toml under packages/contracts/aztec/noir/
  *
@@ -126,6 +127,39 @@ function updatePackageJsonFiles(version, foundationVersion) {
   }
 
   log(COLORS.green, `✓ Updated ${changed} package.json file(s)\n`);
+}
+
+/**
+ * Carries the root `resolutions` that yarn-patch an Aztec package over to the new version, so a
+ * bump keeps applying them instead of silently dropping them (a resolution keyed on the old
+ * version no longer matches anything). If a patch no longer applies to the new version,
+ * `yarn install` fails on it — drop or regenerate it then, and delete it outright once upstream
+ * ships the change it carries.
+ */
+function updatePatchedResolutions(version, foundationVersion) {
+  const path = resolve(ROOT, "package.json");
+  const pkg = JSON.parse(readFileSync(path, "utf-8"));
+  if (!pkg.resolutions) return;
+
+  const bump = (s) =>
+    s
+      .replace(/(@aztec-labs\/[^@"#]+@npm(?::|%3A))[^"#]+/g, `$1${version}`)
+      .replace(/(@aztec-foundation\/[^@"#]+@npm(?::|%3A))[^"#]+/g, `$1${foundationVersion}`);
+  const resolutions = {};
+  const patched = [];
+  for (const [key, value] of Object.entries(pkg.resolutions)) {
+    resolutions[bump(key)] = bump(value);
+    if (value.startsWith("patch:") && bump(key) !== key) patched.push(key.replace(/@npm:.*/, ""));
+  }
+  if (patched.length === 0) return;
+
+  pkg.resolutions = resolutions;
+  writeFileSync(path, JSON.stringify(pkg, null, 2) + "\n", "utf-8");
+  log(
+    COLORS.yellow,
+    `  ! Carried yarn patches over to the new version: ${patched.join(", ")} (.yarn/patches/).` +
+      " Drop each once upstream ships its change.\n",
+  );
 }
 
 /**
@@ -380,6 +414,7 @@ async function main() {
   log(COLORS.green, `@aztec-foundation/* version for v${version}: ${foundationVersion}\n`);
 
   updatePackageJsonFiles(version, foundationVersion);
+  updatePatchedResolutions(version, foundationVersion);
   updateAztecRc(version);
   updateNargoToml(version);
   installDependencies();
