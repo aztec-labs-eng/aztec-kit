@@ -3,7 +3,7 @@
  * `SALT` env var, on-demand secret generation, and a single canonical way to
  * obtain the admin: an **initializerless** Schnorr account — immediately usable
  * with no account-deploy tx. This is the same derivation the deploy framework
- * (`../deploy/runner.ts`) uses for its deployers, so every script and the
+ * (`@aztec-labs/aztec/deploy`) uses for its deployers, so every script and the
  * framework agree on the admin's address.
  */
 import { EmbeddedWallet } from "@aztec-labs/wallets/embedded";

@@ -1,10 +1,10 @@
 /**
  * Façade over the deploy framework plus the kit's network glue.
  *
- * The framework is vendored under `./deploy/` (see its VENDORED.md): upstream ships it as
- * `@aztec/aztec/deploy` on the 5.x line, but the v6 `@aztec-labs/aztec` has no such subpath yet.
- * This file is the only place that names it, so moving back to a published subpath is a one-file
- * change.
+ * The framework is upstream — `@aztec-labs/aztec/deploy`, shipped in nightlies since
+ * 6.0.0-nightly.20261013. The kit runs it with aztec-node#538 applied as a yarn patch (root
+ * `resolutions`, `.yarn/patches/`) until a nightly ships it. This file is the only place that names
+ * the subpath, so a future move is still a one-file change.
  */
 import { join } from "node:path";
 
@@ -14,7 +14,7 @@ import {
   type DeploymentSpec,
   type FeePolicy,
   type Steps,
-} from "./deploy/index.ts";
+} from "@aztec-labs/aztec/deploy";
 import { createNode } from "./node/create-node.ts";
 import {
   apiKeyForNetwork,
@@ -24,7 +24,7 @@ import {
   type NetworkName,
 } from "./testing/network-config.ts";
 
-export * from "./deploy/index.ts";
+export * from "@aztec-labs/aztec/deploy";
 
 /**
  * Fills a fee policy's L1 fields from the kit's per-network defaults: RPC/chain id from
