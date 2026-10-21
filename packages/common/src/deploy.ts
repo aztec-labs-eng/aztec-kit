@@ -1,10 +1,8 @@
 /**
  * Façade over the deploy framework plus the kit's network glue.
  *
- * The framework is upstream — `@aztec-labs/aztec/deploy`, shipped in nightlies since
- * 6.0.0-nightly.20261013. The kit runs it with aztec-node#538 applied as a yarn patch (root
- * `resolutions`, `.yarn/patches/`) until a nightly ships it. This file is the only place that names
- * the subpath, so a future move is still a one-file change.
+ * The framework is upstream — `@aztec-labs/aztec/deploy`, released since 6.0.0-rc.4. This file is
+ * the only place that names the subpath, so a future move is still a one-file change.
  */
 import { join } from "node:path";
 
