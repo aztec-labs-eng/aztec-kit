@@ -12,7 +12,7 @@
  *   - every Nargo.toml under packages/contracts/aztec/noir/
  *
  * Usage:
- *   node scripts/update.js [--version VERSION] [--major N] [--channel nightly|rc]
+ *   node scripts/update.js [--version VERSION] [--major N] [--channel stable|rc|nightly]
  *                          [--skip-aztec-up] [--skip-compile]
  *
  * When `--version` is omitted, the script auto-fetches the latest release of the tracked
@@ -273,7 +273,8 @@ function compileContracts() {
 
 /**
  * Reads `@aztec-labs/aztec.js`'s current pin from any workspace package.json and
- * returns its major and channel (e.g. `"6.0.0-rc.1"` → `{ major: 6, channel: "rc" }`).
+ * returns its major and channel (e.g. `"6.0.0-rc.1"` → `{ major: 6, channel: "rc" }`, `"6.0.0"` →
+ * `{ major: 6, channel: "stable" }`).
  * Used to pick which release series to track when the caller doesn't pass
  * `--major` / `--channel`.
  */
@@ -287,8 +288,8 @@ function inferSeriesFromPin() {
     }
     const pin =
       pkg.dependencies?.["@aztec-labs/aztec.js"] || pkg.devDependencies?.["@aztec-labs/aztec.js"];
-    const m = pin?.match(/^v?(\d+)\.\d+\.\d+-(nightly|rc)\./);
-    if (m) return { major: Number(m[1]), channel: m[2] };
+    const m = pin?.match(/^v?(\d+)\.\d+\.\d+(?:-(nightly|rc)\.\d+)?$/);
+    if (m) return { major: Number(m[1]), channel: m[2] ?? "stable" };
   }
   return null;
 }
@@ -299,7 +300,8 @@ async function fetchLatestRelease(major, channel) {
     // `npm view ... versions` is semver-sorted, so rc.10 lands after rc.9.
     const output = exec("npm view @aztec-labs/aztec.js versions --json", { silent: true });
     const versions = JSON.parse(output);
-    const re = new RegExp(`^${major}\\.\\d+\\.\\d+-${channel}\\.\\d+$`);
+    const suffix = channel === "stable" ? "" : `-${channel}\\.\\d+`;
+    const re = new RegExp(`^${major}\\.\\d+\\.\\d+${suffix}$`);
     const matching = versions.filter((v) => re.test(v));
     const latest = matching[matching.length - 1];
     if (!latest) throw new Error(`No v${major} ${channel} versions found`);
@@ -352,8 +354,8 @@ function parseArgs() {
       major = Number(args[++i]);
     } else if (a === "--channel" && args[i + 1]) {
       channel = args[++i];
-      if (channel !== "nightly" && channel !== "rc") {
-        log(COLORS.red, `Unknown channel "${channel}" (expected nightly or rc)`);
+      if (!["stable", "rc", "nightly"].includes(channel)) {
+        log(COLORS.red, `Unknown channel "${channel}" (expected stable, rc or nightly)`);
         process.exit(1);
       }
     } else if (a === "--skip-aztec-up") {
@@ -370,7 +372,7 @@ function parseArgs() {
         "  --major N            Track v<N> releases (default: inferred from current pin)",
       );
       console.log(
-        "  --channel C          Track `nightly` or `rc` releases (default: inferred from current pin)",
+        "  --channel C          Track `stable`, `rc` or `nightly` releases (default: inferred from current pin)",
       );
       console.log("  --skip-aztec-up      Skip Aztec CLI installation");
       console.log("  --skip-compile       Skip the compile/codegen step at the end");
