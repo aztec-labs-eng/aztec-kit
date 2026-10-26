@@ -132,7 +132,7 @@ export async function installWasmInterceptor(profiler: Profiler): Promise<() => 
   const restores: (() => void)[] = [];
 
   try {
-    const bbMod = await import("@aztec/bb.js");
+    const bbMod = await import("@aztec-foundation/bb.js");
     const BB = (bbMod as any).Barretenberg;
     const BBSync = (bbMod as any).BarretenbergSync;
 
@@ -182,7 +182,7 @@ export async function installWasmInterceptor(profiler: Profiler): Promise<() => 
       }
     }
   } catch {
-    // @aztec/bb.js not available — no WASM profiling
+    // @aztec-foundation/bb.js not available — no WASM profiling
   }
 
   return () => restores.forEach((r) => r());
@@ -217,7 +217,7 @@ function wrapOracleCallback(callback: any, profiler: Profiler): any {
 
 /**
  * Patch circuit simulator prototypes by reaching through the PXE instance.
- * This avoids importing @aztec/simulator or @aztec/pxe/server (which have
+ * This avoids importing @aztec-labs/simulator or @aztec-labs/pxe/server (which have
  * native Node.js deps that break browser builds).
  *
  * Patches:

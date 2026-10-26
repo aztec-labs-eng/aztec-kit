@@ -4,11 +4,11 @@
  */
 
 import { createContext, useContext, useEffect, type ReactNode, useCallback } from "react";
-import type { AztecAddress } from "@aztec/aztec.js/addresses";
-import type { Fr } from "@aztec/foundation/curves/bn254";
-import type { TxReceipt } from "@aztec/stdlib/tx";
+import type { AztecAddress } from "@aztec-labs/aztec.js/addresses";
+import type { Fr } from "@aztec-labs/foundation/curves/bn254";
+import type { TxReceipt } from "@aztec-labs/stdlib/tx";
 import type { AMMContract } from "@aztec-kit/contracts-aztec/artifacts/AMM";
-import type { OffchainMessage } from "@aztec/aztec.js/contracts";
+import type { OffchainMessage } from "@aztec-labs/aztec.js/contracts";
 import type { SubscriptionFPC } from "@aztec-kit/contracts-aztec/subscription-fpc";
 import { useWallet } from "../wallet";
 import { useNetwork } from "../network";

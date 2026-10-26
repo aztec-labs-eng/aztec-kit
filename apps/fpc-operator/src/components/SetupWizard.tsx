@@ -10,7 +10,7 @@ import {
   StepLabel,
   StepContent,
 } from "@mui/material";
-import { FeeJuiceContract } from "@aztec/aztec.js/protocol";
+import { FeeJuiceContract } from "@aztec-labs/aztec.js/protocol";
 import { useWallet } from "../contexts/WalletContext";
 import { useNetwork } from "../contexts/NetworkContext";
 import { prepareFPC, deployFPC } from "../services/fpcService";
@@ -63,7 +63,7 @@ export function SetupWizard({ onComplete, onFpcAddressComputed }: SetupWizardPro
         }
 
         // Not deployed — check if addresses have funds to skip the funding step
-        const fj = FeeJuiceContract.at(wallet);
+        const fj = FeeJuiceContract.withWallet(wallet);
         const [adminBal, fpcBal] = await Promise.all([
           fj.methods
             .balance_of_public(address)

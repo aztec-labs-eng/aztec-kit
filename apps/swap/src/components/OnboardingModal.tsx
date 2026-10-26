@@ -19,9 +19,9 @@ import RefreshIcon from "@mui/icons-material/Refresh";
 import { useOnboarding } from "../contexts/onboarding";
 import { useWallet } from "../contexts/wallet";
 import { useNetwork } from "../contexts/network";
-import type { AztecAddress } from "@aztec/aztec.js/addresses";
-import type { Aliased } from "@aztec/aztec.js/wallet";
-import type { WalletProvider, PendingConnection } from "@aztec/wallet-sdk/manager";
+import type { AztecAddress } from "@aztec-labs/aztec.js/addresses";
+import type { Aliased } from "@aztec-labs/aztec.js/wallet";
+import type { WalletProvider, PendingConnection } from "@aztec-labs/wallet-sdk/manager";
 import { createGoSwapCapabilities } from "../config/capabilities";
 import {
   OnboardingProgress,

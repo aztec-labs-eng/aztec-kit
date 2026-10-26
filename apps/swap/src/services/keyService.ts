@@ -5,7 +5,7 @@
  *   - A 256-bit AES-GCM CryptoKey is generated once and stored in IndexedDB
  *     under `goswap-wallet-keys / keys / wallet-encryption-key`.
  *   - The key is `extractable: true` so we can `exportKey('raw', …)` to
- *     produce the 32 raw bytes that `@aztec/kv-store/sqlite-opfs` expects
+ *     produce the 32 raw bytes that `@aztec-labs/kv-store/sqlite-opfs` expects
  *     as its `encryptionKey` parameter.
  *   - On rollout day, any pre-existing PLAINTEXT OPFS dirs are wiped
  *     unconditionally (a one-shot migration gated by a flag in IndexedDB).

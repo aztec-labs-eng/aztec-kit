@@ -3,17 +3,17 @@
  * `EmbeddedWallet`, registers the SponsoredFPC, and picks the right payment
  * method for the target network/mode.
  *
- * Node-only: pulls in `@aztec/pxe/server` + `@aztec/wallets/embedded`.
+ * Node-only: pulls in `@aztec-labs/pxe/server` + `@aztec-labs/wallets/embedded`.
  */
-import { SPONSORED_FPC_SALT } from "@aztec/constants";
-import { SponsoredFPCContractArtifact } from "@aztec/noir-contracts.js/SponsoredFPC";
-import { getPXEConfig } from "@aztec/pxe/server";
-import { EmbeddedWallet } from "@aztec/wallets/embedded";
-import { AztecAddress } from "@aztec/stdlib/aztec-address";
-import { type AztecNode } from "@aztec/aztec.js/node";
-import { getContractInstanceFromInstantiationParams } from "@aztec/stdlib/contract";
-import { Fr } from "@aztec/foundation/curves/bn254";
-import { SponsoredFeePaymentMethod } from "@aztec/aztec.js/fee";
+import { SPONSORED_FPC_SALT } from "@aztec-labs/constants";
+import { SponsoredFPCContractArtifact } from "@aztec-labs/noir-contracts.js/SponsoredFPC";
+import { getPXEConfig } from "@aztec-labs/pxe/server";
+import { EmbeddedWallet } from "@aztec-labs/wallets/embedded";
+import { AztecAddress } from "@aztec-labs/stdlib/aztec-address";
+import { type AztecNode } from "@aztec-labs/aztec.js/node";
+import { getContractInstanceFromInstantiationParams } from "@aztec-labs/stdlib/contract";
+import { Fr } from "@aztec-labs/foundation/curves/bn254";
+import { SponsoredFeePaymentMethod } from "@aztec-labs/aztec.js/fee";
 
 import { createNode } from "../node/create-node.ts";
 import { parsePaymentMode } from "./cli.ts";

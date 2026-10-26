@@ -7,7 +7,7 @@ const { configId } = vi.hoisted(() => ({
 }));
 
 // Stable config_id for the on-chain fallback assertion.
-vi.mock("@aztec/foundation/crypto/poseidon", () => ({
+vi.mock("@aztec-labs/foundation/crypto/poseidon", () => ({
   poseidon2Hash: vi.fn(async () => configId),
 }));
 
@@ -90,6 +90,8 @@ describe("executeSponsoredSwap", () => {
         get_subscription_info: getSubscriptionInfo,
       },
     };
+    // Only the subscribe path reads the node; this test takes the sponsor path.
+    const node = {};
     const network = {
       subscriptionFPC: {
         address: FPC,
@@ -110,6 +112,7 @@ describe("executeSponsoredSwap", () => {
 
     await expect(
       executeSponsoredSwap(
+        node as never,
         network as never,
         amm as never,
         goCoin as never,

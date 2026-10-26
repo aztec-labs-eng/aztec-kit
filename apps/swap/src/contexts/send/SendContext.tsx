@@ -4,7 +4,7 @@
  */
 
 import { createContext, useContext, type ReactNode, useCallback } from "react";
-import { AztecAddress } from "@aztec/aztec.js/addresses";
+import { AztecAddress } from "@aztec-labs/aztec.js/addresses";
 import { useSendReducer, type SendState, type SendPhase } from "./reducer";
 import { useContracts } from "../contracts";
 import { useWallet } from "../wallet";

@@ -1,24 +1,24 @@
-import type { AztecNode } from "@aztec/aztec.js/node";
-import { EmbeddedWallet, type EmbeddedWalletOptions } from "@aztec/wallets/embedded";
+import type { AztecNode } from "@aztec-labs/aztec.js/node";
+import { EmbeddedWallet, type EmbeddedWalletOptions } from "@aztec-labs/wallets/embedded";
 import type {
   ContractInstanceWithAddress,
   InteractionWaitOptions,
   SendReturn,
-} from "@aztec/aztec.js/contracts";
-import type { SendOptions } from "@aztec/aztec.js/wallet";
-import type { ExecutionPayload } from "@aztec/stdlib/tx";
-import { BaseWallet } from "@aztec/wallet-sdk/base-wallet";
-import { getInitialTestAccountsData } from "@aztec/accounts/testing";
-import { createFundedInitializerlessAccounts } from "@aztec/wallets/testing";
-import type { AztecAddress } from "@aztec/aztec.js/addresses";
-import { Fr } from "@aztec/aztec.js/fields";
-import { getContractInstanceFromInstantiationParams } from "@aztec/stdlib/contract";
-import { FeeJuiceContract } from "@aztec/aztec.js/protocol";
-import { publishContractClass, publishInstance } from "@aztec/aztec.js/deployment";
+} from "@aztec-labs/aztec.js/contracts";
+import type { SendOptions } from "@aztec-labs/aztec.js/wallet";
+import type { ExecutionPayload } from "@aztec-labs/stdlib/tx";
+import { BaseWallet } from "@aztec-labs/wallet-sdk/base-wallet";
+import { getInitialTestAccountsData } from "@aztec-labs/accounts/testing";
+import { createFundedInitializerlessAccounts } from "@aztec-labs/wallets/testing";
+import type { AztecAddress } from "@aztec-labs/aztec.js/addresses";
+import { Fr } from "@aztec-labs/aztec.js/fields";
+import { getContractInstanceFromInstantiationParams } from "@aztec-labs/stdlib/contract";
+import { FeeJuiceContract } from "@aztec-labs/aztec.js/protocol";
+import { publishContractClass, publishInstance } from "@aztec-labs/aztec.js/deployment";
 import {
   AuthRegistryArtifact,
   getStandardAuthRegistry,
-} from "@aztec/standard-contracts/auth-registry";
+} from "@aztec-labs/standard-contracts/auth-registry";
 import { SubscriptionFPC } from "../lib/subscription-fpc.js";
 import { SubscriptionFPCContractArtifact } from "../noir/artifacts/SubscriptionFPC.js";
 import { setupLocalNetwork, TEST_FEE_PADDING } from "@aztec-kit/common/testing";
@@ -140,7 +140,7 @@ export async function setupTestContext(): Promise<FPCTestContext> {
   // public authwit path (sponsored `transfer_in_public`) can dispatch into it.
   await ensureAuthRegistryPublished(wallet, admin);
 
-  const feeJuice = FeeJuiceContract.at(wallet);
+  const feeJuice = FeeJuiceContract.withWallet(wallet);
 
   // Deploy with the same salt the genesis pre-fund used. The FPC owns no
   // notes, so it deploys with default contract keys and needs no secret at

@@ -1,10 +1,10 @@
 import { describe, it, expect, beforeAll } from "vitest";
-import { EmbeddedWallet } from "@aztec/wallets/embedded";
-import type { AztecAddress } from "@aztec/aztec.js/addresses";
-import { Fr } from "@aztec/aztec.js/fields";
-import { Gas } from "@aztec/stdlib/gas";
-import { randomBytes } from "@aztec/foundation/crypto/random";
-import { TokenContract, TokenContractArtifact } from "@aztec/noir-contracts.js/Token";
+import { EmbeddedWallet } from "@aztec-labs/wallets/embedded";
+import type { AztecAddress } from "@aztec-labs/aztec.js/addresses";
+import { Fr } from "@aztec-labs/aztec.js/fields";
+import { Gas } from "@aztec-labs/stdlib/gas";
+import { randomBytes } from "@aztec-labs/foundation/crypto/random";
+import { TokenContract, TokenContractArtifact } from "@aztec-labs/noir-contracts.js/Token";
 
 import { SubscriptionFPC, fpcSubscribeOverhead } from "../lib/subscription-fpc.js";
 import { GrieferWallet } from "./utils.js";

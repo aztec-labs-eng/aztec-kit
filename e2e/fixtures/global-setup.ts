@@ -2,7 +2,7 @@ import { spawnSync } from "node:child_process";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import type { FullConfig } from "@playwright/test";
-import { Fr } from "@aztec/foundation/curves/bn254";
+import { Fr } from "@aztec-labs/foundation/curves/bn254";
 import {
   setupLocalNetworkCli,
   setupWallet,

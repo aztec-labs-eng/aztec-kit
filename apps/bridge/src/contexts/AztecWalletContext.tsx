@@ -7,9 +7,9 @@ import {
   useRef,
   type ReactNode,
 } from "react";
-import { AztecAddress } from "@aztec/stdlib/aztec-address";
-import type { Wallet } from "@aztec/aztec.js/wallet";
-import { FeeJuiceContract } from "@aztec/aztec.js/protocol";
+import { AztecAddress } from "@aztec-labs/stdlib/aztec-address";
+import type { Wallet } from "@aztec-labs/aztec.js/wallet";
+import { FeeJuiceContract } from "@aztec-labs/aztec.js/protocol";
 import { EmbeddedWallet, StaleStoredAccountError } from "@aztec-kit/embedded-wallet";
 import { useNetwork } from "./NetworkContext";
 import {
@@ -92,7 +92,7 @@ export function AztecWalletProvider({ children }: { children: ReactNode }) {
   const refreshFeeJuiceBalance = useCallback(async () => {
     if (!activeWallet || !address) return;
     try {
-      const fj = FeeJuiceContract.at(activeWallet);
+      const fj = FeeJuiceContract.withWallet(activeWallet);
       const { result } = await fj.methods.balance_of_public(address).simulate({ from: address });
       const bal = result.toString();
       setFeeJuiceBalance(bal);

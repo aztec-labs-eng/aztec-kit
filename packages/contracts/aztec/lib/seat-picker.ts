@@ -18,12 +18,12 @@
  * failure; the caller may retry with a fresh pick.
  */
 
-import type { AztecNode } from "@aztec/aztec.js/node";
-import type { AztecAddress } from "@aztec/aztec.js/addresses";
-import { Fr } from "@aztec/aztec.js/fields";
-import { poseidon2HashWithSeparator } from "@aztec/foundation/crypto/poseidon";
-import { siloNullifier } from "@aztec/stdlib/hash";
-import { MerkleTreeId } from "@aztec/stdlib/trees";
+import type { AztecNode } from "@aztec-labs/aztec.js/node";
+import type { AztecAddress } from "@aztec-labs/aztec.js/addresses";
+import { Fr } from "@aztec-labs/aztec.js/fields";
+import { poseidon2HashWithSeparator } from "@aztec-labs/foundation/crypto/poseidon";
+import { siloNullifier } from "@aztec-labs/stdlib/hash";
+import { MerkleTreeId } from "@aztec-labs/stdlib/trees";
 
 /**
  * Domain separator for seat-ticket nullifiers. MUST mirror the

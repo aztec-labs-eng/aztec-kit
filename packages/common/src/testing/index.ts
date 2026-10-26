@@ -1,7 +1,7 @@
 /**
  * Shared CLI / deploy-script plumbing for the app scripts folders.
  *
- * Importers are Node-only — this module pulls in PXE + aztec.js + @aztec/accounts
+ * Importers are Node-only — this module pulls in PXE + aztec.js + @aztec-labs/accounts
  * which aren't browser-safe. The `@aztec-kit/common/testing` subpath export
  * keeps it out of the default browser bundle entry.
  */
@@ -36,7 +36,7 @@ export {
   TEST_FEE_PADDING,
   type LocalNetwork,
   type LocalNetworkOptions,
-} from "@aztec/aztec/testing";
+} from "@aztec-labs/aztec/testing";
 
 export {
   setupLocalNetworkCli,

@@ -1,7 +1,7 @@
 import { Box, Typography, Button, Alert, CircularProgress, Chip } from "@mui/material";
 import { useEffect, useState, useCallback } from "react";
-import { Fr } from "@aztec/aztec.js/fields";
-import { AztecAddress } from "@aztec/aztec.js/addresses";
+import { Fr } from "@aztec-labs/aztec.js/fields";
+import { AztecAddress } from "@aztec-labs/aztec.js/addresses";
 import { extractClaimPayload, type TransferLink } from "../../services/offchainLinkService";
 import { ClaimProgress } from "./ClaimProgress";
 import { ClaimSuccess } from "./ClaimSuccess";

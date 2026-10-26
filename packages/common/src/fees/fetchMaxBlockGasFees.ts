@@ -16,8 +16,8 @@
  * RPC round-trips. Headers only, no tx bodies.
  */
 
-import type { AztecNode } from "@aztec/aztec.js/node";
-import { BlockNumber } from "@aztec/foundation/branded-types";
+import type { AztecNode } from "@aztec-labs/aztec.js/node";
+import { BlockNumber } from "@aztec-labs/foundation/branded-types";
 
 export interface PeakGasFees {
   feePerDaGas: bigint;

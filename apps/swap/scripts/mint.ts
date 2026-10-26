@@ -10,10 +10,10 @@
 
 import fs from "fs";
 import path from "path";
-import { Fr } from "@aztec/foundation/curves/bn254";
-import { AztecAddress } from "@aztec/stdlib/aztec-address";
-import { TokenContract, TokenContractArtifact } from "@aztec/noir-contracts.js/Token";
-import { BatchCall } from "@aztec/aztec.js/contracts";
+import { Fr } from "@aztec-labs/foundation/curves/bn254";
+import { AztecAddress } from "@aztec-labs/stdlib/aztec-address";
+import { TokenContract, TokenContractArtifact } from "@aztec-labs/noir-contracts.js/Token";
+import { BatchCall } from "@aztec-labs/aztec.js/contracts";
 import {
   parseNetwork,
   parseAddressList,

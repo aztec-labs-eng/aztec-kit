@@ -10,8 +10,8 @@ import {
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import RadioButtonUncheckedIcon from "@mui/icons-material/RadioButtonUnchecked";
 import { formatUnits } from "viem";
-import { FeeJuiceContract } from "@aztec/aztec.js/protocol";
-import { AztecAddress } from "@aztec/stdlib/aztec-address";
+import { FeeJuiceContract } from "@aztec-labs/aztec.js/protocol";
+import { AztecAddress } from "@aztec-labs/stdlib/aztec-address";
 import { shortAddress } from "@aztec-kit/common/ui";
 import { BRIDGE_STEP_LABELS } from "../constants";
 import { useAztecWallet } from "../../../contexts/AztecWalletContext";
@@ -47,7 +47,7 @@ function ClaimSummary({ allCredentials }: { allCredentials: ClaimCredentials[] }
     let cancelled = false;
 
     (async () => {
-      const fj = FeeJuiceContract.at(activeWallet);
+      const fj = FeeJuiceContract.withWallet(activeWallet);
 
       const results: Record<string, string | null> = {};
       await Promise.all(

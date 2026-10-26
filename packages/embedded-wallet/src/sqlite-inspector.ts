@@ -4,7 +4,7 @@
  * can be examined from the browser DevTools console. No-op in SSR.
  */
 
-import type { AztecAsyncKVStore } from "@aztec/kv-store";
+import type { AztecAsyncKVStore } from "@aztec-labs/kv-store";
 
 interface InspectableStore extends AztecAsyncKVStore {
   allAsync(sql: string, bind?: unknown[]): Promise<unknown[][]>;

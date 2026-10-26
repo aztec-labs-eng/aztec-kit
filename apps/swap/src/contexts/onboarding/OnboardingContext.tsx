@@ -5,7 +5,7 @@
  */
 
 import { createContext, useContext, useCallback, useEffect, useRef, type ReactNode } from "react";
-import type { AztecAddress } from "@aztec/aztec.js/addresses";
+import type { AztecAddress } from "@aztec-labs/aztec.js/addresses";
 import { useWallet } from "../wallet";
 import { useContracts } from "../contracts";
 import {

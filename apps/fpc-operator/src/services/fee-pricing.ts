@@ -1,6 +1,6 @@
 import { createPublicClient, http, parseUnits, formatUnits, type Chain } from "viem";
 import { sepolia, mainnet } from "viem/chains";
-import { RollupAbi } from "@aztec/l1-artifacts/RollupAbi";
+import { RollupAbi } from "@aztec-foundation/l1-artifacts/RollupAbi";
 
 const CHAIN_MAP: Record<number, { chain: Chain; defaultRpc: string }> = {
   1: { chain: mainnet, defaultRpc: "https://eth.llamarpc.com" },

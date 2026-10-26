@@ -1,9 +1,9 @@
-import { createAztecNodeClient } from "@aztec/aztec.js/node";
-import { EmbeddedWallet } from "@aztec/wallets/embedded";
-import { getPXEConfig } from "@aztec/pxe/server";
-import { FeeJuiceContract } from "@aztec/aztec.js/protocol";
-import { AztecAddress } from "@aztec/aztec.js/addresses";
-import { getInitialTestAccountsData } from "@aztec/accounts/testing";
+import { createAztecNodeClient } from "@aztec-labs/aztec.js/node";
+import { EmbeddedWallet } from "@aztec-labs/wallets/embedded";
+import { getPXEConfig } from "@aztec-labs/pxe/server";
+import { FeeJuiceContract } from "@aztec-labs/aztec.js/protocol";
+import { AztecAddress } from "@aztec-labs/aztec.js/addresses";
+import { getInitialTestAccountsData } from "@aztec-labs/accounts/testing";
 
 /**
  * Queries the public fee-juice balance of an address directly against the
@@ -28,7 +28,7 @@ export async function getPublicFeeJuiceBalance(nodeUrl: string, address: string)
     initial.signingKey,
   );
 
-  const fj = FeeJuiceContract.at(wallet);
+  const fj = FeeJuiceContract.withWallet(wallet);
   const target = AztecAddress.fromStringUnsafe(address);
   const { result } = await fj.methods.balance_of_public(target).simulate({ from: manager.address });
   return BigInt(result.toString());

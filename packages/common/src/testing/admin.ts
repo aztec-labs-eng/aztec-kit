@@ -3,13 +3,13 @@
  * `SALT` env var, on-demand secret generation, and a single canonical way to
  * obtain the admin: an **initializerless** Schnorr account — immediately usable
  * with no account-deploy tx. This is the same derivation the deploy framework
- * (`../deploy/runner.ts`) uses for its deployers, so every script and the
+ * (`@aztec-labs/aztec/deploy`) uses for its deployers, so every script and the
  * framework agree on the admin's address.
  */
-import { EmbeddedWallet } from "@aztec/wallets/embedded";
-import { deriveMasterMessageSigningSecretKey } from "@aztec/stdlib/keys";
-import { AztecAddress } from "@aztec/stdlib/aztec-address";
-import { Fr } from "@aztec/foundation/curves/bn254";
+import { EmbeddedWallet } from "@aztec-labs/wallets/embedded";
+import { deriveMasterMessageSigningSecretKey } from "@aztec-labs/stdlib/keys";
+import { AztecAddress } from "@aztec-labs/stdlib/aztec-address";
+import { Fr } from "@aztec-labs/foundation/curves/bn254";
 
 /**
  * Reads an admin secret from the named env var, generating a fresh one only

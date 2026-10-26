@@ -1,26 +1,26 @@
-import type { AztecAddress } from "@aztec/aztec.js/addresses";
-import type { AztecNode } from "@aztec/aztec.js/node";
-import { poseidon2Hash } from "@aztec/foundation/crypto/poseidon";
-import { Fr } from "@aztec/aztec.js/fields";
+import type { AztecAddress } from "@aztec-labs/aztec.js/addresses";
+import type { AztecNode } from "@aztec-labs/aztec.js/node";
+import { poseidon2Hash } from "@aztec-labs/foundation/crypto/poseidon";
+import { Fr } from "@aztec-labs/aztec.js/fields";
 import {
   FunctionType,
   type AztecAddressLike,
   type ContractArtifact,
   type FunctionCall,
-} from "@aztec/aztec.js/abi";
-import type { Wallet } from "@aztec/aztec.js/wallet";
+} from "@aztec-labs/aztec.js/abi";
+import type { Wallet } from "@aztec-labs/aztec.js/wallet";
 import { findFreeSeat } from "./seat-picker.js";
-import type { AuthWitness } from "@aztec/stdlib/auth-witness";
-import { Gas } from "@aztec/stdlib/gas";
-import type { EmbeddedWallet } from "@aztec/wallets/embedded";
+import type { AuthWitness } from "@aztec-labs/stdlib/auth-witness";
+import { Gas } from "@aztec-labs/stdlib/gas";
+import type { EmbeddedWallet } from "@aztec-labs/wallets/embedded";
 import {
   SubscriptionFPCContract,
   SubscriptionFPCContractArtifact,
 } from "../noir/artifacts/SubscriptionFPC.js";
-import { computeVarArgsHash, computeCalldataHash } from "@aztec/stdlib/hash";
-import { computeInnerAuthWitHash } from "@aztec/stdlib/auth-witness";
-import { HashedValues } from "@aztec/stdlib/tx";
-import { NO_FROM } from "@aztec/aztec.js/account";
+import { computeVarArgsHash, computeCalldataHash } from "@aztec-labs/stdlib/hash";
+import { computeInnerAuthWitHash } from "@aztec-labs/stdlib/auth-witness";
+import { HashedValues } from "@aztec-labs/stdlib/tx";
+import { NO_FROM } from "@aztec-labs/aztec.js/account";
 import {
   FPC_SPONSOR_OVERHEAD_DA_GAS_PRIVATE,
   FPC_SPONSOR_OVERHEAD_DA_GAS_PUBLIC,
@@ -33,7 +33,7 @@ import {
   FPC_TEARDOWN_DA_GAS,
   FPC_TEARDOWN_L2_GAS,
 } from "./fpc-gas-constants.js";
-import type { DeployInstantiationOptions } from "@aztec/aztec.js/contracts";
+import type { DeployInstantiationOptions } from "@aztec-labs/aztec.js/contracts";
 
 /**
  * Overhead the FPC adds on top of the sponsored function's gas.
@@ -179,7 +179,7 @@ export async function calibrateSponsoredApp(params: {
 /**
  * For public calls, the args_hash is computed over [selector, ...args] (the full calldata).
  * For private calls, it's computed over just args.
- * See encoding.ts in @aztec/entrypoints for the canonical behavior.
+ * See encoding.ts in @aztec-labs/entrypoints for the canonical behavior.
  */
 export async function buildNoirFunctionCall(call: FunctionCall) {
   const isPublic = call.type === FunctionType.PUBLIC;

@@ -1,7 +1,10 @@
-import { CheatCodes } from "@aztec/aztec/testing";
-import { type AztecNode, createAztecNodeClient } from "@aztec/aztec.js/node";
-import { type AztecNodeDebug, createAztecNodeDebugClient } from "@aztec/stdlib/interfaces/client";
-import { DateProvider } from "@aztec/foundation/timer";
+import { CheatCodes } from "@aztec-labs/aztec/testing";
+import { type AztecNode, createAztecNodeClient } from "@aztec-labs/aztec.js/node";
+import {
+  type AztecNodeDebug,
+  createAztecNodeDebugClient,
+} from "@aztec-labs/stdlib/interfaces/client";
+import { DateProvider } from "@aztec-labs/foundation/timer";
 
 /**
  * Starts a background loop that advances L1+L2 time + mines an L2 block
