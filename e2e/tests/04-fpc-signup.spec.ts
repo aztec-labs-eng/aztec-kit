@@ -58,18 +58,11 @@ const TOKEN_ARTIFACT_PATH = resolve(
 
 function runMint(env: NodeJS.ProcessEnv, toAddress: string): Promise<void> {
   return new Promise((res, rej) => {
-    const child = spawn(
-      "node",
-      [
-        "--experimental-transform-types",
-        "scripts/mint.ts",
-        "--network",
-        "local",
-        "--to",
-        toAddress,
-      ],
-      { cwd: SWAP_DIR, env, stdio: "inherit" },
-    );
+    const child = spawn("node", ["scripts/mint.ts", "--network", "local", "--to", toAddress], {
+      cwd: SWAP_DIR,
+      env,
+      stdio: "inherit",
+    });
     child.on("exit", (code) => {
       if (code === 0) res();
       else rej(new Error(`mint.ts exited with code ${code}`));

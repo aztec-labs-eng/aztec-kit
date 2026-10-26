@@ -24,8 +24,8 @@ import { getPublicFeeJuiceBalance } from "../fixtures/fee-juice-balance.ts";
  *
  * Running the script as a subprocess keeps Playwright's bundled Babel
  * transformer away from contract artifacts that use `public declare` class
- * fields (which require a specific plugin order); plain Node with
- * `--experimental-transform-types` handles them fine.
+ * fields (which require a specific plugin order); plain Node's type stripping
+ * handles them fine.
  *
  * Output is written to `apps/swap/src/config/networks/local.json`; we read
  * that back and mirror the relevant bits into the `swapDeployment` state file.
@@ -38,11 +38,11 @@ const SWAP_LOCAL_JSON = resolve(SWAP_DIR, "src/config/networks/local.json");
 
 function runSwapScript(name: string, args: string[], env: NodeJS.ProcessEnv): Promise<void> {
   return new Promise((res, rej) => {
-    const child = spawn(
-      "node",
-      ["--experimental-transform-types", `scripts/${name}`, "--network", "local", ...args],
-      { cwd: SWAP_DIR, env, stdio: "inherit" },
-    );
+    const child = spawn("node", [`scripts/${name}`, "--network", "local", ...args], {
+      cwd: SWAP_DIR,
+      env,
+      stdio: "inherit",
+    });
     child.on("exit", (code) => {
       if (code === 0) res();
       else rej(new Error(`${name} exited with code ${code}`));
