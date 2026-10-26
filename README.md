@@ -22,8 +22,8 @@ Three Aztec apps and the libraries that glue them together, in one yarn-workspac
 
 ## Prerequisites
 
-- Node.js 22+ via `nvm`
-- Yarn 4.5.2 (enabled via Corepack — `corepack enable`)
+- Node.js 26.12+ via `nvm` (required by the Aztec nightly installer)
+- Yarn 4.5.2 (enabled via Corepack — `npm i -g corepack && corepack enable`; Node 25+ no longer bundles it)
 - Aztec CLI: `curl -fsSL https://install.aztec-labs.com/<version>/install | bash` (version pinned in `apps/bridge/package.json`'s `@aztec-labs/aztec.js`)
 - Foundry (for L1 anvil + forge)
 

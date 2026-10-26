@@ -46,11 +46,15 @@ runs:
     - name: Set up Node.js
       uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
       with:
-        node-version: "24"
+        # The 6.1.0 nightly installer requires Node >= 26.12.0.
+        node-version: "26.12"
 
+    # Node 25+ no longer bundles Corepack; install it before enabling.
     - name: Enable Corepack
       shell: bash
-      run: corepack enable
+      run: |
+        command -v corepack >/dev/null || npm install -g corepack
+        corepack enable
 
     # Single switch for the whole action: does this branch pull @aztec from the
     # private registry? Detected from the committed .yarnrc.yml so it needs no
