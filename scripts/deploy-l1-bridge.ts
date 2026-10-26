@@ -2,7 +2,7 @@
  * CLI wrapper around `deployL1Bridge` from `@aztec-kit/contracts-ethereum`.
  *
  * Usage:
- *   DEPLOYER_KEY=0x… node --experimental-transform-types scripts/deploy-l1-bridge.ts [chain]
+ *   DEPLOYER_KEY=0x… node scripts/deploy-l1-bridge.ts [chain]
  *
  * Args:
  *   chain — "sepolia" (default), "mainnet", "anvil"

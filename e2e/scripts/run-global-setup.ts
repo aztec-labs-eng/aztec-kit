@@ -6,7 +6,7 @@
  *
  * Usage:
  *   # from repo root, with `aztec start --local-network` already running:
- *   node --experimental-transform-types e2e/scripts/run-global-setup.ts
+ *   node e2e/scripts/run-global-setup.ts
  */
 import globalSetup from "../fixtures/global-setup.ts";
 

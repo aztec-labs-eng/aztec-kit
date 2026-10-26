@@ -10,8 +10,8 @@
     "lint": "eslint .",
     "typecheck": "tsc -b --noEmit",
     "preview": "vite preview",
-    "deploy-fpc:local": "node --experimental-transform-types scripts/deploy-fpc.ts --network local",
-    "deploy-fpc:testnet": "node --experimental-transform-types scripts/deploy-fpc.ts --network testnet"
+    "deploy-fpc:local": "node scripts/deploy-fpc.ts --network local",
+    "deploy-fpc:testnet": "node scripts/deploy-fpc.ts --network testnet"
   },
   "dependencies": {
     "@aztec-foundation/l1-artifacts": "6.0.0-rc.7",

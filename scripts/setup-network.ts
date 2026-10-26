@@ -12,7 +12,7 @@
  * plan/progress reporter lands there); its stdout carries `export KEY=VAL` lines that we capture
  * and feed into later steps' env — the same handoff the shell script did via eval.
  *
- *   node --experimental-transform-types scripts/setup-network.ts <local|testnet>
+ *   node scripts/setup-network.ts <local|testnet>
  *
  * Supply SWAP_ADMIN_SECRET / FPC_ADMIN_SECRET via env to make the flow deterministic;
  * L1_FUNDER_KEY to avoid the faucet mint.
